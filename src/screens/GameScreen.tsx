@@ -1,0 +1,182 @@
+import React, { useState, useMemo, useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { Difficulty, GameId, RootStackParamList } from '../types';
+import { GAMES } from '../utils/constants';
+import DifficultyPicker from '../components/DifficultyPicker';
+import ResumeGamePicker from '../components/ResumeGamePicker';
+import TutorialScreen from '../components/TutorialScreen';
+import HighScoresScreen from '../components/HighScoresScreen';
+import { GAME_TUTORIALS } from '../utils/tutorials';
+import { getActiveGame, setActiveGame, clearActiveGame } from '../utils/storage';
+import TicTacToe from '../games/TicTacToe/TicTacToe';
+import Snake from '../games/Snake/Snake';
+import Game2048 from '../games/Game2048/Game2048';
+import Minesweeper from '../games/Minesweeper/Minesweeper';
+import ConnectFour from '../games/ConnectFour/ConnectFour';
+import Tetris from '../games/Tetris/Tetris';
+import Maze from '../games/Maze/Maze';
+import Solitaire from '../games/Solitaire/Solitaire';
+import Sudoku from '../games/Sudoku/Sudoku';
+import Reversi from '../games/Reversi/Reversi';
+import Checkers from '../games/Checkers/Checkers';
+import Chess from '../games/Chess/Chess';
+import Blackjack from '../games/Blackjack/Blackjack';
+import Poker from '../games/Poker/Poker';
+import Hearts from '../games/Hearts/Hearts';
+import { useTheme } from '../contexts/ThemeContext';
+import { ThemeColors } from '../utils/themes';
+
+type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
+
+export default function GameScreen({ route }: Props) {
+  const { colors } = useTheme();
+  const { gameId } = route.params;
+  const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
+  const [activeGameDifficulty, setActiveGameDifficulty] = useState<Difficulty | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [showHighScores, setShowHighScores] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const gameMeta = GAMES.find((g) => g.id === gameId);
+  const styles = useMemo(() => getStyles(colors), [colors]);
+
+  useEffect(() => {
+    // Check if there's an active game when component mounts
+    getActiveGame(gameId).then((savedDifficulty) => {
+      setActiveGameDifficulty(savedDifficulty);
+      setIsLoading(false);
+    });
+  }, [gameId]);
+
+  const handleSelectDifficulty = async (diff: Difficulty) => {
+    setDifficulty(diff);
+    await setActiveGame(gameId, diff);
+  };
+
+  const handleResume = () => {
+    if (activeGameDifficulty) {
+      setDifficulty(activeGameDifficulty);
+    }
+  };
+
+  const handleNewGame = () => {
+    clearActiveGame(gameId);
+    setActiveGameDifficulty(null);
+    setDifficulty(null);
+  };
+
+  if (isLoading) {
+    return <View style={styles.container} />;
+  }
+
+  if (!difficulty) {
+    // Show resume screen if there's an active game
+    if (activeGameDifficulty) {
+      return (
+        <View style={styles.container}>
+          <ResumeGamePicker
+            gameName={gameMeta?.name ?? 'Game'}
+            difficulty={activeGameDifficulty}
+            onResume={handleResume}
+            onNewGame={handleNewGame}
+            onShowTutorial={() => setShowTutorial(true)}
+            onShowHighScores={() => setShowHighScores(true)}
+          />
+          {showTutorial && (
+            <TutorialScreen
+              gameName={gameMeta?.name ?? 'Game'}
+              steps={GAME_TUTORIALS[gameId] || []}
+              onClose={() => setShowTutorial(false)}
+            />
+          )}
+          {showHighScores && (
+            <HighScoresScreen
+              gameId={gameId}
+              gameName={gameMeta?.name ?? 'Game'}
+              onClose={() => setShowHighScores(false)}
+            />
+          )}
+        </View>
+      );
+    }
+
+    // Show difficulty picker for new game
+    return (
+      <View style={styles.container}>
+        <DifficultyPicker
+          gameName={gameMeta?.name ?? 'Game'}
+          onSelect={handleSelectDifficulty}
+          onShowTutorial={() => setShowTutorial(true)}
+          onShowHighScores={() => setShowHighScores(true)}
+        />
+        {showTutorial && (
+          <TutorialScreen
+            gameName={gameMeta?.name ?? 'Game'}
+            steps={GAME_TUTORIALS[gameId] || []}
+            onClose={() => setShowTutorial(false)}
+          />
+        )}
+        {showHighScores && (
+          <HighScoresScreen
+            gameId={gameId}
+            gameName={gameMeta?.name ?? 'Game'}
+            onClose={() => setShowHighScores(false)}
+          />
+        )}
+      </View>
+    );
+  }
+
+  const renderGame = () => {
+    switch (gameId) {
+      case 'tic-tac-toe':
+        return <TicTacToe difficulty={difficulty} />;
+      case 'snake':
+        return <Snake difficulty={difficulty} />;
+      case '2048':
+        return <Game2048 difficulty={difficulty} />;
+      case 'minesweeper':
+        return <Minesweeper difficulty={difficulty} />;
+      case 'connect-four':
+        return <ConnectFour difficulty={difficulty} />;
+      case 'tetris':
+        return <Tetris difficulty={difficulty} />;
+      case 'maze':
+        return <Maze difficulty={difficulty} />;
+      case 'solitaire':
+        return <Solitaire difficulty={difficulty} />;
+      case 'sudoku':
+        return <Sudoku difficulty={difficulty} />;
+      case 'reversi':
+        return <Reversi difficulty={difficulty} />;
+      case 'checkers':
+        return <Checkers difficulty={difficulty} />;
+      case 'chess':
+        return <Chess difficulty={difficulty} />;
+      case 'blackjack':
+        return <Blackjack difficulty={difficulty} />;
+      case 'poker':
+        return <Poker difficulty={difficulty} />;
+      case 'hearts':
+        return <Hearts difficulty={difficulty} />;
+      default:
+        return <Text style={styles.error}>Unknown game</Text>;
+    }
+  };
+
+  return <View style={styles.container}>{renderGame()}</View>;
+}
+
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  error: {
+    color: colors.primary,
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 40,
+  },
+});

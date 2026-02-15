@@ -1,0 +1,43 @@
+Offline Games App Implementation Plan
+Goal Description
+Build a cross-platform mobile application (iOS & Android) containing a collection of classic offline games. The app will be built using React Native (Expo) to ensure native performance, easy offline support, and straightforward ad integration.
+
+Proposed Tech Stack
+Framework: React Native (Expo)
+Language: TypeScript
+Navigation: React Navigation (Native Stack)
+State Management: React Context / Hooks (sufficient for simple games)
+Persistence: AsyncStorage (for high scores and saved states)
+Ads: Expo Ads AdMob (or similar compatible library)
+Architecture
+Screens:
+HomeScreen: Displays a grid of available games.
+GameScreen: A generic wrapper that loads a specific game component based on route parameters.
+SettingsScreen: Toggle sound, manage data.
+Game Components:
+Each game will be a self-contained component in src/games/[GameName].
+Common utils in src/utils (e.g., game loop hooks, collision detection).
+Level System:
+LevelGenerator: Utility to procedurally generate levels for games like Maze and Water Sort to ensure infinite/100+ variants.
+LevelSelector: UI component for choosing levels.
+Initial Games (Phase 1)
+Tic Tac Toe: Simple logic to validate state management.
+Snake: Requires a game loop and simple graphics.
+2048: Grid logic and animations.
+Level-Based Games (Phase 2 & 3)
+For games where levels are appropriate, we will implement a minimum of 100 levels, primarily using procedural generation to ensure scalability and replayability.
+
+Maze:
+Algorithm: Recursive Backtracker or Prim's Algorithm.
+Difficulty: Increasing grid size (e.g., Level 1: 5x5 -> Level 100: 30x30).
+Water Sorting:
+Algorithm: Random shuffle with solvability check.
+Difficulty: Increasing number of tubes and colors.
+Snake:
+Levels: Different map layouts / obstacle configurations.
+Verification Plan
+Automated Tests:
+Unit tests for game logic (e.g., win conditions for Tic Tac Toe).
+Manual Verification:
+Run npx expo start and test on Android Emulator / iOS Simulator.
+Verify offline mode by toggling network off.
