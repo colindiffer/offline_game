@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { StyleSheet, Text, View, Dimensions, Platform } from 'react-native';
+import { StyleSheet, Text, View, Dimensions, Platform, ScrollView } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
@@ -70,14 +70,14 @@ export default function WordSearch({ difficulty }: Props) {
   const panGesture = Gesture.Pan()
     .onStart((e) => {
       if (gameWon) return;
-      const pos = getCellFromPos(e.absoluteX, e.pageY);
+      const pos = getCellFromPos(e.absoluteX, e.absoluteY);
       if (pos) {
         setSelection({ start: pos, end: pos });
       }
     })
     .onUpdate((e) => {
       if (!selection || gameWon) return;
-      const pos = getCellFromPos(e.absoluteX, e.pageY);
+      const pos = getCellFromPos(e.absoluteX, e.absoluteY);
       if (pos) {
         setSelection(prev => prev ? { ...prev, end: pos } : null);
       }

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
 import Header from '../../components/Header';
 import GameOverOverlay from '../../components/GameOverOverlay';
 import GameBoardContainer from '../../components/GameBoardContainer';

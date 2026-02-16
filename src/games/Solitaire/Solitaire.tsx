@@ -252,7 +252,7 @@ export default function Solitaire({ difficulty }: Props) {
           let targetPile: string | null = null;
           let minDistance = 200;
 
-          pilePositions.current.forEach((pos, key) => {
+          for (const [key, pos] of pilePositions.current.entries()) {
             const isInside = 
               dropX >= pos.x - 20 && 
               dropX <= pos.x + pos.width + 20 &&
@@ -262,6 +262,7 @@ export default function Solitaire({ difficulty }: Props) {
             if (isInside) {
               targetPile = key;
               minDistance = 0;
+              break;
             } else {
               const centerX = pos.x + pos.width / 2;
               const centerY = pos.y + pos.height / 2;
@@ -271,12 +272,12 @@ export default function Solitaire({ difficulty }: Props) {
                 targetPile = key;
               }
             }
-          });
+          }
 
           if (targetPile) {
-            let finalTarget = targetPile;
-            if (targetPile.includes('-card-')) {
-              const parts = targetPile.split('-');
+            let finalTarget: string = targetPile;
+            if (finalTarget.includes('-card-')) {
+              const parts = finalTarget.split('-');
               finalTarget = `${parts[0]}-${parts[1]}`;
             }
             performMove(draggingRef.current.source, draggingRef.current.cardIndex, finalTarget);
