@@ -150,7 +150,7 @@ export default function Solitaire({ difficulty }: Props) {
           playSound('win');
           const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
           recordGameResult('solitaire', 'win', finalTime);
-          if (highScore === null || finalTime < highScore) {
+          if (highScore === null || finalTime < highScore || highScore === 0) {
             setHighScoreState(finalTime);
             setHighScore('solitaire', finalTime, difficulty);
           }

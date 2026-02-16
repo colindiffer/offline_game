@@ -99,13 +99,16 @@ export default function HighScoresScreen({ gameId, gameName, onClose }: Props) {
               </View>
             </View>
             
-            {scores[diff] !== null && scores[diff] !== 0 && (
+            {scores[diff] !== null && scores[diff] !== 0 ? (
               <TouchableOpacity 
                 style={styles.clearMiniBtn} 
                 onPress={() => handleClearScore(diff)}
+                activeOpacity={0.6}
               >
                 <Text style={styles.clearText}>Clear</Text>
               </TouchableOpacity>
+            ) : (
+              <View style={styles.clearPlaceholder} />
             )}
           </View>
         ))}
@@ -186,16 +189,23 @@ const getStyles = (colors: ThemeColors) =>
     },
     clearMiniBtn: {
       backgroundColor: '#ff7675',
-      paddingHorizontal: 12,
-      paddingVertical: 8,
-      borderRadius: radius.sm,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: radius.md,
       marginLeft: 10,
+      minWidth: 70,
+      alignItems: 'center',
+      ...shadows.sm,
     },
     clearText: {
       color: '#fff',
-      fontSize: 11,
+      fontSize: 12,
       fontWeight: '900',
       textTransform: 'uppercase',
+    },
+    clearPlaceholder: {
+      width: 70,
+      marginLeft: 10,
     },
     closeButton: {
       backgroundColor: colors.primary,

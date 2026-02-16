@@ -100,7 +100,7 @@ const getStyles = (colors: ThemeColors) =>
       borderRadius: radius.lg,
       padding: spacing.xl,
       width: '100%',
-      maxHeight: '80%',
+      maxHeight: '90%',
       borderWidth: 1,
       borderColor: colors.border,
       ...shadows.xl,

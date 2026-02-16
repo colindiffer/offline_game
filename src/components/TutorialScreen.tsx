@@ -114,8 +114,8 @@ const getStyles = (colors: ThemeColors) =>
       marginBottom: spacing.xl,
     },
     scrollView: {
+      flex: 1,
       width: '100%',
-      maxHeight: 400,
     },
     scrollContent: {
       alignItems: 'center',
