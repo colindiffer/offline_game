@@ -28,7 +28,7 @@ import {
 } from './logic';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const BOARD_SIZE = Math.min(SCREEN_WIDTH - 40, 360);
+const BOARD_SIZE = SCREEN_WIDTH - 32;
 const CELL_SIZE = Math.floor(BOARD_SIZE / SNAKE_GRID_SIZE);
 const ACTUAL_BOARD = CELL_SIZE * SNAKE_GRID_SIZE;
 
@@ -231,7 +231,9 @@ export default function Snake({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.bgIcon}>🐍</Text>
       <Header
+        title="Snake"
         score={score}
         highScore={highScore}
         onPause={() => setPaused(!paused)}
@@ -419,5 +421,13 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: '#00b894',
     borderRadius: 2,
     transform: [{ rotate: '45deg' }],
+  },
+  bgIcon: {
+    position: 'absolute',
+    bottom: '5%',
+    right: '-10%',
+    fontSize: 200,
+    opacity: 0.03,
+    transform: [{ rotate: '-15deg' }],
   },
 });

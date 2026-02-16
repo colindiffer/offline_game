@@ -19,7 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const BOARD_PADDING = 8;
-const BOARD_SIZE = Math.min(SCREEN_WIDTH - 40, 380);
+const BOARD_SIZE = SCREEN_WIDTH - 32;
 const TILE_GAP = 6;
 const TILE_SIZE = (BOARD_SIZE - BOARD_PADDING * 2 - TILE_GAP * 5) / 4;
 
@@ -200,7 +200,8 @@ export default function Game2048({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Header score={score} highScore={highScore} />
+      <Text style={styles.bgIcon}>2048</Text>
+      <Header title="2048" score={score} highScore={highScore} />
 
       <GestureDetector gesture={panGesture}>
         <View style={styles.boardContainer}>
@@ -354,5 +355,15 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 14,
     color: colors.text,
     letterSpacing: 0.5,
+  },
+  bgIcon: {
+    position: 'absolute',
+    top: '40%',
+    left: '-10%',
+    fontSize: 120,
+    fontWeight: '900',
+    color: '#fff',
+    opacity: 0.02,
+    transform: [{ rotate: '-15deg' }],
   },
 });

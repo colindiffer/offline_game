@@ -404,6 +404,7 @@ export default function Tetris({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.bgIcon}>🧱</Text>
       <Header
         score={score}
         highScore={highScore}
@@ -576,5 +577,13 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     height: 12,
     margin: 1,
     borderRadius: 2,
+  },
+  bgIcon: {
+    position: 'absolute',
+    bottom: '10%',
+    left: '-10%',
+    fontSize: 250,
+    opacity: 0.03,
+    transform: [{ rotate: '-15deg' }],
   },
 });

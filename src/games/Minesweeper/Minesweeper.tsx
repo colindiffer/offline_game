@@ -221,7 +221,8 @@ export default function Minesweeper({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Header score={minesRemaining} scoreLabel="MINES" highScore={highScore || 0} highScoreLabel="BEST" />
+      <Text style={styles.bgIcon}>💣</Text>
+      <Header title="Minesweeper" score={minesRemaining} scoreLabel="MINES" highScore={highScore || 0} highScoreLabel="BEST" />
       
       <View style={styles.levelHeader}>
         <View style={styles.difficultyBadge}>
@@ -303,4 +304,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   footer: { paddingVertical: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
   resetBtn: { width: '100%' },
   resetText: { fontWeight: '900', fontSize: 14, color: colors.text, letterSpacing: 1 },
+  bgIcon: {
+    position: 'absolute',
+    bottom: '10%',
+    left: '-10%',
+    fontSize: 250,
+    opacity: 0.03,
+    transform: [{ rotate: '-15deg' }],
+  },
 });

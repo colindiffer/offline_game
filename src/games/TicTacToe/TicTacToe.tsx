@@ -176,7 +176,10 @@ export default function TicTacToe({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.bgIconX}>X</Text>
+      <Text style={styles.bgIconO}>O</Text>
       <Header
+        title="Tic Tac Toe"
         score={score}
         highScore={highScore}
       />
@@ -343,5 +346,25 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     color: '#fff',
     fontWeight: '900',
     fontSize: 16,
+  },
+  bgIconX: {
+    position: 'absolute',
+    top: '15%',
+    left: '-10%',
+    fontSize: 200,
+    fontWeight: '900',
+    color: '#ff7675',
+    opacity: 0.03,
+    transform: [{ rotate: '-15deg' }],
+  },
+  bgIconO: {
+    position: 'absolute',
+    bottom: '10%',
+    right: '-10%',
+    fontSize: 250,
+    fontWeight: '900',
+    color: '#55efc4',
+    opacity: 0.03,
+    transform: [{ rotate: '15deg' }],
   },
 });

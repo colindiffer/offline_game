@@ -269,7 +269,9 @@ export default function Sudoku({ difficulty }: Props) {
   return (
     <ScrollView contentContainerStyle={styles.scrollContainer} style={styles.viewRoot}>
       <View style={styles.container}>
+        <Text style={styles.bgIcon}>🔢</Text>
         <Header
+          title="Sudoku"
           score={elapsedTime}
           scoreLabel="TIME"
           highScore={level}
@@ -459,5 +461,13 @@ const getStyles = (colors: ThemeColors) =>
       fontSize: 14,
       color: colors.text,
       letterSpacing: 0.5,
+    },
+    bgIcon: {
+      position: 'absolute',
+      top: '40%',
+      right: '-10%',
+      fontSize: 250,
+      opacity: 0.03,
+      transform: [{ rotate: '15deg' }],
     },
   });

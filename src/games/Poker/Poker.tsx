@@ -168,7 +168,8 @@ export default function Poker({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Header score={player?.tokens || 0} scoreLabel="CHIPS" highScore={highScore} highScoreLabel="BEST" />
+      <Text style={styles.bgIcon}>🎰</Text>
+      <Header title="Poker" score={player?.tokens || 0} scoreLabel="CHIPS" highScore={highScore} highScoreLabel="BEST" />
 
       <View style={styles.table}>
         <LinearGradient colors={['#1b4332', '#081c15']} style={StyleSheet.absoluteFill} />
@@ -316,4 +317,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   fullBtn: { width: '100%' },
   waitingState: { height: 60, justifyContent: 'center', alignItems: 'center' },
   waitingText: { color: colors.textSecondary, fontWeight: 'bold', letterSpacing: 1 },
+  bgIcon: {
+    position: 'absolute',
+    bottom: '5%',
+    right: '-10%',
+    fontSize: 200,
+    opacity: 0.05,
+    transform: [{ rotate: '15deg' }],
+  },
 });

@@ -269,9 +269,11 @@ export default function Hearts({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.bgIcon}>♥️</Text>
       <LinearGradient colors={['#1b4332', '#081c15']} style={StyleSheet.absoluteFill} />
 
       <Header
+        title="Hearts"
         score={gameState.players[0].totalScore}
         scoreLabel="TOTAL"
         highScore={highScore}
@@ -487,4 +489,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   moonShotText: { color: '#fab1a0', fontWeight: '900', fontSize: 14, marginBottom: spacing.xl },
   modalAction: { width: '100%' },
   modalActionText: { color: '#fff', fontWeight: '900', fontSize: 16, letterSpacing: 1 },
+  bgIcon: {
+    position: 'absolute',
+    top: '40%',
+    left: '-10%',
+    fontSize: 200,
+    opacity: 0.05,
+    transform: [{ rotate: '-15deg' }],
+  },
 });

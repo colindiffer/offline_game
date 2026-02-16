@@ -200,7 +200,8 @@ export default function WordSearch({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Header score={elapsedTime} scoreLabel="TIME" highScore={level} highScoreLabel="LEVEL" />
+      <Text style={styles.bgIcon}>🔍</Text>
+      <Header title="Word Search" score={elapsedTime} scoreLabel="TIME" highScore={level} highScoreLabel="LEVEL" />
       
       <View style={styles.levelHeader}>
         <View style={styles.difficultyBadge}>
@@ -300,4 +301,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   foundWordItem: { backgroundColor: colors.success + '20', borderColor: colors.success },
   wordText: { color: colors.textSecondary, fontSize: 12, fontWeight: '900' },
   foundWordText: { color: colors.success, textDecorationLine: 'line-through' },
+  bgIcon: {
+    position: 'absolute',
+    bottom: '10%',
+    right: '-10%',
+    fontSize: 250,
+    opacity: 0.03,
+    transform: [{ rotate: '15deg' }],
+  },
 });

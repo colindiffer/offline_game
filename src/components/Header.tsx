@@ -2,10 +2,11 @@ import React, { useMemo } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Platform } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
-import { spacing, radius, typography } from '../utils/designTokens';
+import { spacing, radius, typography, shadows } from '../utils/designTokens';
 import { useNavigation } from '@react-navigation/native';
 
 interface Props {
+  title?: string;
   score?: number;
   scoreLabel?: string;
   highScore?: number;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function Header({
+  title,
   score,
   scoreLabel = 'SCORE',
   highScore,
@@ -37,25 +39,25 @@ export default function Header({
           <Text style={styles.backIcon}>‹</Text>
         </TouchableOpacity>
 
-        <View style={styles.capsuleContainer}>
-          <View style={styles.pill}>
-            <View style={styles.pillLabelContainer}>
+        {title ? (
+          <Text style={styles.headerTitle}>{title}</Text>
+        ) : (
+          <View style={styles.statsContainer}>
+            <View style={styles.statPill}>
               <Text style={styles.pillLabel}>{scoreLabel}</Text>
+              <Text style={styles.pillValue}>{score !== undefined ? score : '0'}</Text>
             </View>
-            <Text style={styles.pillValue}>{score !== undefined ? score : '0'}</Text>
-          </View>
 
-          {highScore !== undefined && (
-            <View style={styles.pill}>
-              <View style={[styles.pillLabelContainer, styles.highScoreLabelContainer]}>
-                <Text style={styles.pillLabel}>{highScoreLabel}</Text>
+            {highScore !== undefined && (
+              <View style={[styles.statPill, styles.bestPill]}>
+                <Text style={[styles.pillLabel, { color: '#fab1a0' }]}>{highScoreLabel}</Text>
+                <Text style={styles.pillValue}>{highScore}</Text>
               </View>
-              <Text style={[styles.pillValue, styles.highScoreValue]}>{highScore}</Text>
-            </View>
-          )}
-        </View>
+            )}
+          </View>
+        )}
 
-        {onPause && (
+        {onPause ? (
           <TouchableOpacity
             style={styles.circleBtn}
             onPress={onPause}
@@ -63,8 +65,28 @@ export default function Header({
           >
             <Text style={styles.pauseIcon}>{isPaused ? '▶' : '‖'}</Text>
           </TouchableOpacity>
+        ) : (
+          <View style={[styles.circleBtn, { opacity: 0 }]} />
         )}
       </View>
+      
+      {title && (
+        <View style={styles.bottomStatsRow}>
+          <View style={styles.statsContainer}>
+            <View style={styles.statPill}>
+              <Text style={styles.pillLabel}>{scoreLabel}</Text>
+              <Text style={styles.pillValue}>{score !== undefined ? score : '0'}</Text>
+            </View>
+
+            {highScore !== undefined && (
+              <View style={[styles.statPill, styles.bestPill]}>
+                <Text style={[styles.pillLabel, { color: '#fab1a0' }]}>{highScoreLabel}</Text>
+                <Text style={styles.pillValue}>{highScore}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -73,74 +95,73 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       paddingBottom: spacing.md,
-      marginTop: Platform.OS === 'ios' ? 44 : 20,
+      paddingHorizontal: spacing.md,
+      marginTop: Platform.OS === 'ios' ? 50 : 20,
     },
     topRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
     },
+    headerTitle: {
+      fontSize: 22,
+      fontWeight: '900',
+      color: '#fff',
+      letterSpacing: -0.5,
+    },
+    bottomStatsRow: {
+      alignItems: 'center',
+      marginTop: spacing.md,
+    },
     circleBtn: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: colors.surface,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: 'rgba(255,255,255,0.05)',
       justifyContent: 'center',
       alignItems: 'center',
-      borderWidth: 2,
-      borderColor: colors.border,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
+      ...shadows.sm,
     },
     backIcon: {
       fontSize: 32,
-      color: colors.textSecondary,
+      color: '#fff',
       marginTop: -4,
     },
     pauseIcon: {
       fontSize: 20,
-      color: colors.textSecondary,
+      color: '#fff',
       fontWeight: 'bold',
     },
-    capsuleContainer: {
+    statsContainer: {
       flexDirection: 'row',
-      gap: spacing.md,
+      backgroundColor: 'rgba(0,0,0,0.3)',
+      borderRadius: 25,
+      padding: 4,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.05)',
     },
-    pill: {
-      backgroundColor: '#3d3d5c', // Dark capsule background
-      borderRadius: radius.md,
-      minWidth: 90,
-      height: 52,
+    statPill: {
+      paddingHorizontal: 16,
+      paddingVertical: 6,
       alignItems: 'center',
-      justifyContent: 'center',
-      paddingTop: 8,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.1)',
-      position: 'relative',
+      minWidth: 80,
     },
-    pillLabelContainer: {
-      position: 'absolute',
-      top: -10,
-      backgroundColor: '#2b2b45',
-      paddingHorizontal: 12,
-      paddingVertical: 2,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.2)',
-    },
-    highScoreLabelContainer: {
-      backgroundColor: colors.primary, // Using primary color for High Score badge
+    bestPill: {
+      borderLeftWidth: 1,
+      borderLeftColor: 'rgba(255,255,255,0.1)',
     },
     pillLabel: {
-      color: '#fff',
+      color: 'rgba(255,255,255,0.5)',
       fontSize: 10,
-      fontWeight: 'bold',
-      letterSpacing: 0.5,
+      fontWeight: '900',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
     },
     pillValue: {
       color: '#fff',
-      fontSize: 20,
-      fontWeight: 'bold',
-    },
-    highScoreValue: {
-      color: '#fab1a0',
+      fontSize: 18,
+      fontWeight: '900',
     },
   });

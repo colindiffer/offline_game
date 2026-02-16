@@ -99,7 +99,8 @@ export default function Hangman({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Header score={level} scoreLabel="LEVEL" highScore={highScore} highScoreLabel="BEST" />
+      <Text style={styles.bgIcon}>😵</Text>
+      <Header title="Hangman" score={level} scoreLabel="LEVEL" highScore={highScore} highScoreLabel="BEST" />
       
       <View style={styles.levelHeader}>
         <Text style={styles.themeText}>{gameState.theme}</Text>
@@ -196,4 +197,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   keyText: { color: '#fff', fontWeight: 'bold' },
   footer: { padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
   footerText: { color: colors.text, fontWeight: 'bold' },
+  bgIcon: {
+    position: 'absolute',
+    top: '40%',
+    left: '-15%',
+    fontSize: 250,
+    opacity: 0.03,
+    transform: [{ rotate: '-15deg' }],
+  },
 });

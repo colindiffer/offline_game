@@ -182,7 +182,9 @@ export default function Blackjack({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.bgIcon}>🃏</Text>
       <Header
+        title="Blackjack"
         score={gameState.tokens}
         scoreLabel="CHIPS"
         highScore={highScore}
@@ -523,5 +525,13 @@ const getStyles = (colors: ThemeColors) =>
     },
     newHandBtn: {
       width: '80%',
+    },
+    bgIcon: {
+      position: 'absolute',
+      top: '40%',
+      left: '-10%',
+      fontSize: 200,
+      opacity: 0.05,
+      transform: [{ rotate: '-15deg' }],
     },
   });

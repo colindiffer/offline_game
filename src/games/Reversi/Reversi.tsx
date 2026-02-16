@@ -193,7 +193,9 @@ export default function Reversi({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.bgIcon}>⚪</Text>
       <Header
+        title="Reversi"
         score={gameState.blackScore}
         scoreLabel="YOU"
         highScore={gameState.whiteScore}
@@ -295,6 +297,7 @@ const getStyles = (colors: ThemeColors) =>
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
+      paddingVertical: spacing.xl,
     },
     boardContainer: {
       padding: 4,
@@ -401,5 +404,13 @@ const getStyles = (colors: ThemeColors) =>
       fontWeight: '900',
       fontSize: 16,
       letterSpacing: 1,
+    },
+    bgIcon: {
+      position: 'absolute',
+      bottom: '10%',
+      right: '-10%',
+      fontSize: 250,
+      opacity: 0.03,
+      transform: [{ rotate: '15deg' }],
     },
   });

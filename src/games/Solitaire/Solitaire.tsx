@@ -346,8 +346,9 @@ export default function Solitaire({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.bgIcon}>🃏</Text>
       <LinearGradient colors={['#27ae60', '#1b4332']} style={StyleSheet.absoluteFill} />
-      <Header score={elapsedTime} scoreLabel="TIME" highScore={highScore || 0} highScoreLabel="BEST" />
+      <Header title="Solitaire" score={elapsedTime} scoreLabel="TIME" highScore={highScore || 0} highScoreLabel="BEST" />
       
       <View style={styles.gameArea}>
         <View style={styles.topRow}>
@@ -512,4 +513,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   newGameText: { color: '#fff', fontWeight: '900', fontSize: 12, letterSpacing: 1 },
   dragOverlay: { ...StyleSheet.absoluteFillObject, zIndex: 1000 },
   draggedCard: { position: 'absolute', zIndex: 1001, ...shadows.lg },
+  bgIcon: {
+    position: 'absolute',
+    bottom: '10%',
+    right: '5%',
+    fontSize: 200,
+    opacity: 0.05,
+    transform: [{ rotate: '15deg' }],
+  },
 });

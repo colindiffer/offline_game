@@ -180,6 +180,7 @@ export default function Maze({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.bgIcon}>🔀</Text>
       <Header score={elapsedTime} scoreLabel="TIME" highScore={level} highScoreLabel="LEVEL" />
       
       <View style={styles.levelHeader}>
@@ -243,4 +244,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   footer: { padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
   newGameBtn: { width: '100%' },
   newGameText: { color: colors.text, fontWeight: '900', fontSize: 14, letterSpacing: 1 },
+  bgIcon: {
+    position: 'absolute',
+    top: '40%',
+    left: '-10%',
+    fontSize: 250,
+    opacity: 0.03,
+    transform: [{ rotate: '-15deg' }],
+  },
 });

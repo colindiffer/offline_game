@@ -212,8 +212,9 @@ export default function WaterSort({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.bgIcon}>🧪</Text>
       <LinearGradient colors={['#1a1a2e', '#16213e']} style={StyleSheet.absoluteFill} />
-      <Header score={elapsedTime} scoreLabel="TIME" highScore={level} highScoreLabel="LEVEL" />
+      <Header title="Water Sort" score={elapsedTime} scoreLabel="TIME" highScore={level} highScoreLabel="LEVEL" />
       
       <View style={styles.levelHeader}>
         <View style={styles.difficultyBadge}>
@@ -377,4 +378,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   controlText: { fontSize: 10, color: '#fff', fontWeight: 'bold', marginTop: 2 },
   newGameBtn: { minWidth: 140 },
   newGameText: { color: '#fff', fontWeight: '900', fontSize: 14, letterSpacing: 1 },
+  bgIcon: {
+    position: 'absolute',
+    top: '40%',
+    right: '-10%',
+    fontSize: 250,
+    opacity: 0.03,
+    transform: [{ rotate: '15deg' }],
+  },
 });

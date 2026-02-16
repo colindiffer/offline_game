@@ -194,7 +194,9 @@ export default function Checkers({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.bgIcon}>⚫</Text>
       <Header
+        title="Checkers"
         score={gameState.blackPieces}
         scoreLabel="YOU"
         highScore={gameState.redPieces}
@@ -344,6 +346,7 @@ const getStyles = (colors: ThemeColors) =>
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
+      paddingVertical: spacing.xl,
     },
     boardContainer: {
       padding: 4,
@@ -426,5 +429,13 @@ const getStyles = (colors: ThemeColors) =>
       fontWeight: '900',
       fontSize: 16,
       letterSpacing: 1,
+    },
+    bgIcon: {
+      position: 'absolute',
+      top: '40%',
+      right: '-15%',
+      fontSize: 250,
+      opacity: 0.03,
+      transform: [{ rotate: '15deg' }],
     },
   });

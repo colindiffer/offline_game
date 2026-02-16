@@ -190,7 +190,8 @@ export default function BrickBreaker({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Header score={score} highScore={highScore} />
+      <Text style={styles.bgIcon}>🎾</Text>
+      <Header title="Brick Breaker" score={score} highScore={highScore} />
       
       <View style={styles.levelHeader}>
         <Text style={styles.levelText}>Level {level}</Text>
@@ -262,4 +263,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   overlayText: { color: '#fff', fontSize: 24, fontWeight: '900', letterSpacing: 2 },
   footer: { padding: spacing.xl },
   footerText: { color: colors.text, fontWeight: 'bold' },
+  bgIcon: {
+    position: 'absolute',
+    bottom: '5%',
+    left: '-10%',
+    fontSize: 250,
+    opacity: 0.03,
+    transform: [{ rotate: '-15deg' }],
+  },
 });

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Dimensions, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Difficulty, GameId, RootStackParamList } from '../types';
 import { GAMES } from '../utils/constants';
@@ -34,6 +35,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
+const { width } = Dimensions.get('window');
 
 export default function GameScreen({ route }: Props) {
   const { colors } = useTheme();
@@ -48,7 +50,6 @@ export default function GameScreen({ route }: Props) {
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   useEffect(() => {
-    // Check if there's an active game when component mounts
     getActiveGame(gameId).then((savedDifficulty) => {
       setActiveGameDifficulty(savedDifficulty);
       setIsLoading(false);
@@ -76,16 +77,42 @@ export default function GameScreen({ route }: Props) {
     return <View style={styles.container} />;
   }
 
-  if (!difficulty) {
-    // Show resume screen if there's an active game
-    if (activeGameDifficulty) {
+  const renderContent = () => {
+    if (!difficulty) {
+      if (activeGameDifficulty) {
+        return (
+          <>
+            <ResumeGamePicker
+              gameName={gameMeta?.name ?? 'Game'}
+              difficulty={activeGameDifficulty}
+              onResume={handleResume}
+              onNewGame={handleNewGame}
+              onShowTutorial={() => setShowTutorial(true)}
+              onShowHighScores={() => setShowHighScores(true)}
+            />
+            {showTutorial && (
+              <TutorialScreen
+                gameName={gameMeta?.name ?? 'Game'}
+                steps={GAME_TUTORIALS[gameId] || []}
+                onClose={() => setShowTutorial(false)}
+              />
+            )}
+            {showHighScores && (
+              <HighScoresScreen
+                gameId={gameId}
+                gameName={gameMeta?.name ?? 'Game'}
+                onClose={() => setShowHighScores(false)}
+              />
+            )}
+          </>
+        );
+      }
+
       return (
-        <View style={styles.container}>
-          <ResumeGamePicker
+        <>
+          <DifficultyPicker
             gameName={gameMeta?.name ?? 'Game'}
-            difficulty={activeGameDifficulty}
-            onResume={handleResume}
-            onNewGame={handleNewGame}
+            onSelect={handleSelectDifficulty}
             onShowTutorial={() => setShowTutorial(true)}
             onShowHighScores={() => setShowHighScores(true)}
           />
@@ -103,87 +130,44 @@ export default function GameScreen({ route }: Props) {
               onClose={() => setShowHighScores(false)}
             />
           )}
-        </View>
+        </>
       );
     }
 
-    // Show difficulty picker for new game
-    return (
-      <View style={styles.container}>
-        <DifficultyPicker
-          gameName={gameMeta?.name ?? 'Game'}
-          onSelect={handleSelectDifficulty}
-          onShowTutorial={() => setShowTutorial(true)}
-          onShowHighScores={() => setShowHighScores(true)}
-        />
-        {showTutorial && (
-          <TutorialScreen
-            gameName={gameMeta?.name ?? 'Game'}
-            steps={GAME_TUTORIALS[gameId] || []}
-            onClose={() => setShowTutorial(false)}
-          />
-        )}
-        {showHighScores && (
-          <HighScoresScreen
-            gameId={gameId}
-            gameName={gameMeta?.name ?? 'Game'}
-            onClose={() => setShowHighScores(false)}
-          />
-        )}
-      </View>
-    );
-  }
-
-  const renderGame = () => {
     switch (gameId) {
-      case 'tic-tac-toe':
-        return <TicTacToe difficulty={difficulty} />;
-      case 'snake':
-        return <Snake difficulty={difficulty} />;
-      case '2048':
-        return <Game2048 difficulty={difficulty} />;
-      case 'minesweeper':
-        return <Minesweeper difficulty={difficulty} />;
-      case 'connect-four':
-        return <ConnectFour difficulty={difficulty} />;
-      case 'tetris':
-        return <Tetris difficulty={difficulty} />;
-      case 'maze':
-        return <Maze difficulty={difficulty} />;
-      case 'solitaire':
-        return <Solitaire difficulty={difficulty} />;
-      case 'sudoku':
-        return <Sudoku difficulty={difficulty} />;
-      case 'reversi':
-        return <Reversi difficulty={difficulty} />;
-      case 'checkers':
-        return <Checkers difficulty={difficulty} />;
-      case 'chess':
-        return <Chess difficulty={difficulty} />;
-      case 'blackjack':
-        return <Blackjack difficulty={difficulty} />;
-      case 'poker':
-        return <Poker difficulty={difficulty} />;
-      case 'hearts':
-        return <Hearts difficulty={difficulty} />;
-      case 'water-sort':
-        return <WaterSort difficulty={difficulty} />;
-      case 'word-search':
-        return <WordSearch difficulty={difficulty} />;
-      case 'brick-breaker':
-        return <BrickBreaker difficulty={difficulty} />;
-      case 'mahjong':
-        return <Mahjong difficulty={difficulty} />;
-      case 'hangman':
-        return <Hangman difficulty={difficulty} />;
-      case 'simon-says':
-        return <SimonSays difficulty={difficulty} />;
-      default:
-        return <Text style={styles.error}>Unknown game</Text>;
+      case 'tic-tac-toe': return <TicTacToe difficulty={difficulty} />;
+      case 'snake': return <Snake difficulty={difficulty} />;
+      case '2048': return <Game2048 difficulty={difficulty} />;
+      case 'minesweeper': return <Minesweeper difficulty={difficulty} />;
+      case 'connect-four': return <ConnectFour difficulty={difficulty} />;
+      case 'tetris': return <Tetris difficulty={difficulty} />;
+      case 'maze': return <Maze difficulty={difficulty} />;
+      case 'solitaire': return <Solitaire difficulty={difficulty} />;
+      case 'sudoku': return <Sudoku difficulty={difficulty} />;
+      case 'reversi': return <Reversi difficulty={difficulty} />;
+      case 'checkers': return <Checkers difficulty={difficulty} />;
+      case 'chess': return <Chess difficulty={difficulty} />;
+      case 'blackjack': return <Blackjack difficulty={difficulty} />;
+      case 'poker': return <Poker difficulty={difficulty} />;
+      case 'hearts': return <Hearts difficulty={difficulty} />;
+      case 'water-sort': return <WaterSort difficulty={difficulty} />;
+      case 'word-search': return <WordSearch difficulty={difficulty} />;
+      case 'brick-breaker': return <BrickBreaker difficulty={difficulty} />;
+      case 'mahjong': return <Mahjong difficulty={difficulty} />;
+      case 'hangman': return <Hangman difficulty={difficulty} />;
+      case 'simon-says': return <SimonSays difficulty={difficulty} />;
+      default: return <Text style={styles.error}>Unknown game</Text>;
     }
   };
 
-  return <View style={styles.container}>{renderGame()}</View>;
+  return (
+    <View style={styles.container}>
+      <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
+      {/* Mesh decorative elements */}
+      <View style={[styles.blob, styles.blob1, { backgroundColor: (gameMeta?.color || colors.primary) + '10' }]} />
+      {renderContent()}
+    </View>
+  );
 }
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
@@ -191,6 +175,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  blob: { position: 'absolute', borderRadius: 300, filter: Platform.OS === 'web' ? 'blur(100px)' : undefined },
+  blob1: { width: width * 1.5, height: width * 1.5, top: -width * 0.5, left: -width * 0.2 },
   error: {
     color: colors.primary,
     fontSize: 18,

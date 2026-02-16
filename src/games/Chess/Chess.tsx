@@ -182,7 +182,9 @@ export default function Chess({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.bgIcon}>♟️</Text>
       <Header
+        title="Chess"
         score={16 - gameState.capturedWhite.length}
         scoreLabel="PIECES"
         highScore={16 - gameState.capturedBlack.length}
@@ -341,9 +343,12 @@ const getStyles = (colors: ThemeColors) =>
     capturedBar: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      paddingHorizontal: spacing.sm,
-      marginBottom: spacing.xs,
-      height: 24,
+      paddingHorizontal: spacing.lg,
+      marginBottom: spacing.md,
+      height: 40,
+      backgroundColor: 'rgba(0,0,0,0.1)',
+      borderRadius: radius.md,
+      alignItems: 'center',
     },
     capturedSet: {
       flexDirection: 'row',
@@ -351,10 +356,10 @@ const getStyles = (colors: ThemeColors) =>
       maxWidth: '45%',
     },
     capturedPieceSmall: {
-      fontSize: 14,
+      fontSize: 20,
       color: colors.textSecondary,
-      opacity: 0.6,
-      marginRight: 2,
+      opacity: 0.8,
+      marginRight: 4,
     },
     boardWrapper: {
       flex: 1,
@@ -436,5 +441,13 @@ const getStyles = (colors: ThemeColors) =>
       fontWeight: '900',
       fontSize: 16,
       letterSpacing: 1,
+    },
+    bgIcon: {
+      position: 'absolute',
+      bottom: '10%',
+      left: '-10%',
+      fontSize: 250,
+      opacity: 0.03,
+      transform: [{ rotate: '-15deg' }],
     },
   });

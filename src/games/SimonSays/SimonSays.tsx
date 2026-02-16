@@ -136,7 +136,8 @@ export default function SimonSays({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Header score={level} scoreLabel="LEVEL" highScore={0} highScoreLabel="RECORD" />
+      <Text style={styles.bgIcon}>🔴</Text>
+      <Header title="Simon Says" score={level} scoreLabel="LEVEL" highScore={0} highScoreLabel="RECORD" />
       
       <View style={styles.levelHeader}>
         <Text style={styles.levelText}>Level {level}</Text>
@@ -225,5 +226,13 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     height: '30%',
     borderRadius: 50,
     backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  bgIcon: {
+    position: 'absolute',
+    bottom: '5%',
+    right: '-10%',
+    fontSize: 250,
+    opacity: 0.03,
+    transform: [{ rotate: '15deg' }],
   },
 });
