@@ -8,7 +8,7 @@ import GameBoardContainer from '../../components/GameBoardContainer';
 import PremiumButton from '../../components/PremiumButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
-import { getHighScore, setHighScore } from '../../utils/storage';
+import { getHighScore, setHighScore, getLevel, setLevel } from '../../utils/storage';
 import { recordGameResult } from '../../utils/stats';
 import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
@@ -23,26 +23,35 @@ export default function WordSearch({ difficulty }: Props) {
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
-  const [gameState, setGameState] = useState<WordSearchGrid>(() => generateWordSearch(difficulty));
+  const [level, setLevelState] = useState(1);
+  const [gameState, setGameState] = useState<WordSearchGrid | null>(null);
   const [selection, setSelection] = useState<{ start: Position; end: Position } | null>(null);
   const [gameWon, setGameWon] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [highScore, setHighScoreState] = useState(0);
   const [foundPaths, setFoundPaths] = useState<Position[][]>([]);
+  const [isReady, setIsReady] = useState(false);
 
-  const CELL_SIZE = GRID_SIZE / gameState.letters.length;
   const startTimeRef = useRef<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const containerPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
-    getHighScore('word-search').then(setHighScoreState);
-    startTimeRef.current = Date.now();
+    const init = async () => {
+      const savedLevel = await getLevel('word-search', difficulty);
+      const best = await getHighScore('word-search', difficulty);
+      setLevelState(savedLevel);
+      setHighScoreState(best);
+      setGameState(generateWordSearch(difficulty, savedLevel));
+      setIsReady(true);
+      startTimeRef.current = Date.now();
+    };
+    init();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
+  }, [difficulty]);
 
   useEffect(() => {
-    if (!gameWon && startTimeRef.current) {
+    if (!gameWon && isReady && startTimeRef.current) {
       timerRef.current = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - startTimeRef.current!) / 1000));
       }, 1000);
@@ -50,7 +59,7 @@ export default function WordSearch({ difficulty }: Props) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-  }, [gameWon]);
+  }, [gameWon, isReady]);
 
   const onLayout = (e: any) => {
     e.target.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
@@ -59,8 +68,10 @@ export default function WordSearch({ difficulty }: Props) {
   };
 
   const getCellFromPos = (x: number, y: number): Position | null => {
-    const col = Math.floor((x - containerPos.current.x) / CELL_SIZE);
-    const row = Math.floor((y - containerPos.current.y) / CELL_SIZE);
+    if (!gameState) return null;
+    const cellSize = GRID_SIZE / gameState.letters.length;
+    const col = Math.floor((x - containerPos.current.x) / cellSize);
+    const row = Math.floor((y - containerPos.current.y) / cellSize);
     if (row >= 0 && row < gameState.letters.length && col >= 0 && col < gameState.letters[0].length) {
       return { row, col };
     }
@@ -83,7 +94,7 @@ export default function WordSearch({ difficulty }: Props) {
       }
     })
     .onEnd(() => {
-      if (!selection || gameWon) return;
+      if (!selection || gameWon || !gameState) return;
       
       const result = getSelectedWord(gameState.letters, selection.start, selection.end);
       if (result) {
@@ -96,15 +107,15 @@ export default function WordSearch({ difficulty }: Props) {
           playSound('win');
           setFoundPaths(prev => [...prev, result.cells]);
           setGameState(prev => {
+            if (!prev) return prev;
             const newState = { ...prev, foundWords: [...prev.foundWords, foundWord] };
             if (newState.foundWords.length === prev.words.length) {
               setGameWon(true);
               const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
               recordGameResult('word-search', 'win', finalTime);
-              if (finalTime < highScore || highScore === 0) {
-                setHighScoreState(finalTime);
-                setHighScore('word-search', finalTime);
-              }
+              
+              const nextLvl = level + 1;
+              setLevel('word-search', difficulty, nextLvl);
             }
             return newState;
           });
@@ -115,8 +126,10 @@ export default function WordSearch({ difficulty }: Props) {
       setSelection(null);
     });
 
-  const resetGame = useCallback(() => {
-    setGameState(generateWordSearch(difficulty));
+  const nextLevel = useCallback(async () => {
+    const savedLevel = await getLevel('word-search', difficulty);
+    setLevelState(savedLevel);
+    setGameState(generateWordSearch(difficulty, savedLevel));
     setFoundPaths([]);
     setSelection(null);
     setGameWon(false);
@@ -124,8 +137,17 @@ export default function WordSearch({ difficulty }: Props) {
     startTimeRef.current = Date.now();
   }, [difficulty]);
 
+  const resetLevel = useCallback(() => {
+    setGameState(generateWordSearch(difficulty, level));
+    setFoundPaths([]);
+    setSelection(null);
+    setGameWon(false);
+    setElapsedTime(0);
+    startTimeRef.current = Date.now();
+  }, [difficulty, level]);
+
   const isCellSelected = (r: number, c: number) => {
-    if (!selection) return false;
+    if (!selection || !gameState) return false;
     const res = getSelectedWord(gameState.letters, selection.start, selection.end);
     return res?.cells.some(p => p.row === r && p.col === c) ?? false;
   };
@@ -135,12 +157,13 @@ export default function WordSearch({ difficulty }: Props) {
   };
 
   const renderSelectionLine = () => {
-    if (!selection) return null;
+    if (!selection || !gameState) return null;
+    const cellSize = GRID_SIZE / gameState.letters.length;
     
-    const startX = containerPos.current.x + selection.start.col * CELL_SIZE + CELL_SIZE / 2;
-    const startY = containerPos.current.y + selection.start.row * CELL_SIZE + CELL_SIZE / 2;
-    const endX = containerPos.current.x + selection.end.col * CELL_SIZE + CELL_SIZE / 2;
-    const endY = containerPos.current.y + selection.end.row * CELL_SIZE + CELL_SIZE / 2;
+    const startX = containerPos.current.x + selection.start.col * cellSize + cellSize / 2;
+    const startY = containerPos.current.y + selection.start.row * cellSize + cellSize / 2;
+    const endX = containerPos.current.x + selection.end.col * cellSize + cellSize / 2;
+    const endY = containerPos.current.y + selection.end.row * cellSize + cellSize / 2;
 
     const dx = endX - startX;
     const dy = endY - startY;
@@ -153,8 +176,8 @@ export default function WordSearch({ difficulty }: Props) {
         style={[
           styles.selectionLine,
           {
-            left: selection.start.col * CELL_SIZE + CELL_SIZE / 2,
-            top: selection.start.row * CELL_SIZE + CELL_SIZE / 2,
+            left: selection.start.col * cellSize + cellSize / 2,
+            top: selection.start.row * cellSize + cellSize / 2,
             width: length,
             transform: [
               { rotate: `${angle}rad` },
@@ -167,10 +190,20 @@ export default function WordSearch({ difficulty }: Props) {
     );
   };
 
+  if (!isReady || !gameState) return <View style={styles.container} />;
+  const cellSize = GRID_SIZE / gameState.letters.length;
+
   return (
     <View style={styles.container}>
-      <Header score={gameState.foundWords.length} scoreLabel="FOUND" highScore={gameState.words.length} highScoreLabel="TOTAL" />
+      <Header score={elapsedTime} scoreLabel="TIME" highScore={level} highScoreLabel="LEVEL" />
       
+      <View style={styles.levelHeader}>
+        <View style={styles.difficultyBadge}>
+          <Text style={styles.difficultyText}>{difficulty.toUpperCase()}</Text>
+        </View>
+        <Text style={styles.levelText}>Level {level}</Text>
+      </View>
+
       <View style={styles.gameArea}>
         <GestureDetector gesture={panGesture}>
           <View onLayout={onLayout}>
@@ -184,14 +217,14 @@ export default function WordSearch({ difficulty }: Props) {
                         key={c} 
                         style={[
                           styles.cell, 
-                          { width: CELL_SIZE, height: CELL_SIZE },
+                          { width: cellSize, height: cellSize },
                           isCellSelected(r, c) && styles.selectedCell,
                           isCellFound(r, c) && styles.foundCell,
                         ]}
                       >
                         <Text style={[
                           styles.letter, 
-                          { fontSize: CELL_SIZE * 0.6 },
+                          { fontSize: cellSize * 0.6 },
                           (isCellSelected(r, c) || isCellFound(r, c)) && { color: '#fff' }
                         ]}>
                           {letter}
@@ -206,7 +239,7 @@ export default function WordSearch({ difficulty }: Props) {
         </GestureDetector>
 
         <View style={styles.wordListContainer}>
-          <ScrollView contentContainerStyle={styles.wordList}>
+          <ScrollView contentContainerStyle={styles.wordList} showsVerticalScrollIndicator={false}>
             {gameState.words.map((word, i) => (
               <View key={i} style={[styles.wordItem, gameState.foundWords.includes(word) && styles.foundWordItem]}>
                 <Text style={[styles.wordText, gameState.foundWords.includes(word) && styles.foundWordText]}>
@@ -221,9 +254,10 @@ export default function WordSearch({ difficulty }: Props) {
       {gameWon && (
         <GameOverOverlay 
           result="win" 
-          title="EXCELLENT!" 
+          title="LEVEL COMPLETE!" 
           subtitle={`Found all words in ${elapsedTime}s.`} 
-          onPlayAgain={resetGame} 
+          onPlayAgain={nextLevel}
+          onPlayAgainLabel="NEXT LEVEL"
         />
       )}
     </View>
@@ -236,6 +270,10 @@ interface Props {
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  levelHeader: { alignItems: 'center', marginTop: spacing.md },
+  difficultyBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 2, borderRadius: radius.sm, marginBottom: 4 },
+  difficultyText: { color: '#fab1a0', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+  levelText: { color: '#fff', fontSize: 24, fontWeight: '900' },
   gameArea: { flex: 1, padding: spacing.md, alignItems: 'center' },
   boardWrapper: { padding: 4, backgroundColor: '#1e1e3a', borderRadius: radius.md },
   grid: { backgroundColor: '#1e1e3a', position: 'relative' },
@@ -252,7 +290,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   foundCell: { backgroundColor: colors.success + '80', borderRadius: radius.xs },
   letter: { color: 'rgba(255,255,255,0.8)', fontWeight: 'bold' },
   wordListContainer: { flex: 1, width: '100%', marginTop: spacing.lg },
-  wordList: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm },
+  wordList: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm, paddingBottom: 20 },
   wordItem: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   foundWordItem: { backgroundColor: colors.success + '20', borderColor: colors.success },
   wordText: { color: colors.textSecondary, fontSize: 12, fontWeight: '900' },

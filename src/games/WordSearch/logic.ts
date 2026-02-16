@@ -15,22 +15,16 @@ const WORD_LISTS: Record<string, string[]> = {
   tech: ['CODE', 'DATA', 'CHIP', 'WEB', 'CLOUD', 'LOGIC', 'PIXEL', 'BYTE', 'ARRAY', 'LINK', 'TECH', 'USER'],
 };
 
-export function generateWordSearch(difficulty: Difficulty): WordSearchGrid {
-  let size = 10;
-  let wordCount = 6;
-  let allowDiagonals = false;
-  let allowReversed = false;
-
-  if (difficulty === 'medium') {
-    size = 12;
-    wordCount = 9;
-    allowDiagonals = true;
-  } else if (difficulty === 'hard') {
-    size = 14;
-    wordCount = 12;
-    allowDiagonals = true;
-    allowReversed = true;
-  }
+export function generateWordSearch(difficulty: Difficulty, level: number = 1): WordSearchGrid {
+  const baseSize = difficulty === 'easy' ? 8 : difficulty === 'medium' ? 10 : 12;
+  const baseWords = difficulty === 'easy' ? 4 : difficulty === 'medium' ? 7 : 10;
+  
+  // Growth: +1 size every 8 levels, +1 word every 3 levels
+  const size = Math.min(baseSize + Math.floor((level - 1) / 8), 16);
+  const wordCount = Math.min(baseWords + Math.floor((level - 1) / 3), 15);
+  
+  let allowDiagonals = difficulty !== 'easy' || level > 5;
+  let allowReversed = difficulty === 'hard' || (difficulty === 'medium' && level > 10);
 
   const grid: string[][] = Array(size).fill(null).map(() => Array(size).fill(''));
   const allThemes = Object.keys(WORD_LISTS);

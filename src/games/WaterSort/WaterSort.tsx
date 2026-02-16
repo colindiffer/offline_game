@@ -185,14 +185,16 @@ export default function WaterSort({ difficulty }: Props) {
           
           <View style={[styles.tube, isSelected && styles.selectedTube]}>
             <View style={styles.liquidContainer}>
-              {[...tube].map((color, i) => (
+              {tube.map((color, i) => (
                 <View 
                   key={i} 
                   style={[
                     styles.liquidLayer, 
-                    { backgroundColor: color, height: 120 / TUBE_CAPACITY }
+                    { backgroundColor: color, height: 130 / TUBE_CAPACITY }
                   ]} 
-                />
+                >
+                  <View style={styles.liquidGlow} />
+                </View>
               ))}
             </View>
             {/* Glass Shine */}
@@ -314,11 +316,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.08)',
     overflow: 'hidden',
     position: 'relative',
+    ...shadows.lg,
   },
   selectedTube: {
     borderColor: '#fab1a0',
     borderWidth: 3,
-    ...shadows.md,
+    ...shadows.xl,
   },
   glassShine: {
     position: 'absolute',
@@ -331,10 +334,20 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   liquidContainer: {
     flex: 1,
-    justifyContent: 'flex-end',
+    flexDirection: 'column-reverse',
+    justifyContent: 'flex-start',
   },
   liquidLayer: {
     width: '100%',
+    position: 'relative',
+  },
+  liquidGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   bottomControls: {
     padding: spacing.xl,

@@ -55,6 +55,9 @@ function AppContent() {
               'water-sort': 'Water Sort',
               'word-search': 'Word Search',
               'brick-breaker': 'Brick Breaker',
+              'mahjong': 'Mahjong',
+              'hangman': 'Hangman',
+              'simon-says': 'Simon Says',
             };
             return {
               title: titles[route.params.gameId],

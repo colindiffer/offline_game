@@ -27,6 +27,9 @@ import Hearts from '../games/Hearts/Hearts';
 import WaterSort from '../games/WaterSort/WaterSort';
 import WordSearch from '../games/WordSearch/WordSearch';
 import BrickBreaker from '../games/BrickBreaker/BrickBreaker';
+import Mahjong from '../games/Mahjong/Mahjong';
+import Hangman from '../games/Hangman/Hangman';
+import SimonSays from '../games/SimonSays/SimonSays';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
 
@@ -169,6 +172,12 @@ export default function GameScreen({ route }: Props) {
         return <WordSearch difficulty={difficulty} />;
       case 'brick-breaker':
         return <BrickBreaker difficulty={difficulty} />;
+      case 'mahjong':
+        return <Mahjong difficulty={difficulty} />;
+      case 'hangman':
+        return <Hangman difficulty={difficulty} />;
+      case 'simon-says':
+        return <SimonSays difficulty={difficulty} />;
       default:
         return <Text style={styles.error}>Unknown game</Text>;
     }

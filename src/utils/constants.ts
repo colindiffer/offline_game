@@ -129,6 +129,27 @@ export const GAMES: GameMetadata[] = [
     description: 'Break all bricks with your ball!',
     color: '#f9ca24',
   },
+  {
+    id: 'mahjong',
+    name: 'Mahjong',
+    icon: '🀄',
+    description: 'Match pairs of tiles to clear the board!',
+    color: '#fab1a0',
+  },
+  {
+    id: 'hangman',
+    name: 'Hangman',
+    icon: '😵',
+    description: 'Guess the hidden word!',
+    color: '#ff7675',
+  },
+  {
+    id: 'simon-says',
+    name: 'Simon Says',
+    icon: '🔴',
+    description: 'Repeat the growing sequence of colors!',
+    color: '#74b9ff',
+  },
 ];
 
 export const SNAKE_GRID_SIZE = 15;

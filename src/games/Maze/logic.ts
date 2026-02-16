@@ -19,14 +19,10 @@ export interface MazeConfig {
   cols: number;
 }
 
-const MAZE_CONFIGS: Record<Difficulty, MazeConfig> = {
-  easy: { rows: 15, cols: 15 },
-  medium: { rows: 20, cols: 20 },
-  hard: { rows: 25, cols: 25 },
-};
-
-export function getMazeConfig(difficulty: Difficulty): MazeConfig {
-  return MAZE_CONFIGS[difficulty];
+export function getMazeConfig(difficulty: Difficulty, level: number = 1): MazeConfig {
+  const baseSize = difficulty === 'easy' ? 8 : difficulty === 'medium' ? 12 : 16;
+  const size = Math.min(baseSize + Math.floor((level - 1) / 4), 30);
+  return { rows: size, cols: size };
 }
 
 function createEmptyGrid(rows: number, cols: number): MazeGrid {
@@ -86,8 +82,8 @@ function getUnvisitedNeighbors(grid: MazeGrid, cell: Cell): Cell[] {
 }
 
 // Recursive backtracker algorithm
-export function generateMaze(difficulty: Difficulty): MazeGrid {
-  const config = getMazeConfig(difficulty);
+export function generateMaze(difficulty: Difficulty, level: number = 1): MazeGrid {
+  const config = getMazeConfig(difficulty, level);
   const grid = createEmptyGrid(config.rows, config.cols);
   const stack: Cell[] = [];
 

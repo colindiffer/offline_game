@@ -1,4 +1,4 @@
-export type GameId = 'tic-tac-toe' | 'snake' | '2048' | 'minesweeper' | 'connect-four' | 'tetris' | 'maze' | 'solitaire' | 'sudoku' | 'reversi' | 'checkers' | 'chess' | 'blackjack' | 'poker' | 'hearts' | 'water-sort' | 'word-search' | 'brick-breaker';
+export type GameId = 'tic-tac-toe' | 'snake' | '2048' | 'minesweeper' | 'connect-four' | 'tetris' | 'maze' | 'solitaire' | 'sudoku' | 'reversi' | 'checkers' | 'chess' | 'blackjack' | 'poker' | 'hearts' | 'water-sort' | 'word-search' | 'brick-breaker' | 'mahjong' | 'hangman' | 'simon-says';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export interface GameMetadata {

@@ -7,7 +7,7 @@ import GameOverOverlay from '../../components/GameOverOverlay';
 import GameBoardContainer from '../../components/GameBoardContainer';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
-import { getHighScore, setHighScore } from '../../utils/storage';
+import { getHighScore, setHighScore, getLevel, setLevel } from '../../utils/storage';
 import { recordGameResult } from '../../utils/stats';
 import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
@@ -29,7 +29,8 @@ export default function Sudoku({ difficulty }: Props) {
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
-  const [board, setBoard] = useState<SudokuBoard>(() => generateSudoku(difficulty));
+  const [level, setLevelState] = useState(1);
+  const [board, setBoard] = useState<SudokuBoard>([]);
   const [selectedCell, setSelectedCell] = useState<{ row: number; col: number } | null>(null);
   const [gameWon, setGameWon] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -38,32 +39,29 @@ export default function Sudoku({ difficulty }: Props) {
   const [hintCell, setHintCell] = useState<{ row: number; col: number } | null>(null);
   const [remainingHints, setRemainingHints] = useState(3);
   const [hintCooldown, setHintCooldown] = useState(0);
+  const [isReady, setIsReady] = useState(false);
 
   const startTimeRef = useRef<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Check if tutorial has been shown
+    const init = async () => {
+      const savedLevel = await getLevel('sudoku', difficulty);
+      const best = await getHighScore('sudoku', difficulty);
+      setLevelState(savedLevel);
+      setHighScoreState(best);
+      setBoard(generateSudoku(difficulty, savedLevel));
+      setIsReady(true);
+      startTimeRef.current = Date.now();
+    };
+    init();
     AsyncStorage.getItem('@tutorial_sudoku').then((shown) => {
-      if (!shown) {
-        setShowTutorial(true);
-      }
+      if (!shown) setShowTutorial(true);
     });
-  }, []);
-
-  useEffect(() => {
-    getHighScore('sudoku').then((score) => {
-      setHighScoreState(score);
-    });
-  }, []);
-
-  useEffect(() => {
-    // Reset game when difficulty changes
-    resetGame();
   }, [difficulty]);
 
   useEffect(() => {
-    if (!gameWon && startTimeRef.current) {
+    if (!gameWon && isReady && startTimeRef.current) {
       timerRef.current = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - startTimeRef.current!) / 1000));
       }, 1000);
@@ -71,30 +69,21 @@ export default function Sudoku({ difficulty }: Props) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-    };
-  }, [gameWon]);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [gameWon, isReady]);
 
   const handleCellPress = useCallback(
     (row: number, col: number) => {
-      if (gameWon || board[row][col].isFixed) return;
-
-      if (!startTimeRef.current) {
-        startTimeRef.current = Date.now();
-      }
-
+      if (gameWon || board[row][col].isFixed || !isReady) return;
+      if (!startTimeRef.current) startTimeRef.current = Date.now();
       setSelectedCell({ row, col });
     },
-    [board, gameWon]
+    [board, gameWon, isReady]
   );
 
   const handleNumberPress = useCallback(
     (num: number) => {
-      if (!selectedCell || gameWon) return;
+      if (!selectedCell || gameWon || !isReady) return;
 
       const newBoard = board.map((r) => r.map((c) => ({ ...c })));
       newBoard[selectedCell.row][selectedCell.col].value = num;
@@ -109,11 +98,14 @@ export default function Sudoku({ difficulty }: Props) {
 
         if (highScore === null || finalTime < highScore) {
           setHighScoreState(finalTime);
-          setHighScore('sudoku', finalTime);
+          setHighScore('sudoku', finalTime, difficulty);
         }
+        
+        const nextLvl = level + 1;
+        setLevel('sudoku', difficulty, nextLvl);
       }
     },
-    [selectedCell, board, gameWon, highScore, playSound]
+    [selectedCell, board, gameWon, highScore, difficulty, playSound, level, isReady]
   );
 
   const handleClear = useCallback(() => {
@@ -124,14 +116,11 @@ export default function Sudoku({ difficulty }: Props) {
   const handleHint = useCallback(() => {
     if (remainingHints <= 0 || hintCooldown > 0 || gameWon) return;
 
-    // Find first empty cell with only one possibility
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
         if (board[row][col].value === 0 && !board[row][col].isFixed) {
-          // Find valid numbers for this cell
           const usedInRow = new Set(board[row].filter(c => c.value > 0).map(c => c.value));
           const usedInCol = new Set(board.map(r => r[col]).filter(c => c.value > 0).map(c => c.value));
-
           const boxRow = Math.floor(row / 3) * 3;
           const boxCol = Math.floor(col / 3) * 3;
           const usedInBox = new Set<number>();
@@ -140,30 +129,21 @@ export default function Sudoku({ difficulty }: Props) {
               if (board[r][c].value > 0) usedInBox.add(board[r][c].value);
             }
           }
-
           const candidates: number[] = [];
           for (let num = 1; num <= 9; num++) {
-            if (!usedInRow.has(num) && !usedInCol.has(num) && !usedInBox.has(num)) {
-              candidates.push(num);
-            }
+            if (!usedInRow.has(num) && !usedInCol.has(num) && !usedInBox.has(num)) candidates.push(num);
           }
-
-          // If only one candidate, show hint
           if (candidates.length === 1) {
             setHintCell({ row, col });
             setRemainingHints(prev => prev - 1);
             setHintCooldown(10);
             playSound('tap');
-
-            // Clear hint after 3 seconds
             setTimeout(() => setHintCell(null), 3000);
             return;
           }
         }
       }
     }
-
-    // If no single candidate found, just highlight first empty cell
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
         if (board[row][col].value === 0 && !board[row][col].isFixed) {
@@ -183,22 +163,17 @@ export default function Sudoku({ difficulty }: Props) {
     AsyncStorage.setItem('@tutorial_sudoku', 'true');
   }, []);
 
-  // Hint cooldown timer
   useEffect(() => {
     if (hintCooldown > 0) {
-      const timer = setTimeout(() => {
-        setHintCooldown(prev => prev - 1);
-      }, 1000);
+      const timer = setTimeout(() => setHintCooldown(prev => prev - 1), 1000);
       return () => clearTimeout(timer);
     }
   }, [hintCooldown]);
 
-  // Keyboard support for web
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const handler = (e: KeyboardEvent) => {
       if (gameWon || !selectedCell) return;
-
       if (e.key >= '1' && e.key <= '9') {
         e.preventDefault();
         handleNumberPress(parseInt(e.key, 10));
@@ -211,13 +186,29 @@ export default function Sudoku({ difficulty }: Props) {
     return () => window.removeEventListener('keydown', handler);
   }, [handleNumberPress, handleClear, gameWon, selectedCell]);
 
-  const resetGame = useCallback(() => {
-    setBoard(generateSudoku(difficulty));
+  const nextLevel = useCallback(async () => {
+    const savedLevel = await getLevel('sudoku', difficulty);
+    setLevelState(savedLevel);
+    setBoard(generateSudoku(difficulty, savedLevel));
     setSelectedCell(null);
     setGameWon(false);
     setElapsedTime(0);
-    startTimeRef.current = null;
+    setRemainingHints(3);
+    setHintCooldown(0);
+    startTimeRef.current = Date.now();
   }, [difficulty]);
+
+  const resetLevel = useCallback(() => {
+    setBoard(generateSudoku(difficulty, level));
+    setSelectedCell(null);
+    setGameWon(false);
+    setElapsedTime(0);
+    setRemainingHints(3);
+    setHintCooldown(0);
+    startTimeRef.current = Date.now();
+  }, [difficulty, level]);
+
+  if (!isReady) return <View style={styles.container} />;
 
   const renderBoard = () => {
     return (
@@ -281,8 +272,8 @@ export default function Sudoku({ difficulty }: Props) {
         <Header
           score={elapsedTime}
           scoreLabel="TIME"
-          highScore={highScore || 0}
-          highScoreLabel="BEST"
+          highScore={level}
+          highScoreLabel="LEVEL"
         />
 
         <View style={styles.statsRow}>
@@ -294,7 +285,7 @@ export default function Sudoku({ difficulty }: Props) {
             ))}
           </View>
           <View style={styles.difficultyBadge}>
-            <Text style={styles.difficultyText}>{difficulty.toUpperCase()}</Text>
+            <Text style={styles.difficultyText}>LEVEL {level}</Text>
           </View>
         </View>
 
@@ -327,12 +318,12 @@ export default function Sudoku({ difficulty }: Props) {
 
           <View style={styles.actions}>
             <PremiumButton
-              variant="primary"
+              variant="secondary"
               height={56}
-              onPress={resetGame}
+              onPress={resetLevel}
               style={styles.actionBtn}
             >
-              <Text style={styles.actionText}>NEW GAME</Text>
+              <Text style={styles.actionText}>RESET LEVEL</Text>
             </PremiumButton>
 
             <PremiumButton
@@ -350,9 +341,10 @@ export default function Sudoku({ difficulty }: Props) {
         {gameWon && (
           <GameOverOverlay
             result="win"
-            title="SUDOKU MASTER!"
+            title="LEVEL COMPLETE!"
             subtitle={`Finished in ${elapsedTime} seconds.`}
-            onPlayAgain={resetGame}
+            onPlayAgain={nextLevel}
+            onPlayAgainLabel="NEXT LEVEL"
           />
         )}
 

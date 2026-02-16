@@ -12,14 +12,11 @@ export interface SudokuConfig {
   prefilled: number; // Number of cells to pre-fill
 }
 
-const SUDOKU_CONFIGS: Record<Difficulty, SudokuConfig> = {
-  easy: { prefilled: 43 },
-  medium: { prefilled: 33 },
-  hard: { prefilled: 27 },
-};
-
-export function getSudokuConfig(difficulty: Difficulty): SudokuConfig {
-  return SUDOKU_CONFIGS[difficulty];
+export function getSudokuConfig(difficulty: Difficulty, level: number = 1): SudokuConfig {
+  const basePrefilled = difficulty === 'easy' ? 43 : difficulty === 'medium' ? 33 : 27;
+  // Decrease prefilled every 5 levels
+  const prefilled = Math.max(basePrefilled - Math.floor((level - 1) / 5), 17);
+  return { prefilled };
 }
 
 // Check if a number is valid in a specific position
@@ -89,8 +86,8 @@ function removeNumbers(grid: SudokuGrid, cellsToRemove: number): void {
 }
 
 // Generate a new sudoku puzzle
-export function generateSudoku(difficulty: Difficulty): SudokuBoard {
-  const config = getSudokuConfig(difficulty);
+export function generateSudoku(difficulty: Difficulty, level: number = 1): SudokuBoard {
+  const config = getSudokuConfig(difficulty, level);
   const solvedGrid = generateSolvedGrid();
   const puzzleGrid = solvedGrid.map((row) => [...row]);
   

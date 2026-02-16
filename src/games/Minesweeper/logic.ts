@@ -18,14 +18,18 @@ export interface GameConfig {
   mines: number;
 }
 
-const GAME_CONFIGS: Record<Difficulty, GameConfig> = {
-  easy: { rows: 8, cols: 8, mines: 10 },
-  medium: { rows: 12, cols: 12, mines: 25 },
-  hard: { rows: 16, cols: 16, mines: 50 },
-};
+export function getGameConfig(difficulty: Difficulty, level: number = 1): GameConfig {
+  const baseSize = difficulty === 'easy' ? 8 : difficulty === 'medium' ? 12 : 16;
+  const baseMines = difficulty === 'easy' ? 10 : difficulty === 'medium' ? 25 : 50;
+  
+  const size = Math.min(baseSize + Math.floor((level - 1) / 10), 24);
+  const mines = Math.min(baseMines + (level - 1), Math.floor(size * size * 0.3));
+  
+  return { rows: size, cols: size, mines };
+}
 
-export function createBoard(difficulty: Difficulty, firstClickRow: number, firstClickCol: number): Board {
-  const { rows, cols, mines } = GAME_CONFIGS[difficulty];
+export function createBoard(difficulty: Difficulty, firstClickRow: number, firstClickCol: number, level: number = 1): Board {
+  const { rows, cols, mines } = getGameConfig(difficulty, level);
   let board: Board = Array(rows)
     .fill(0)
     .map((_, r) =>

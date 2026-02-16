@@ -348,4 +348,43 @@ export const GAME_TUTORIALS: Record<GameId, TutorialStep[]> = {
       tips: ['Aim for the corners', 'Clear the top rows first for easier bounces'],
     },
   ],
+
+  'mahjong': [
+    {
+      title: 'Welcome to Mahjong!',
+      description: 'Match pairs of identical tiles to clear the board!',
+      icon: '🀄',
+    },
+    {
+      title: 'How to Play',
+      description: 'Tap two matching tiles to remove them. You can only pick "free" tiles (those with no tile on top and at least one side open).',
+      tips: ['Plan your moves to free up blocked tiles', 'Focus on matching tiles that free up the most other tiles'],
+    },
+  ],
+
+  'hangman': [
+    {
+      title: 'Welcome to Hangman!',
+      description: 'Guess the hidden word letter by letter!',
+      icon: '😵',
+    },
+    {
+      title: 'How to Play',
+      description: 'Tap letters on the keyboard. Correct letters fill the blanks. Wrong letters draw parts of the hangman.',
+      tips: ['Start with common vowels (A, E, I, O, U)', 'Look for common word patterns'],
+    },
+  ],
+
+  'simon-says': [
+    {
+      title: 'Welcome to Simon Says!',
+      description: 'Test your memory by repeating the sequence of colors!',
+      icon: '🔴',
+    },
+    {
+      title: 'How to Play',
+      description: 'Watch the sequence of flashing colors, then tap the pads in the exact same order.',
+      tips: ['Say the colors out loud to help remember', 'The sequence grows by one color each turn'],
+    },
+  ],
 };

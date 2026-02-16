@@ -31,13 +31,19 @@ A comprehensive mobile + web app with **15 classic games** built with React Nati
 16. **Water Sort** — Color sorting puzzle with smooth animations and undo
 17. **Word Search** — Find hidden words in dynamic grids with swipe selection
 18. **Brick Breaker** — Classic arcade action with responsive touch paddle and physics
+19. **Mahjong** — Match identical tiles in 3D layered layouts
+20. **Hangman** — Guess the word with premium character drawing
+21. **Simon Says** — Test your memory with high-speed color sequences
 
 ---
 
 ## ✨ Key Features
 
+### ✅ Phase 9: Logic & Memory (3 Games)
+Added Mahjong, Hangman, and Simon Says to reach 21 games.
+
 ### ✅ Phase 8: New Challenges (3 Games)
-Added Water Sort, Word Search, and Brick Breaker to expand the collection to 18 games.
+Added Water Sort, Word Search, and Brick Breaker to expand the collection.
 
 ### 🎨 Visual Overhaul (Premium Feel)
 - **Maximized Board Sizes**: Every game board dynamically scales to fill the full width of the mobile screen.
@@ -102,6 +108,23 @@ src/
     Header.tsx                   # Capsule-style header with score badges
     ... (Shared UI components)
 ```
+
+## 🏗️ Core Development Standards
+
+All games in this app must adhere to these standards:
+
+1. **Dynamic Scaling**: Boards and game elements must fill the screen width (`SCREEN_WIDTH - 32`) and scale proportionally.
+2. **Level-Based Progression**:
+   - Every puzzle/arcade game must support a `level` parameter.
+   - Difficulty must scale incrementally (e.g., speed +0.5, grid +1, clues -1).
+   - Progress must be saved via `getLevel` and `setLevel` in `storage.ts`.
+   - Victory screens must offer a "NEXT LEVEL" flow.
+3. **Premium Visuals**:
+   - Use `shadows.lg` and depth-based borders.
+   - Every interaction should have a sound (`playSound`) and visual feedback.
+   - Use `ThemeContext` for all colors.
+4. **Mobile-First Controls**: Prioritize gestures (swipe, long-press, drag).
+5. **Stability**: Zero TypeScript errors (`npx tsc --noEmit`) before committing.
 
 ---
 
