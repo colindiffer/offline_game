@@ -135,6 +135,10 @@ export default function MemoryMatch({ difficulty }: Props) {
   const cols = cards.length > 24 ? 6 : cards.length > 12 ? 4 : 3;
   const cardSize = Math.floor((GRID_WIDTH - (cols * 8)) / cols);
 
+  const isCellMatched = (index: number) => {
+    return cards[index].isMatched;
+  };
+
   return (
     <View style={styles.container}>
       <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
@@ -154,6 +158,7 @@ export default function MemoryMatch({ difficulty }: Props) {
               inputRange: [0, 1],
               outputRange: ['0deg', '180deg']
             });
+            const isFlipped = flippedCards.includes(index) || card.isMatched;
 
             return (
               <TouchableOpacity
@@ -162,19 +167,21 @@ export default function MemoryMatch({ difficulty }: Props) {
                 activeOpacity={0.9}
                 style={{ width: cardSize, height: cardSize * 1.3, margin: 4 }}
               >
-                <Animated.View style={[styles.card, { transform: [{ rotateY }] }]}>
-                  {/* Back of card */}
-                  <View style={styles.cardBack}>
-                    <LinearGradient colors={['#4834d4', '#686de0']} style={StyleSheet.absoluteFill} />
-                    <Text style={styles.cardBackLogo}>?</Text>
-                  </View>
-                  
-                  {/* Front of card (shown when flipped) */}
-                  <Animated.View style={[styles.cardFront, { transform: [{ rotateY: '180deg' }] }]}>
-                    <Text style={[styles.cardIcon, { fontSize: cardSize * 0.6 }]}>{card.type}</Text>
-                    {card.isMatched && <View style={styles.matchedOverlay} />}
+                <View style={styles.cardContainer}>
+                  <Animated.View style={[styles.card, { transform: [{ rotateY }] }]}>
+                    {/* Back of card */}
+                    <View style={styles.cardBack}>
+                      <LinearGradient colors={['#4834d4', '#686de0']} style={StyleSheet.absoluteFill} />
+                      <Text style={styles.cardBackLogo}>?</Text>
+                    </View>
+                    
+                    {/* Front of card (shown when flipped) */}
+                    <Animated.View style={[styles.cardFront, { transform: [{ rotateY: '180deg' }] }]}>
+                      <Text style={[styles.cardIcon, { fontSize: cardSize * 0.6 }]}>{card.type}</Text>
+                      {card.isMatched && <View style={styles.matchedOverlay} />}
+                    </Animated.View>
                   </Animated.View>
-                </Animated.View>
+                </View>
               </TouchableOpacity>
             );
           })}
@@ -212,8 +219,9 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   levelText: { color: '#fff', fontSize: 24, fontWeight: '900' },
   gameArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
-  card: { flex: 1, position: 'relative', ...shadows.md, backfaceVisibility: 'hidden' },
-  cardBack: { ...StyleSheet.absoluteFillObject, borderRadius: 8, borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  cardContainer: { flex: 1 },
+  card: { flex: 1, position: 'relative', ...shadows.md },
+  cardBack: { ...StyleSheet.absoluteFillObject, borderRadius: 8, borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', backfaceVisibility: 'hidden' },
   cardBackLogo: { fontSize: 32, fontWeight: '900', color: 'rgba(255,255,255,0.3)' },
   cardFront: { ...StyleSheet.absoluteFillObject, backgroundColor: '#fff', borderRadius: 8, justifyContent: 'center', alignItems: 'center', backfaceVisibility: 'hidden' },
   cardIcon: { color: '#000' },

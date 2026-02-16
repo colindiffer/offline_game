@@ -280,6 +280,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   stockCard: { position: 'absolute' },
   controls: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   undoBtn: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
+  undoInner: { width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' },
   undoIcon: { fontSize: 24, color: '#fff' },
   resetBtn: { minWidth: 100 },
   resetText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },

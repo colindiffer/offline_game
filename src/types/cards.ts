@@ -5,6 +5,7 @@ export interface Card {
   suit: Suit;
   rank: Rank;
   id: string; // Unique identifier like "A-hearts"
+  faceUp?: boolean;
 }
 
 export interface Deck {

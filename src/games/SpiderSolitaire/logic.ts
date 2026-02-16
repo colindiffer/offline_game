@@ -19,14 +19,6 @@ export function initializeSpider(difficulty: Difficulty): SpiderGameState {
   const suits: Suit[] = ['spades', 'hearts', 'diamonds', 'clubs'].slice(0, suitCount) as Suit[];
   let deck: Card[] = [];
 
-  // 104 cards total (2 full decks)
-  const totalCardsNeeded = 104;
-  const setsPerSuit = totalCardsNeeded / (suitCount * 13);
-
-  for (let s = 0; r < setsPerSuit; s++) { // This was a typo, fixing below
-  }
-  
-  // Actually, simpler deck gen:
   while (deck.length < 104) {
     for (const suit of suits) {
       for (const rank of RANKS) {
@@ -54,7 +46,6 @@ export function initializeSpider(difficulty: Difficulty): SpiderGameState {
   for (let i = 0; i < 54; i++) {
     const col = i % 10;
     const card = deck[deckIndex++];
-    // Top card of each pile is face up
     if (i >= 44) card.faceUp = true; 
     tableau[col].push(card);
   }
@@ -80,7 +71,6 @@ export function canMoveCards(cards: Card[]): boolean {
   if (cards.length === 0) return false;
   if (cards.some(c => !c.faceUp)) return false;
   
-  // Must be descending and same suit
   for (let i = 0; i < cards.length - 1; i++) {
     if (cards[i].suit !== cards[i+1].suit) return false;
     if (getRankValue(cards[i].rank) !== getRankValue(cards[i+1].rank) + 1) return false;
