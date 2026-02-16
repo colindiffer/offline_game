@@ -96,7 +96,7 @@ export default function Sudoku({ difficulty }: Props) {
         const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
         recordGameResult('sudoku', 'win', finalTime);
 
-        if (highScore === null || finalTime < highScore) {
+        if (highScore === null || finalTime < highScore || highScore === 0) {
           setHighScoreState(finalTime);
           setHighScore('sudoku', finalTime, difficulty);
         }

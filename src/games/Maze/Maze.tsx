@@ -99,7 +99,7 @@ export default function Maze({ difficulty }: Props) {
           const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
           recordGameResult('maze', 'win', finalTime);
 
-          if (highScore === null || finalTime < highScore) {
+          if (highScore === null || finalTime < highScore || highScore === 0) {
             setHighScoreState(finalTime);
             setHighScore('maze', finalTime, difficulty);
           }

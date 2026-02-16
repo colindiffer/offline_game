@@ -39,6 +39,12 @@ A comprehensive mobile + web app with **15 classic games** built with React Nati
 
 ## ✨ Key Features
 
+### ✅ Phase 10: Professional UI & High Scores
+- **Overhauled Icons**: Made game icons 40% larger on the homepage for better "fit" and recognition.
+- **Fixed Visibility**: Resolved "invisible text" in Tutorials and High Scores by using theme-aware contrast logic.
+- **Granular Data Control**: Added ability to clear high scores for individual difficulty levels.
+- **Consistent Progress**: Fixed high score logic for time-based games to handle "cleared" states correctly.
+
 ### ✅ Phase 9: Logic & Memory (3 Games)
 Added Mahjong, Hangman, and Simon Says to reach 21 games.
 

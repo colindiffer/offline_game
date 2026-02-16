@@ -103,61 +103,63 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     gameTitle: {
       ...typography.heading,
-      color: '#2d3436', // Dark for light modal
+      color: colors.text,
       textAlign: 'center',
       marginBottom: spacing.xs,
     },
     subtitle: {
       ...typography.body,
-      color: '#636e72',
+      color: colors.textSecondary,
       textAlign: 'center',
       marginBottom: spacing.xl,
     },
     scrollView: {
       width: '100%',
+      maxHeight: 400,
     },
     scrollContent: {
       alignItems: 'center',
       paddingBottom: spacing.lg,
+      flexGrow: 1,
     },
     icon: {
       fontSize: 80,
       marginBottom: spacing.xl,
-      color: '#2d3436',
+      color: colors.text,
     },
     stepTitle: {
       ...typography.heading,
       fontSize: 22,
-      color: '#2d3436',
+      color: colors.text,
       textAlign: 'center',
       marginBottom: spacing.md,
     },
     description: {
       ...typography.body,
-      color: '#2d3436',
+      color: colors.text,
       textAlign: 'center',
       marginBottom: spacing.xl,
       paddingHorizontal: spacing.md,
       lineHeight: 24,
     },
     tipsContainer: {
-      backgroundColor: '#f1f2f6',
+      backgroundColor: colors.card,
       borderRadius: radius.md,
       padding: spacing.lg,
       width: '100%',
       marginTop: spacing.md,
       borderWidth: 1,
-      borderColor: '#dfe4ea',
+      borderColor: colors.border,
     },
     tipsTitle: {
       ...typography.bodyBold,
-      color: '#2d3436',
+      color: colors.text,
       marginBottom: spacing.sm,
     },
     tip: {
       ...typography.label,
       fontWeight: '500',
-      color: '#2d3436',
+      color: colors.text,
       marginBottom: spacing.xs,
     },
     pagination: {
