@@ -24,6 +24,9 @@ import Chess from '../games/Chess/Chess';
 import Blackjack from '../games/Blackjack/Blackjack';
 import Poker from '../games/Poker/Poker';
 import Hearts from '../games/Hearts/Hearts';
+import WaterSort from '../games/WaterSort/WaterSort';
+import WordSearch from '../games/WordSearch/WordSearch';
+import BrickBreaker from '../games/BrickBreaker/BrickBreaker';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
 
@@ -160,6 +163,12 @@ export default function GameScreen({ route }: Props) {
         return <Poker difficulty={difficulty} />;
       case 'hearts':
         return <Hearts difficulty={difficulty} />;
+      case 'water-sort':
+        return <WaterSort difficulty={difficulty} />;
+      case 'word-search':
+        return <WordSearch difficulty={difficulty} />;
+      case 'brick-breaker':
+        return <BrickBreaker difficulty={difficulty} />;
       default:
         return <Text style={styles.error}>Unknown game</Text>;
     }

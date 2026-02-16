@@ -294,4 +294,58 @@ export const GAME_TUTORIALS: Record<GameId, TutorialStep[]> = {
       tips: ['Pass high cards and Queen of Spades', 'Watch what others play', 'Game ends at 100 points - lowest wins!'],
     },
   ],
+
+  'water-sort': [
+    {
+      title: 'Welcome to Water Sort!',
+      description: 'Sort the colored water until each tube contains only one color!',
+      icon: '🧪',
+    },
+    {
+      title: 'How to Play',
+      description: 'Tap a tube to select it, then tap another tube to pour. You can only pour into an empty tube or onto the same color.',
+      tips: ['Tubes have a limit of 4 layers', 'Use empty tubes strategically'],
+    },
+    {
+      title: 'Winning',
+      description: 'The game is won when all colors are sorted into their own tubes.',
+      tips: ['Plan several moves ahead', 'Don\'t get stuck! Use Undo if needed'],
+    },
+  ],
+
+  'word-search': [
+    {
+      title: 'Welcome to Word Search!',
+      description: 'Find all the hidden words in the grid of letters!',
+      icon: '🔍',
+    },
+    {
+      title: 'Controls',
+      description: 'Swipe across letters to select a word. Words can be horizontal, vertical, or diagonal.',
+      tips: ['Look for the first letter of a word', 'Check all directions'],
+    },
+    {
+      title: 'Difficulty',
+      description: 'Higher difficulties have larger grids, more words, and reversed word directions.',
+      tips: ['Focus on one word at a time', 'Found words are crossed off'],
+    },
+  ],
+
+  'brick-breaker': [
+    {
+      title: 'Welcome to Brick Breaker!',
+      description: 'Destroy all the bricks using the ball and paddle!',
+      icon: '🎾',
+    },
+    {
+      title: 'Controls',
+      description: 'Drag your finger across the screen to move the paddle. Keep the ball in play!',
+      tips: ['The ball bounces faster over time', 'Hit the side of the paddle to change ball angle'],
+    },
+    {
+      title: 'Objective',
+      description: 'Break every brick on the screen to win. If the ball falls past your paddle, you lose a life!',
+      tips: ['Aim for the corners', 'Clear the top rows first for easier bounces'],
+    },
+  ],
 };

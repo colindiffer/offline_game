@@ -28,10 +28,16 @@ A comprehensive mobile + web app with **15 classic games** built with React Nati
 13. **Blackjack** — Hit, Stand, Double Down against the dealer (tokens-based)
 14. **Poker** — 5-Card Hold'em with AI opponents and dynamic card sizing
 15. **Hearts** — 4-player trick-taking game with a full-width fanned card layout
+16. **Water Sort** — Color sorting puzzle with smooth animations and undo
+17. **Word Search** — Find hidden words in dynamic grids with swipe selection
+18. **Brick Breaker** — Classic arcade action with responsive touch paddle and physics
 
 ---
 
 ## ✨ Key Features
+
+### ✅ Phase 8: New Challenges (3 Games)
+Added Water Sort, Word Search, and Brick Breaker to expand the collection to 18 games.
 
 ### 🎨 Visual Overhaul (Premium Feel)
 - **Maximized Board Sizes**: Every game board dynamically scales to fill the full width of the mobile screen.

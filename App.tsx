@@ -52,6 +52,9 @@ function AppContent() {
               'blackjack': 'Blackjack',
               'poker': 'Poker',
               'hearts': 'Hearts',
+              'water-sort': 'Water Sort',
+              'word-search': 'Word Search',
+              'brick-breaker': 'Brick Breaker',
             };
             return {
               title: titles[route.params.gameId],

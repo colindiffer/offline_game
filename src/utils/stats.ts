@@ -21,6 +21,9 @@ const createEmptyStats = (): Record<GameId, GameStats> => ({
   blackjack: { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
   poker: { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
   hearts: { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'water-sort': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'word-search': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'brick-breaker': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
 });
 
 export function getEmptyStats(): Record<GameId, GameStats> {

@@ -108,6 +108,27 @@ export const GAMES: GameMetadata[] = [
     description: 'Avoid hearts and the Queen of Spades!',
     color: '#fd79a8',
   },
+  {
+    id: 'water-sort',
+    name: 'Water Sort',
+    icon: '🧪',
+    description: 'Sort colored water into tubes!',
+    color: '#00cec9',
+  },
+  {
+    id: 'word-search',
+    name: 'Word Search',
+    icon: '🔍',
+    description: 'Find hidden words in the grid!',
+    color: '#6ab04c',
+  },
+  {
+    id: 'brick-breaker',
+    name: 'Brick Breaker',
+    icon: '🎾',
+    description: 'Break all bricks with your ball!',
+    color: '#f9ca24',
+  },
 ];
 
 export const SNAKE_GRID_SIZE = 15;
