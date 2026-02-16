@@ -14,20 +14,17 @@ export interface BrickBreakerState {
 
 const BRICK_COLORS = ['#ff7675', '#fdcb6e', '#55efc4', '#74b9ff', '#a29bfe'];
 
-export function initializeBrickBreaker(difficulty: Difficulty, boardWidth: number, boardHeight: number): BrickBreakerState {
-  let rows = 4;
-  let cols = 6;
-  let ballSpeed = 4;
-
-  if (difficulty === 'medium') {
-    rows = 6;
-    cols = 8;
-    ballSpeed = 6;
-  } else if (difficulty === 'hard') {
-    rows = 8;
-    cols = 10;
-    ballSpeed = 8;
-  }
+export function initializeBrickBreaker(difficulty: Difficulty, boardWidth: number, boardHeight: number, level: number = 1): BrickBreakerState {
+  let baseRows = difficulty === 'easy' ? 3 : difficulty === 'medium' ? 5 : 7;
+  let cols = difficulty === 'easy' ? 6 : difficulty === 'medium' ? 8 : 10;
+  
+  // Growth: Add a row every 5 levels
+  let rows = Math.min(baseRows + Math.floor((level - 1) / 5), 12);
+  
+  // Speed growth: increase by 0.5 every level
+  let baseSpeed = difficulty === 'easy' ? 4 : difficulty === 'medium' ? 6 : 8;
+  let ballSpeed = baseSpeed + (level - 1) * 0.5;
+  ballSpeed = Math.min(ballSpeed, 15); // Cap speed
 
   const bricks: Brick[] = [];
   const brickWidth = (boardWidth - 40) / cols;

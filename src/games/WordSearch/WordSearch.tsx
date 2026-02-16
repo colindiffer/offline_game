@@ -134,6 +134,39 @@ export default function WordSearch({ difficulty }: Props) {
     return foundPaths.some(path => path.some(p => p.row === r && p.col === c));
   };
 
+  const renderSelectionLine = () => {
+    if (!selection) return null;
+    
+    const startX = containerPos.current.x + selection.start.col * CELL_SIZE + CELL_SIZE / 2;
+    const startY = containerPos.current.y + selection.start.row * CELL_SIZE + CELL_SIZE / 2;
+    const endX = containerPos.current.x + selection.end.col * CELL_SIZE + CELL_SIZE / 2;
+    const endY = containerPos.current.y + selection.end.row * CELL_SIZE + CELL_SIZE / 2;
+
+    const dx = endX - startX;
+    const dy = endY - startY;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx);
+
+    return (
+      <View
+        pointerEvents="none"
+        style={[
+          styles.selectionLine,
+          {
+            left: selection.start.col * CELL_SIZE + CELL_SIZE / 2,
+            top: selection.start.row * CELL_SIZE + CELL_SIZE / 2,
+            width: length,
+            transform: [
+              { rotate: `${angle}rad` },
+              { translateX: 0 },
+              { translateY: -10 },
+            ],
+          },
+        ]}
+      />
+    );
+  };
+
   return (
     <View style={styles.container}>
       <Header score={gameState.foundWords.length} scoreLabel="FOUND" highScore={gameState.words.length} highScoreLabel="TOTAL" />
@@ -143,6 +176,7 @@ export default function WordSearch({ difficulty }: Props) {
           <View onLayout={onLayout}>
             <GameBoardContainer style={styles.boardWrapper}>
               <View style={styles.grid}>
+                {renderSelectionLine()}
                 {gameState.letters.map((row, r) => (
                   <View key={r} style={styles.row}>
                     {row.map((letter, c) => (
@@ -204,7 +238,14 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   gameArea: { flex: 1, padding: spacing.md, alignItems: 'center' },
   boardWrapper: { padding: 4, backgroundColor: '#1e1e3a', borderRadius: radius.md },
-  grid: { backgroundColor: '#1e1e3a' },
+  grid: { backgroundColor: '#1e1e3a', position: 'relative' },
+  selectionLine: {
+    position: 'absolute',
+    height: 20,
+    backgroundColor: 'rgba(233, 69, 96, 0.4)',
+    borderRadius: 10,
+    zIndex: 5,
+  },
   row: { flexDirection: 'row' },
   cell: { justifyContent: 'center', alignItems: 'center' },
   selectedCell: { backgroundColor: colors.primary, borderRadius: radius.xs },

@@ -6,7 +6,7 @@ import GameOverOverlay from '../../components/GameOverOverlay';
 import PremiumButton from '../../components/PremiumButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
-import { getHighScore, setHighScore } from '../../utils/storage';
+import { getHighScore, setHighScore, getLevel, setLevel } from '../../utils/storage';
 import { recordGameResult } from '../../utils/stats';
 import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
@@ -14,41 +14,46 @@ import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { initializeWaterSort, canPour, pour, isWin, TUBE_CAPACITY, Tube } from './logic';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const SCREEN_HEIGHT = Dimensions.get('window').height;
+
+interface Props {
+  difficulty: Difficulty;
+}
 
 export default function WaterSort({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
-  const [tubes, setTubes] = useState<Tube[]>(() => initializeWaterSort(difficulty));
+  const [level, setLevelState] = useState(1);
+  const [tubes, setTubes] = useState<Tube[]>([]);
   const [selectedTube, setSelectedTube] = useState<number | null>(null);
   const [moves, setMoves] = useState(0);
   const [gameWon, setGameWon] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [highScore, setHighScoreState] = useState(0);
   const [undoHistory, setUndoHistory] = useState<Tube[][]>([]);
+  const [isReady, setIsReady] = useState(false);
 
   const startTimeRef = useRef<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const tubeAnims = useRef<Animated.Value[]>([]).current;
-
-  // Initialize animations for tubes
-  if (tubeAnims.length === 0) {
-    const tubeCount = tubes.length;
-    for (let i = 0; i < 15; i++) { // Max possible tubes
-      tubeAnims.push(new Animated.Value(0));
-    }
-  }
+  const tubeAnims = useRef<Animated.Value[]>(Array.from({ length: 15 }, () => new Animated.Value(0))).current;
 
   useEffect(() => {
-    getHighScore('water-sort').then(setHighScoreState);
-    startTimeRef.current = Date.now();
+    const init = async () => {
+      const savedLevel = await getLevel('water-sort', difficulty);
+      const best = await getHighScore('water-sort', difficulty);
+      setLevelState(savedLevel);
+      setHighScoreState(best);
+      setTubes(initializeWaterSort(difficulty, savedLevel));
+      setIsReady(true);
+      startTimeRef.current = Date.now();
+    };
+    init();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, []);
+  }, [difficulty]);
 
   useEffect(() => {
-    if (!gameWon && startTimeRef.current) {
+    if (!gameWon && isReady && startTimeRef.current) {
       timerRef.current = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - startTimeRef.current!) / 1000));
       }, 1000);
@@ -56,7 +61,7 @@ export default function WaterSort({ difficulty }: Props) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-  }, [gameWon]);
+  }, [gameWon, isReady]);
 
   const handleTubePress = useCallback((index: number) => {
     if (gameWon) return;
@@ -104,10 +109,10 @@ export default function WaterSort({ difficulty }: Props) {
           playSound('win');
           const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
           recordGameResult('water-sort', 'win', finalTime);
-          if (moves + 1 < highScore || highScore === 0) {
-            setHighScoreState(moves + 1);
-            setHighScore('water-sort', moves + 1);
-          }
+          
+          // Next level logic
+          const nextLevel = level + 1;
+          setLevel('water-sort', difficulty, nextLevel);
         }
       } else {
         // Can't pour, switch selection if not empty
@@ -123,7 +128,7 @@ export default function WaterSort({ difficulty }: Props) {
         }
       }
     }
-  }, [tubes, selectedTube, gameWon, moves, highScore, playSound, tubeAnims]);
+  }, [tubes, selectedTube, gameWon, moves, highScore, playSound, tubeAnims, level, difficulty]);
 
   const handleUndo = useCallback(() => {
     if (undoHistory.length === 0 || gameWon) return;
@@ -136,9 +141,10 @@ export default function WaterSort({ difficulty }: Props) {
     playSound('tap');
   }, [undoHistory, gameWon, playSound, tubeAnims]);
 
-  const resetGame = useCallback(() => {
-    const initialTubes = initializeWaterSort(difficulty);
-    setTubes(initialTubes);
+  const nextLevel = useCallback(async () => {
+    const savedLevel = await getLevel('water-sort', difficulty);
+    setLevelState(savedLevel);
+    setTubes(initializeWaterSort(difficulty, savedLevel));
     setUndoHistory([]);
     setMoves(0);
     setSelectedTube(null);
@@ -147,6 +153,19 @@ export default function WaterSort({ difficulty }: Props) {
     startTimeRef.current = Date.now();
     tubeAnims.forEach(anim => anim.setValue(0));
   }, [difficulty, tubeAnims]);
+
+  const resetGame = useCallback(() => {
+    setTubes(initializeWaterSort(difficulty, level));
+    setUndoHistory([]);
+    setMoves(0);
+    setSelectedTube(null);
+    setGameWon(false);
+    setElapsedTime(0);
+    startTimeRef.current = Date.now();
+    tubeAnims.forEach(anim => anim.setValue(0));
+  }, [difficulty, level, tubeAnims]);
+
+  if (!isReady) return <View style={styles.container} />;
 
   const renderTube = (tube: Tube, index: number) => {
     const isSelected = selectedTube === index;
@@ -161,20 +180,24 @@ export default function WaterSort({ difficulty }: Props) {
           styles.tubeContainer,
           { transform: [{ translateY: tubeAnims[index] }] }
         ]}>
+          {/* Tube Rim */}
+          <View style={[styles.tubeRim, isSelected && styles.selectedRim]} />
+          
           <View style={[styles.tube, isSelected && styles.selectedTube]}>
             <View style={styles.liquidContainer}>
-              {[...tube].reverse().map((color, i) => (
+              {[...tube].map((color, i) => (
                 <View 
                   key={i} 
                   style={[
                     styles.liquidLayer, 
-                    { backgroundColor: color, height: (styles.tube.height - 10) / TUBE_CAPACITY }
+                    { backgroundColor: color, height: 120 / TUBE_CAPACITY }
                   ]} 
                 />
               ))}
             </View>
+            {/* Glass Shine */}
+            <View style={styles.glassShine} />
           </View>
-          <View style={styles.tubeStand} />
         </Animated.View>
       </TouchableOpacity>
     );
@@ -183,8 +206,15 @@ export default function WaterSort({ difficulty }: Props) {
   return (
     <View style={styles.container}>
       <LinearGradient colors={['#1a1a2e', '#16213e']} style={StyleSheet.absoluteFill} />
-      <Header score={moves} scoreLabel="MOVES" highScore={highScore} highScoreLabel="BEST" />
+      <Header score={elapsedTime} scoreLabel="TIME" highScore={level} highScoreLabel="LEVEL" />
       
+      <View style={styles.levelHeader}>
+        <View style={styles.difficultyBadge}>
+          <Text style={styles.difficultyText}>{difficulty.toUpperCase()}</Text>
+        </View>
+        <Text style={styles.levelText}>Level {level}</Text>
+      </View>
+
       <View style={styles.gameArea}>
         <View style={styles.tubesGrid}>
           {tubes.map((tube, index) => renderTube(tube, index))}
@@ -192,70 +222,112 @@ export default function WaterSort({ difficulty }: Props) {
       </View>
 
       <View style={styles.bottomControls}>
-        <TouchableOpacity style={styles.undoBtn} onPress={handleUndo} disabled={undoHistory.length === 0}>
-          <View style={[styles.undoInner, undoHistory.length === 0 && { opacity: 0.5 }]}>
-            <Text style={styles.undoIcon}>↶</Text>
-            <Text style={styles.undoText}>Undo</Text>
+        <TouchableOpacity style={styles.controlBtn} onPress={handleUndo} disabled={undoHistory.length === 0}>
+          <View style={[styles.controlInner, undoHistory.length === 0 && { opacity: 0.5 }]}>
+            <Text style={styles.controlIcon}>↶</Text>
+            <Text style={styles.controlText}>Undo</Text>
           </View>
         </TouchableOpacity>
-        
-        <PremiumButton variant="secondary" height={44} style={styles.newGameBtn} onPress={resetGame}>
-          <Text style={styles.newGameText}>RESTART</Text>
-        </PremiumButton>
+
+        <TouchableOpacity style={styles.controlBtn} onPress={resetGame}>
+          <View style={styles.controlInner}>
+            <Text style={styles.controlIcon}>↺</Text>
+            <Text style={styles.controlText}>Reset</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       {gameWon && (
         <GameOverOverlay 
           result="win" 
-          title="SORTED!" 
-          subtitle={`Completed in ${moves} moves and ${elapsedTime}s.`} 
-          onPlayAgain={resetGame} 
+          title="LEVEL COMPLETE!" 
+          subtitle={`Sorted in ${moves} moves!`} 
+          onPlayAgain={nextLevel}
+          onPlayAgainLabel="NEXT LEVEL"
         />
       )}
     </View>
   );
 }
 
-interface Props {
-  difficulty: Difficulty;
-}
-
-const TUBE_WIDTH = Math.floor(SCREEN_WIDTH / 5);
+const TUBE_WIDTH = Math.floor(SCREEN_WIDTH / 5.5);
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1 },
+  levelHeader: {
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  difficultyBadge: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: 12,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    marginBottom: 4,
+  },
+  difficultyText: {
+    color: '#fab1a0',
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  levelText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: '900',
+  },
   gameArea: { flex: 1, padding: spacing.md, justifyContent: 'center', alignItems: 'center' },
   tubesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: spacing.md,
-    paddingTop: 40,
+    gap: spacing.sm,
+    paddingTop: 20,
   },
   tubeTouch: {
     width: TUBE_WIDTH,
     alignItems: 'center',
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.xl,
   },
   tubeContainer: {
     alignItems: 'center',
   },
+  tubeRim: {
+    width: TUBE_WIDTH * 0.8,
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 3,
+    marginBottom: -2,
+    zIndex: 2,
+  },
+  selectedRim: {
+    backgroundColor: '#fab1a0',
+  },
   tube: {
     width: TUBE_WIDTH * 0.7,
-    height: 140,
-    borderWidth: 3,
+    height: 130,
+    borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.2)',
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    borderTopLeftRadius: 2,
+    borderTopRightRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.08)',
     overflow: 'hidden',
-    padding: 2,
+    position: 'relative',
   },
   selectedTube: {
     borderColor: '#fab1a0',
-    borderWidth: 4,
+    borderWidth: 3,
     ...shadows.md,
+  },
+  glassShine: {
+    position: 'absolute',
+    left: '10%',
+    top: '5%',
+    width: '20%',
+    height: '80%',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 10,
   },
   liquidContainer: {
     flex: 1,
@@ -263,34 +335,28 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   liquidLayer: {
     width: '100%',
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-  },
-  tubeStand: {
-    width: TUBE_WIDTH * 0.8,
-    height: 4,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: 2,
-    marginTop: 4,
   },
   bottomControls: {
     padding: spacing.xl,
     paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    gap: spacing.xxl,
     alignItems: 'center',
   },
-  undoBtn: { alignItems: 'center' },
-  undoInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+  controlBtn: { alignItems: 'center' },
+  controlInner: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  undoIcon: { fontSize: 24, color: '#fff' },
-  undoText: { fontSize: 10, color: '#fff', fontWeight: 'bold' },
+  controlIcon: { fontSize: 24, color: '#fff' },
+  controlText: { fontSize: 10, color: '#fff', fontWeight: 'bold', marginTop: 2 },
   newGameBtn: { minWidth: 140 },
   newGameText: { color: '#fff', fontWeight: '900', fontSize: 14, letterSpacing: 1 },
 });

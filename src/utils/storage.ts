@@ -57,3 +57,20 @@ export async function clearAllHighScores(): Promise<void> {
     // silently fail
   }
 }
+
+export async function getLevel(gameId: GameId, difficulty: Difficulty): Promise<number> {
+  try {
+    const value = await AsyncStorage.getItem(`@level_${gameId}_${difficulty}`);
+    return value ? parseInt(value, 10) : 1;
+  } catch {
+    return 1;
+  }
+}
+
+export async function setLevel(gameId: GameId, difficulty: Difficulty, level: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(`@level_${gameId}_${difficulty}`, level.toString());
+  } catch {
+    // silently fail
+  }
+}

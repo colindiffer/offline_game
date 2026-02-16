@@ -17,15 +17,18 @@ const COLORS: Color[] = [
 
 export const TUBE_CAPACITY = 4;
 
-export function initializeWaterSort(difficulty: Difficulty): Tube[] {
-  let colorCount = 5;
-  let emptyTubes = 2;
+export function initializeWaterSort(difficulty: Difficulty, level: number = 1): Tube[] {
+  // Base settings per difficulty
+  let baseColors = difficulty === 'easy' ? 3 : difficulty === 'medium' ? 6 : 9;
+  
+  // Growth logic: Add 1 color every 3 levels
+  let colorCount = baseColors + Math.floor((level - 1) / 3);
+  // Cap colors to avoid overflowing screen too much (max 12-14)
+  colorCount = Math.min(colorCount, 13);
 
-  if (difficulty === 'medium') {
-    colorCount = 8;
-  } else if (difficulty === 'hard') {
-    colorCount = 11;
-  }
+  // Empty tubes: usually 2 is standard
+  let emptyTubes = 2;
+  if (level > 10) emptyTubes = 2; // Keep at 2 for challenge, or could increase to 3 if very high level
 
   const tubes: Tube[] = [];
   const allColors: Color[] = [];

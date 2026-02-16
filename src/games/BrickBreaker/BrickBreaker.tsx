@@ -8,7 +8,7 @@ import GameBoardContainer from '../../components/GameBoardContainer';
 import PremiumButton from '../../components/PremiumButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
-import { getHighScore, setHighScore } from '../../utils/storage';
+import { getHighScore, setHighScore, getLevel, setLevel } from '../../utils/storage';
 import { recordGameResult } from '../../utils/stats';
 import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
@@ -27,24 +27,34 @@ export default function BrickBreaker({ difficulty }: Props) {
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
-  const [gameState, setGameState] = useState<BrickBreakerState>(() => initializeBrickBreaker(difficulty, BOARD_WIDTH, BOARD_HEIGHT));
+  const [level, setLevelState] = useState(1);
+  const [gameState, setGameState] = useState<BrickBreakerState | null>(null);
   const [score, setScore] = useState(0);
   const [highScore, setHighScoreState] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
-  const stateRef = useRef(gameState);
-  stateRef.current = gameState;
-  const scoreRef = useRef(score);
-  scoreRef.current = score;
+  const stateRef = useRef<BrickBreakerState | null>(null);
+  const scoreRef = useRef(0);
   const requestRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
-    getHighScore('brick-breaker').then(setHighScoreState);
-  }, []);
+    const init = async () => {
+      const savedLevel = await getLevel('brick-breaker', difficulty);
+      const best = await getHighScore('brick-breaker', difficulty);
+      setLevelState(savedLevel);
+      setHighScoreState(best);
+      const initialState = initializeBrickBreaker(difficulty, BOARD_WIDTH, BOARD_HEIGHT, savedLevel);
+      setGameState(initialState);
+      stateRef.current = initialState;
+      setIsReady(true);
+    };
+    init();
+  }, [difficulty]);
 
   const update = useCallback(() => {
-    if (!isPlaying || stateRef.current.gameOver || stateRef.current.gameWon) return;
+    if (!isPlaying || !stateRef.current || stateRef.current.gameOver || stateRef.current.gameWon) return;
 
     let { ball, ballVel, paddleX, bricks } = stateRef.current;
     let newScore = scoreRef.current;
@@ -65,12 +75,12 @@ export default function BrickBreaker({ difficulty }: Props) {
 
     // Paddle collision
     if (
-      nextY >= BOARD_HEIGHT - PADDLE_HEIGHT - BALL_SIZE &&
+      nextY >= BOARD_HEIGHT - PADDLE_HEIGHT - BALL_SIZE - 10 &&
       nextY <= BOARD_HEIGHT - BALL_SIZE &&
       nextX + BALL_SIZE >= paddleX &&
       nextX <= paddleX + PADDLE_WIDTH
     ) {
-      ballVel.y *= -1;
+      ballVel.y = -Math.abs(ballVel.y); // Ensure it goes up
       // Add angle based on hit location
       const hitPos = (nextX + BALL_SIZE / 2 - (paddleX + PADDLE_WIDTH / 2)) / (PADDLE_WIDTH / 2);
       ballVel.x = hitPos * 8;
@@ -98,7 +108,7 @@ export default function BrickBreaker({ difficulty }: Props) {
 
     // Lose
     if (nextY >= BOARD_HEIGHT) {
-      setGameState(prev => ({ ...prev, gameOver: true }));
+      setGameState(prev => prev ? ({ ...prev, gameOver: true }) : null);
       playSound('lose');
       const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
       recordGameResult('brick-breaker', 'loss', finalTime);
@@ -107,27 +117,34 @@ export default function BrickBreaker({ difficulty }: Props) {
 
     // Win
     if (newBricks.every(b => !b.active)) {
-      setGameState(prev => ({ ...prev, gameWon: true }));
+      setGameState(prev => prev ? ({ ...prev, gameWon: true }) : null);
       playSound('win');
       const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
       recordGameResult('brick-breaker', 'win', finalTime);
+      
+      const nextLvl = level + 1;
+      setLevel('brick-breaker', difficulty, nextLvl);
+      
       if (newScore > highScore) {
         setHighScoreState(newScore);
-        setHighScore('brick-breaker', newScore);
+        setHighScore('brick-breaker', newScore, difficulty);
       }
       return;
     }
 
-    setGameState({
+    const newState = {
       ...stateRef.current,
       ball: { x: nextX, y: nextY },
       ballVel,
       bricks: newBricks,
-    });
+    };
+    stateRef.current = newState;
+    setGameState(newState);
     setScore(newScore);
+    scoreRef.current = newScore;
 
     requestRef.current = requestAnimationFrame(update);
-  }, [isPlaying, playSound, highScore]);
+  }, [isPlaying, playSound, highScore, level, difficulty]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -138,22 +155,47 @@ export default function BrickBreaker({ difficulty }: Props) {
   }, [isPlaying, update]);
 
   const panGesture = Gesture.Pan()
+    .runOnJS(true)
     .onUpdate((e) => {
+      if (!stateRef.current) return;
       const newX = Math.max(0, Math.min(BOARD_WIDTH - PADDLE_WIDTH, e.x - PADDLE_WIDTH / 2));
-      setGameState(prev => ({ ...prev, paddleX: newX }));
+      const newState = { ...stateRef.current, paddleX: newX };
+      stateRef.current = newState;
+      setGameState(newState);
     });
 
-  const resetGame = useCallback(() => {
-    setGameState(initializeBrickBreaker(difficulty, BOARD_WIDTH, BOARD_HEIGHT));
+  const nextLevel = useCallback(async () => {
+    const savedLevel = await getLevel('brick-breaker', difficulty);
+    setLevelState(savedLevel);
+    const newState = initializeBrickBreaker(difficulty, BOARD_WIDTH, BOARD_HEIGHT, savedLevel);
+    setGameState(newState);
+    stateRef.current = newState;
     setScore(0);
+    scoreRef.current = 0;
     setIsPlaying(false);
     startTimeRef.current = null;
   }, [difficulty]);
+
+  const resetGame = useCallback(() => {
+    const newState = initializeBrickBreaker(difficulty, BOARD_WIDTH, BOARD_HEIGHT, level);
+    setGameState(newState);
+    stateRef.current = newState;
+    setScore(0);
+    scoreRef.current = 0;
+    setIsPlaying(false);
+    startTimeRef.current = null;
+  }, [difficulty, level]);
+
+  if (!isReady || !gameState) return <View style={styles.container} />;
 
   return (
     <View style={styles.container}>
       <Header score={score} highScore={highScore} />
       
+      <View style={styles.levelHeader}>
+        <Text style={styles.levelText}>Level {level}</Text>
+      </View>
+
       <View style={styles.gameArea}>
         <GestureDetector gesture={panGesture}>
           <View>
@@ -185,16 +227,17 @@ export default function BrickBreaker({ difficulty }: Props) {
 
       <View style={styles.footer}>
         <PremiumButton variant="secondary" height={50} onPress={resetGame}>
-          <Text style={styles.footerText}>RESET</Text>
+          <Text style={styles.footerText}>RESET LEVEL</Text>
         </PremiumButton>
       </View>
 
       {(gameState.gameOver || gameState.gameWon) && (
         <GameOverOverlay 
           result={gameState.gameWon ? 'win' : 'lose'} 
-          title={gameState.gameWon ? 'VICTORY!' : 'GAME OVER'} 
+          title={gameState.gameWon ? 'LEVEL COMPLETE!' : 'GAME OVER'} 
           subtitle={`Score: ${score}`} 
-          onPlayAgain={resetGame} 
+          onPlayAgain={gameState.gameWon ? nextLevel : resetGame}
+          onPlayAgainLabel={gameState.gameWon ? "NEXT LEVEL" : "TRY AGAIN"}
         />
       )}
     </View>
@@ -207,6 +250,8 @@ interface Props {
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  levelHeader: { alignItems: 'center', marginTop: spacing.md },
+  levelText: { color: '#fff', fontSize: 24, fontWeight: '900' },
   gameArea: { flex: 1, padding: spacing.md, justifyContent: 'center', alignItems: 'center' },
   boardWrapper: { padding: 0, backgroundColor: '#1a1a2e', borderRadius: radius.sm, borderWidth: 4, borderColor: '#2b2b45', overflow: 'hidden' },
   board: { width: BOARD_WIDTH, height: BOARD_HEIGHT, position: 'relative' },
