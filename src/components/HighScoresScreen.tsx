@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
 import { GameId, Difficulty } from '../types';
-import { getHighScore } from '../utils/storage';
+import { getHighScore, setHighScore } from '../utils/storage';
 import { spacing, radius, shadows, typography } from '../utils/designTokens';
 import ModalContainer from './ModalContainer';
 
@@ -24,27 +24,45 @@ export default function HighScoresScreen({ gameId, gameName, onClose }: Props) {
     hard: null,
   });
 
-  useEffect(() => {
-    const loadScores = async () => {
-      const loadedScores: Record<Difficulty, number | null> = {
-        easy: null,
-        medium: null,
-        hard: null,
-      };
-
-      for (const diff of DIFFICULTIES) {
-        const score = await getHighScore(gameId, diff);
-        loadedScores[diff] = score || null;
-      }
-
-      setScores(loadedScores);
+  const loadScores = async () => {
+    const loadedScores: Record<Difficulty, number | null> = {
+      easy: null,
+      medium: null,
+      hard: null,
     };
 
+    for (const diff of DIFFICULTIES) {
+      const score = await getHighScore(gameId, diff);
+      loadedScores[diff] = score || null;
+    }
+
+    setScores(loadedScores);
+  };
+
+  useEffect(() => {
     loadScores();
   }, [gameId]);
 
+  const handleClearScore = (diff: Difficulty) => {
+    Alert.alert(
+      'Clear Score',
+      `Are you sure you want to clear the ${diff} high score?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: async () => {
+            await setHighScore(gameId, 0, diff);
+            loadScores();
+          }
+        }
+      ]
+    );
+  };
+
   const formatScore = (score: number | null): string => {
-    if (score === null || score === 0) return 'No score yet';
+    if (score === null || score === 0) return 'None';
     return score.toString();
   };
 
@@ -70,14 +88,25 @@ export default function HighScoresScreen({ gameId, gameName, onClose }: Props) {
           <View key={diff} style={styles.scoreRow}>
             <View style={styles.difficultyInfo}>
               <Text style={styles.difficultyIcon}>{getDifficultyIcon(diff)}</Text>
-              <Text style={styles.difficultyLabel}>{getDifficultyLabel(diff)}</Text>
+              <View>
+                <Text style={styles.difficultyLabel}>{getDifficultyLabel(diff)}</Text>
+                <Text style={[
+                  styles.scoreValue,
+                  scores[diff] === null && styles.noScore
+                ]}>
+                  {formatScore(scores[diff])}
+                </Text>
+              </View>
             </View>
-            <Text style={[
-              styles.scoreValue,
-              scores[diff] === null && styles.noScore
-            ]}>
-              {formatScore(scores[diff])}
-            </Text>
+            
+            {scores[diff] !== null && scores[diff] !== 0 && (
+              <TouchableOpacity 
+                style={styles.clearMiniBtn} 
+                onPress={() => handleClearScore(diff)}
+              >
+                <Text style={styles.clearText}>Clear</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ))}
       </ScrollView>
@@ -108,15 +137,15 @@ const getStyles = (colors: ThemeColors) =>
       marginBottom: spacing.xl,
     },
     scrollView: {
-      maxHeight: 300,
+      maxHeight: 350,
     },
     scrollContent: {
-      gap: spacing.lg,
+      gap: spacing.md,
     },
     scoreRow: {
       backgroundColor: colors.card,
       borderRadius: radius.md,
-      padding: spacing.lg,
+      padding: spacing.md,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
@@ -133,23 +162,40 @@ const getStyles = (colors: ThemeColors) =>
       fontSize: 24,
     },
     difficultyLabel: {
-      ...typography.bodyBold,
-      fontSize: 18,
-      color: colors.text,
+      ...typography.small,
+      fontWeight: 'bold',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
     },
     scoreValue: {
-      ...typography.subheading,
+      ...typography.heading,
       color: colors.warning,
+      fontSize: 24,
     },
     noScore: {
       color: colors.textSecondary,
       ...typography.label,
       fontStyle: 'italic',
+      fontSize: 16,
+    },
+    clearMiniBtn: {
+      backgroundColor: colors.error + '20',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      borderColor: colors.error + '40',
+    },
+    clearText: {
+      color: colors.error,
+      fontSize: 12,
+      fontWeight: 'bold',
     },
     closeButton: {
       backgroundColor: colors.primary,
       borderRadius: radius.md,
-      paddingVertical: spacing.md + 2,
+      paddingVertical: spacing.md,
       paddingHorizontal: spacing.xxl,
       marginTop: spacing.xl,
       alignItems: 'center',

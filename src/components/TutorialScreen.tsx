@@ -122,6 +122,7 @@ const getStyles = (colors: ThemeColors) =>
     icon: {
       fontSize: 64,
       marginBottom: spacing.lg,
+      color: colors.text,
     },
     stepTitle: {
       ...typography.subheading,
@@ -131,9 +132,10 @@ const getStyles = (colors: ThemeColors) =>
     },
     description: {
       ...typography.body,
-      color: colors.text,
+      color: colors.textSecondary,
       textAlign: 'center',
       marginBottom: spacing.lg,
+      paddingHorizontal: spacing.md,
     },
     tipsContainer: {
       backgroundColor: colors.card,

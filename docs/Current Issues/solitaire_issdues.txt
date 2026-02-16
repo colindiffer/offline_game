@@ -1,2 +1,0 @@
-if I lket go of a card close to a match (where it should go, it should snap into place). 
-moving crds from the top pack to the main part doesn't work

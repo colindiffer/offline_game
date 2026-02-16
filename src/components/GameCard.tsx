@@ -18,21 +18,21 @@ export default function GameCard({ game, onPress, index = 0 }: Props) {
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(20)).current;
+  const translateY = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(opacity, {
         toValue: 1,
-        duration: 300,
-        delay: index * 30,
+        duration: 400,
+        delay: index * 40,
         useNativeDriver: true,
       }),
       Animated.spring(translateY, {
         toValue: 0,
-        friction: 8,
-        tension: 65,
-        delay: index * 30,
+        friction: 9,
+        tension: 50,
+        delay: index * 40,
         useNativeDriver: true,
       }),
     ]).start();
@@ -42,20 +42,22 @@ export default function GameCard({ game, onPress, index = 0 }: Props) {
     <Animated.View style={[styles.animWrapper, { opacity, transform: [{ translateY }] }]}>
       <PremiumButton
         variant="secondary"
-        height={110}
+        height={130}
         depth={6}
         onPress={onPress}
         style={styles.cardWrapper}
       >
-        <LinearGradient
-          colors={[colors.card, colors.surface]}
-          style={styles.cardInner}
-        >
-          <View style={[styles.iconContainer, { backgroundColor: game.color + '20' }]}>
+        <View style={styles.cardContent}>
+          <LinearGradient
+            colors={['rgba(255,255,255,0.05)', 'transparent']}
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={[styles.iconBox, { backgroundColor: game.color + '15' }]}>
             <Text style={styles.icon}>{game.icon}</Text>
           </View>
-          <Text style={styles.name}>{game.name.toUpperCase()}</Text>
-        </LinearGradient>
+          <Text style={styles.name} numberOfLines={1}>{game.name.toUpperCase()}</Text>
+          <View style={[styles.indicator, { backgroundColor: game.color }]} />
+        </View>
       </PremiumButton>
     </Animated.View>
   );
@@ -69,32 +71,42 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   cardWrapper: {
     width: '100%',
   },
-  cardInner: {
+  cardContent: {
     flex: 1,
     width: '100%',
-    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.sm,
-  },
-  iconContainer: {
-    width: 54,
-    height: 54,
+    backgroundColor: colors.surface,
     borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  iconBox: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
+    borderColor: 'rgba(255,255,255,0.1)',
   },
-  icon: {
-    fontSize: 28,
-  },
+  icon: { fontSize: 26 },
   name: {
     color: colors.text,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '900',
     textAlign: 'center',
     letterSpacing: 0.5,
+  },
+  indicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: '35%',
+    right: '35%',
+    height: 3,
+    borderTopLeftRadius: 3,
+    borderTopRightRadius: 3,
+    opacity: 0.6,
   },
 });

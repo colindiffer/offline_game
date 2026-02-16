@@ -163,7 +163,15 @@ export default function Mahjong({ difficulty }: Props) {
                 <View style={styles.tileSide} />
                 <View style={styles.tileBottom} />
                 <LinearGradient colors={['#ffffff', '#f1f2f6']} style={styles.tileFace}>
-                  <Text style={[styles.tileIcon, { color: getTileColor(tile.type), fontSize: metrics.tileWidth * 0.85 }]}>{tile.type}</Text>
+                  <Text style={[
+                    styles.tileIcon, 
+                    { 
+                      color: getTileColor(tile.type), 
+                      fontSize: metrics.tileWidth * 0.95,
+                    }
+                  ]}>
+                    {tile.type}
+                  </Text>
                 </LinearGradient>
               </View>
             </TouchableOpacity>
@@ -220,7 +228,7 @@ const getStyles = (colors: ThemeColors, tileWidth: number, tileHeight: number) =
     right: 0,
     top: 0,
     bottom: 0,
-    width: 4,
+    width: 6,
     backgroundColor: '#27ae60', // Classic green Mahjong base
     borderLeftWidth: 1,
     borderLeftColor: 'rgba(0,0,0,0.2)',
@@ -230,15 +238,15 @@ const getStyles = (colors: ThemeColors, tileWidth: number, tileHeight: number) =
     bottom: 0,
     left: 0,
     right: 0,
-    height: 4,
+    height: 6,
     backgroundColor: '#219150',
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.2)',
   },
   tileFace: {
     flex: 1,
-    marginRight: 3,
-    marginBottom: 3,
+    marginRight: 2,
+    marginBottom: 2,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 2,

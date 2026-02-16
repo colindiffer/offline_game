@@ -1,1 +1,0 @@
-I should be able to see all cards at the sdame time where now I hace to scroll. they can over lap each other

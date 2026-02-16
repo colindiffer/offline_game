@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Platform } from 'react-native';
+import React, { useCallback, useMemo, useRef, useEffect } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Platform, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import GameCard from '../components/GameCard';
@@ -7,51 +7,61 @@ import { GAMES } from '../utils/constants';
 import { GameId, RootStackParamList } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
-import { spacing, radius, typography } from '../utils/designTokens';
+import { spacing, radius, shadows } from '../utils/designTokens';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }: Props) {
   const { colors } = useTheme();
-  const openGame = useCallback(
-    (gameId: GameId) => {
-      navigation.navigate('Game', { gameId });
-    },
-    [navigation]
-  );
-
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const openGame = useCallback((gameId: GameId) => {
+    navigation.navigate('Game', { gameId });
+  }, [navigation]);
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={[colors.background, colors.surface]}
-        style={StyleSheet.absoluteFill}
-      />
-      {/* Mesh gradient effect circles */}
-      <View style={[styles.blob, styles.blob1, { backgroundColor: colors.primary + '15' }]} />
-      <View style={[styles.blob, styles.blob2, { backgroundColor: colors.accent + '10' }]} />
+      <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
+      
+      {/* Premium Decorative Blobs */}
+      <View style={[styles.blob, styles.blob1, { backgroundColor: colors.primary + '10' }]} />
+      <View style={[styles.blob, styles.blob2, { backgroundColor: colors.accent + '08' }]} />
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        <View style={styles.headerArea}>
-          <View style={styles.headerRow}>
-            <View>
-              <Text style={styles.heading}>OFFLINE{'\n'}GAMES</Text>
+      <Animated.ScrollView 
+        style={[styles.scrollView, { opacity: fadeAnim }]} 
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.appTitle}>Arcade</Text>
+            <Text style={styles.appSubtitle}>COLLECTION</Text>
+            <View style={styles.pillContainer}>
               <View style={styles.countPill}>
-                <Text style={styles.countText}>15 CLASSICS READY</Text>
+                <Text style={styles.countText}>21 CLASSICS READY</Text>
               </View>
             </View>
-            <View style={styles.headerButtons}>
-              <TouchableOpacity
-                style={styles.settingsBtn}
-                onPress={() => navigation.navigate('Settings')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.settingsIcon}>⚙️</Text>
-              </TouchableOpacity>
-            </View>
           </View>
+          
+          <TouchableOpacity 
+            style={styles.settingsBtn} 
+            onPress={() => navigation.navigate('Settings')}
+            activeOpacity={0.7}
+          >
+            <View style={styles.settingsBtnInner}>
+              <Text style={styles.settingsEmoji}>⚙️</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.grid}>
@@ -59,90 +69,29 @@ export default function HomeScreen({ navigation }: Props) {
             <GameCard key={game.id} game={game} onPress={() => openGame(game.id)} index={index} />
           ))}
         </View>
-      </ScrollView>
+        
+        <View style={styles.footerSpacer} />
+      </Animated.ScrollView>
     </View>
   );
 }
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    padding: spacing.xl,
-    paddingTop: 70,
-  },
-  blob: {
-    position: 'absolute',
-    borderRadius: 200,
-    filter: Platform.OS === 'web' ? 'blur(80px)' : undefined,
-  },
-  blob1: {
-    width: width * 1.2,
-    height: width * 1.2,
-    top: -width * 0.5,
-    left: -width * 0.2,
-  },
-  blob2: {
-    width: width * 0.9,
-    height: width * 0.9,
-    bottom: -width * 0.2,
-    right: -width * 0.3,
-  },
-  headerArea: {
-    marginBottom: spacing.xxl,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  heading: {
-    color: colors.text,
-    fontSize: 42,
-    fontWeight: '900',
-    lineHeight: 44,
-    letterSpacing: -1,
-  },
-  countPill: {
-    backgroundColor: colors.primary + '25',
-    borderRadius: radius.sm,
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    alignSelf: 'flex-start',
-    marginTop: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.primary + '40',
-  },
-  countText: {
-    color: colors.primary,
-    fontSize: 10,
-    fontWeight: '900',
-  },
-  headerButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  settingsBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.border,
-  },
-  settingsIcon: {
-    fontSize: 24,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
+  container: { flex: 1, backgroundColor: colors.background },
+  scrollView: { flex: 1 },
+  content: { padding: spacing.lg, paddingTop: Platform.OS === 'ios' ? 60 : 40 },
+  blob: { position: 'absolute', borderRadius: 300, filter: Platform.OS === 'web' ? 'blur(100px)' : undefined },
+  blob1: { width: width * 1.5, height: width * 1.5, top: -width, left: -width * 0.5 },
+  blob2: { width: width, height: width, bottom: -width * 0.3, right: -width * 0.4 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.xl },
+  appTitle: { fontSize: 48, fontWeight: '900', color: colors.text, lineHeight: 48, letterSpacing: -1.5 },
+  appSubtitle: { fontSize: 14, fontWeight: '800', color: colors.primary, letterSpacing: 4, marginTop: -2 },
+  pillContainer: { marginTop: 12 },
+  countPill: { backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: radius.sm, alignSelf: 'flex-start', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  countText: { color: colors.textSecondary, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+  settingsBtn: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(255,255,255,0.05)', padding: 2 },
+  settingsBtnInner: { flex: 1, borderRadius: 23, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  settingsEmoji: { fontSize: 22 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  footerSpacer: { height: 100 },
 });
