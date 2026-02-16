@@ -14,14 +14,11 @@ import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { initializeMahjong, isTileFree, Tile } from './logic';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const BOARD_SIZE = SCREEN_WIDTH - 32;
-const TILE_WIDTH = Math.floor(BOARD_SIZE / 8);
-const TILE_HEIGHT = Math.floor(TILE_WIDTH * 1.3);
+const BOARD_SIZE = SCREEN_WIDTH - 16; // Reduced margins from 32 to 16
 
 export default function Mahjong({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
-  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [level, setLevelState] = useState(1);
   const [tiles, setTiles] = useState<Tile[]>([]);
@@ -29,9 +26,34 @@ export default function Mahjong({ difficulty }: Props) {
   const [gameWon, setGameWon] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
+  const metrics = useMemo(() => {
+    if (tiles.length === 0) return { tileWidth: 50, tileHeight: 65, width: 0, height: 0 };
+    
+    let maxCol = 0;
+    let maxRow = 0;
+    tiles.forEach(t => {
+      if (t.col > maxCol) maxCol = t.col;
+      if (t.row > maxRow) maxRow = t.row;
+    });
+    
+    // Use 0.9 overlap to allow tiles to be bigger
+    const tileWidth = Math.floor(BOARD_SIZE / (maxCol * 0.9 + 1));
+    const tileHeight = Math.floor(tileWidth * 1.3);
+    
+    return {
+      tileWidth,
+      tileHeight,
+      width: (maxCol * 0.9 + 1) * tileWidth,
+      height: (maxRow * 0.8 + 1) * tileHeight
+    };
+  }, [tiles]);
+
+  const styles = useMemo(() => getStyles(colors, metrics.tileWidth, metrics.tileHeight), [colors, metrics]);
+
   useEffect(() => {
     const init = async () => {
       const savedLevel = await getLevel('mahjong', difficulty);
+      const best = await getHighScore('mahjong', difficulty);
       setLevelState(savedLevel);
       setTiles(initializeMahjong(difficulty, savedLevel));
       setIsReady(true);
@@ -41,7 +63,7 @@ export default function Mahjong({ difficulty }: Props) {
 
   const handleTilePress = useCallback((tile: Tile) => {
     if (gameWon || !tile.visible || !isTileFree(tile, tiles)) {
-      playSound('tap'); // Sound for blocked tile
+      playSound('tap'); 
       return;
     }
 
@@ -70,7 +92,6 @@ export default function Mahjong({ difficulty }: Props) {
           recordGameResult('mahjong', 'win', 0);
         }
       } else {
-        // No match
         setSelectedId(tile.id);
         playSound('tap');
       }
@@ -93,15 +114,25 @@ export default function Mahjong({ difficulty }: Props) {
 
   if (!isReady) return <View style={styles.container} />;
 
-  // Sort visible tiles for proper stacking order (bottom to top)
   const sortedTiles = [...tiles].sort((a, b) => {
     if (a.layer !== b.layer) return a.layer - b.layer;
     if (a.row !== b.row) return a.row - b.row;
     return a.col - b.col;
   });
 
+  const getTileColor = (type: string) => {
+    const green = ['🀅', '🀐', '🀑', '🀒', '🀓', '🀔', '🀕', '🀖', '🀗'];
+    const red = ['🀄', '🀇', '🀈', '🀉', '🀊', '🀋', '🀌', '🀍', '🀎'];
+    const blue = ['🀀', '🀁', '🀂', '🀃', '🀙', '🀚', '🀛', '🀜', '🀝'];
+    if (green.includes(type)) return '#27ae60';
+    if (red.includes(type)) return '#e74c3c';
+    if (blue.includes(type)) return '#2980b9';
+    return '#2d3436';
+  };
+
   return (
     <View style={styles.container}>
+      <LinearGradient colors={['#2c3e50', '#000000']} style={StyleSheet.absoluteFill} />
       <Header score={tiles.filter(t => !t.visible).length / 2} scoreLabel="PAIRS" highScore={level} highScoreLabel="LEVEL" />
       
       <View style={styles.levelHeader}>
@@ -109,7 +140,7 @@ export default function Mahjong({ difficulty }: Props) {
       </View>
 
       <View style={styles.gameArea}>
-        <View style={styles.board}>
+        <View style={[styles.board, { width: metrics.width, height: metrics.height }]}>
           {sortedTiles.map(tile => tile.visible && (
             <TouchableOpacity
               key={tile.id}
@@ -118,8 +149,8 @@ export default function Mahjong({ difficulty }: Props) {
               style={[
                 styles.tileWrapper,
                 {
-                  left: tile.col * TILE_WIDTH + (tile.layer * 4),
-                  top: tile.row * TILE_HEIGHT * 0.8 - (tile.layer * 4),
+                  left: tile.col * metrics.tileWidth * 0.9 + (tile.layer * 4),
+                  top: tile.row * metrics.tileHeight * 0.8 - (tile.layer * 4),
                   zIndex: tile.layer * 100 + tile.row,
                 }
               ]}
@@ -130,9 +161,10 @@ export default function Mahjong({ difficulty }: Props) {
                 !isTileFree(tile, tiles) && styles.blockedTile
               ]}>
                 <View style={styles.tileSide} />
-                <View style={styles.tileFace}>
-                  <Text style={styles.tileIcon}>{tile.type}</Text>
-                </View>
+                <View style={styles.tileBottom} />
+                <LinearGradient colors={['#ffffff', '#f1f2f6']} style={styles.tileFace}>
+                  <Text style={[styles.tileIcon, { color: getTileColor(tile.type), fontSize: metrics.tileWidth * 0.85 }]}>{tile.type}</Text>
+                </LinearGradient>
               </View>
             </TouchableOpacity>
           ))}
@@ -162,59 +194,68 @@ interface Props {
   difficulty: Difficulty;
 }
 
-const getStyles = (colors: ThemeColors) => StyleSheet.create({
+const getStyles = (colors: ThemeColors, tileWidth: number, tileHeight: number) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   levelHeader: { alignItems: 'center', marginTop: spacing.md },
   levelText: { color: '#fff', fontSize: 24, fontWeight: '900' },
   gameArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   board: {
-    width: BOARD_SIZE,
-    height: BOARD_SIZE,
     position: 'relative',
   },
   tileWrapper: {
     position: 'absolute',
-    width: TILE_WIDTH,
-    height: TILE_HEIGHT,
+    width: tileWidth,
+    height: tileHeight,
   },
   tile: {
     flex: 1,
-    backgroundColor: '#f5f6fa',
     borderRadius: 4,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#dcdde1',
-    ...shadows.sm,
+    borderColor: 'rgba(0,0,0,0.1)',
+    ...shadows.md,
   },
   tileSide: {
     position: 'absolute',
-    bottom: -4,
-    right: -4,
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#bdc3c7',
-    borderRadius: 4,
-    zIndex: -1,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+    backgroundColor: '#27ae60', // Classic green Mahjong base
+    borderLeftWidth: 1,
+    borderLeftColor: 'rgba(0,0,0,0.2)',
+  },
+  tileBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: '#219150',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.2)',
   },
   tileFace: {
     flex: 1,
+    marginRight: 3,
+    marginBottom: 3,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 3,
-    margin: 2,
+    borderRadius: 2,
   },
   tileIcon: {
-    fontSize: TILE_WIDTH * 0.6,
-    color: '#2d3436',
+    textAlign: 'center',
+    textAlignVertical: 'center',
   },
   selectedTile: {
     borderColor: '#fab1a0',
     borderWidth: 2,
-    transform: [{ translateY: -4 }],
+    transform: [{ scale: 1.1 }, { translateY: -4 }],
+    zIndex: 1000,
   },
   blockedTile: {
-    opacity: 0.8,
     backgroundColor: '#dcdde1',
+    opacity: 0.6,
   },
   footer: { padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
   footerText: { color: colors.text, fontWeight: 'bold' },
