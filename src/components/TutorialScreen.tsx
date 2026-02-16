@@ -1,9 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Dimensions, Platform, Modal } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
 import { spacing, radius, shadows, typography } from '../utils/designTokens';
-import ModalContainer from './ModalContainer';
+import PremiumButton from './PremiumButton';
+
+const { width, height } = Dimensions.get('window');
 
 export interface TutorialStep {
   title: string;
@@ -40,176 +43,242 @@ export default function TutorialScreen({ gameName, steps, onClose }: Props) {
   const step = steps[currentStep];
 
   return (
-    <ModalContainer onClose={onClose}>
-      <Text style={styles.gameTitle}>{gameName}</Text>
-      <Text style={styles.subtitle}>How to Play</Text>
+    <Modal animationType="slide" transparent={false} visible={true} onRequestClose={onClose}>
+      <View style={styles.container}>
+        <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
+        
+        {/* Decorative Blobs */}
+        <View style={[styles.blob, { backgroundColor: colors.primary + '10' }]} />
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {step.icon && (
-          <Text style={styles.icon}>{step.icon}</Text>
-        )}
+        <View style={styles.header}>
+          <Text style={styles.gameTitle}>{gameName.toUpperCase()}</Text>
+          <Text style={styles.subtitle}>GUIDE</Text>
+        </View>
 
-        <Text style={styles.stepTitle}>{step.title}</Text>
-        <Text style={styles.description}>{step.description}</Text>
+        <View style={styles.contentCard}>
+          <ScrollView 
+            style={styles.scrollView} 
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {step.icon && (
+              <View style={styles.iconContainer}>
+                <Text style={styles.icon}>{step.icon}</Text>
+              </View>
+            )}
 
-        {step.tips && step.tips.length > 0 && (
-          <View style={styles.tipsContainer}>
-            <Text style={styles.tipsTitle}>Tips:</Text>
-            {step.tips.map((tip, index) => (
-              <Text key={index} style={styles.tip}>- {tip}</Text>
+            <Text style={styles.stepTitle}>{step.title}</Text>
+            <Text style={styles.description}>{step.description}</Text>
+
+            {step.tips && step.tips.length > 0 && (
+              <View style={styles.tipsSection}>
+                <Text style={styles.tipsHeading}>PRO TIPS</Text>
+                {step.tips.map((tip, index) => (
+                  <View key={index} style={styles.tipRow}>
+                    <View style={[styles.tipDot, { backgroundColor: colors.primary }]} />
+                    <Text style={styles.tipText}>{tip}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </ScrollView>
+        </View>
+
+        <View style={styles.footer}>
+          <View style={styles.pagination}>
+            {steps.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.dot,
+                  index === currentStep ? [styles.activeDot, { backgroundColor: colors.primary }] : { backgroundColor: colors.textSecondary + '40' },
+                ]}
+              />
             ))}
           </View>
-        )}
-      </ScrollView>
 
-      <View style={styles.pagination}>
-        {steps.map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.dot,
-              index === currentStep && styles.activeDot,
-            ]}
-          />
-        ))}
+          <View style={styles.buttons}>
+            {currentStep > 0 ? (
+              <TouchableOpacity
+                style={styles.prevBtn}
+                onPress={handlePrev}
+              >
+                <Text style={styles.prevBtnText}>PREVIOUS</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.prevBtn} />
+            )}
+
+            <PremiumButton
+              variant="primary"
+              height={56}
+              onPress={handleNext}
+              style={styles.nextBtn}
+            >
+              <Text style={styles.nextBtnText}>
+                {currentStep === steps.length - 1 ? 'START PLAYING' : 'NEXT STEP'}
+              </Text>
+            </PremiumButton>
+          </View>
+        </View>
       </View>
-
-      <View style={styles.buttons}>
-        {currentStep > 0 && (
-          <TouchableOpacity
-            style={[styles.button, styles.prevButton]}
-            onPress={handlePrev}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.prevButtonText}>Previous</Text>
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          style={[styles.button, styles.nextButton]}
-          onPress={handleNext}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.nextButtonText}>
-            {currentStep === steps.length - 1 ? 'Got it!' : 'Next'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </ModalContainer>
+    </Modal>
   );
 }
 
 const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    },
+    blob: {
+      position: 'absolute',
+      width: width * 1.5,
+      height: width * 1.5,
+      borderRadius: width,
+      top: -width * 0.5,
+      left: -width * 0.25,
+      filter: Platform.OS === 'web' ? 'blur(80px)' : undefined,
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: spacing.xl,
+    },
     gameTitle: {
-      ...typography.heading,
+      fontSize: 36,
+      fontWeight: '900',
       color: colors.text,
-      textAlign: 'center',
-      marginBottom: spacing.xs,
+      letterSpacing: -1,
     },
     subtitle: {
-      ...typography.body,
-      color: colors.textSecondary,
-      textAlign: 'center',
-      marginBottom: spacing.xl,
+      fontSize: 14,
+      fontWeight: '800',
+      color: colors.primary,
+      letterSpacing: 4,
+      marginTop: -4,
+    },
+    contentCard: {
+      flex: 1,
+      marginHorizontal: spacing.lg,
+      backgroundColor: 'rgba(255,255,255,0.03)',
+      borderRadius: radius.xl,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.08)',
+      overflow: 'hidden',
+      ...shadows.lg,
     },
     scrollView: {
       flex: 1,
-      width: '100%',
     },
     scrollContent: {
+      padding: spacing.xl,
       alignItems: 'center',
-      paddingBottom: spacing.lg,
-      flexGrow: 1,
+    },
+    iconContainer: {
+      width: 160,
+      height: 160,
+      borderRadius: 80,
+      backgroundColor: 'rgba(255,255,255,0.05)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: spacing.xxl,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.1)',
     },
     icon: {
-      fontSize: 80,
-      marginBottom: spacing.xl,
-      color: colors.text,
+      fontSize: 100,
     },
     stepTitle: {
-      ...typography.heading,
-      fontSize: 22,
+      fontSize: 32,
+      fontWeight: '900',
       color: colors.text,
       textAlign: 'center',
-      marginBottom: spacing.md,
+      marginBottom: spacing.lg,
     },
     description: {
-      ...typography.body,
+      fontSize: 20,
+      lineHeight: 28,
       color: colors.text,
       textAlign: 'center',
-      marginBottom: spacing.xl,
-      paddingHorizontal: spacing.md,
-      lineHeight: 24,
+      marginBottom: spacing.xxl,
     },
-    tipsContainer: {
-      backgroundColor: colors.card,
-      borderRadius: radius.md,
-      padding: spacing.lg,
+    tipsSection: {
       width: '100%',
-      marginTop: spacing.md,
+      backgroundColor: 'rgba(0,0,0,0.2)',
+      borderRadius: radius.lg,
+      padding: spacing.xl,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: 'rgba(255,255,255,0.05)',
     },
-    tipsTitle: {
-      ...typography.bodyBold,
-      color: colors.text,
-      marginBottom: spacing.sm,
+    tipsHeading: {
+      fontSize: 16,
+      fontWeight: '900',
+      color: colors.primary,
+      letterSpacing: 2,
+      marginBottom: spacing.lg,
     },
-    tip: {
-      ...typography.label,
-      fontWeight: '500',
+    tipRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: spacing.md,
+    },
+    tipDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginTop: 10,
+      marginRight: 16,
+    },
+    tipText: {
+      flex: 1,
+      fontSize: 18,
       color: colors.text,
-      marginBottom: spacing.xs,
+      lineHeight: 26,
+    },
+    footer: {
+      padding: spacing.xl,
+      paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl,
     },
     pagination: {
       flexDirection: 'row',
       justifyContent: 'center',
-      alignItems: 'center',
-      marginVertical: spacing.lg,
-      gap: spacing.sm,
+      gap: 8,
+      marginBottom: spacing.xl,
     },
     dot: {
-      width: 8,
-      height: 8,
-      borderRadius: radius.full,
-      backgroundColor: '#b2bec3',
-      opacity: 0.3,
+      height: 6,
+      borderRadius: 3,
+      width: 6,
     },
     activeDot: {
-      backgroundColor: colors.primary,
-      opacity: 1,
       width: 24,
     },
     buttons: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'center',
-      gap: spacing.sm,
+      gap: spacing.lg,
     },
-    button: {
-      paddingVertical: spacing.md,
-      paddingHorizontal: spacing.xl,
-      borderRadius: radius.sm,
+    prevBtn: {
       flex: 1,
-      ...shadows.sm,
+      height: 56,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
-    prevButton: {
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
+    prevBtnText: {
+      color: colors.textSecondary,
+      fontWeight: '900',
+      fontSize: 14,
+      letterSpacing: 1,
     },
-    prevButtonText: {
-      color: colors.text,
-      ...typography.bodyBold,
-      textAlign: 'center',
+    nextBtn: {
+      flex: 2,
     },
-    nextButton: {
-      backgroundColor: colors.primary,
-    },
-    nextButtonText: {
-      color: colors.textOnPrimary,
-      ...typography.bodyBold,
-      textAlign: 'center',
+    nextBtnText: {
+      color: '#fff',
+      fontWeight: '900',
+      fontSize: 16,
+      letterSpacing: 1,
     },
   });

@@ -65,8 +65,8 @@ export default function GameCard({ game, onPress, index = 0 }: Props) {
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   animWrapper: {
-    width: '31%',
-    marginBottom: spacing.lg,
+    width: '48%', // Changed from 31% to fit 2 per row
+    marginBottom: spacing.xl,
   },
   cardWrapper: {
     width: '100%',
@@ -76,26 +76,26 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.sm,
+    padding: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     overflow: 'hidden',
   },
   iconBox: {
-    width: 70,
-    height: 70,
-    borderRadius: 16,
+    width: 90, // Increased from 70
+    height: 90,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 14,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.15)',
-    ...shadows.sm,
+    ...shadows.md,
   },
-  icon: { fontSize: 42 },
+  icon: { fontSize: 54 }, // Increased from 42
   name: {
     color: colors.text,
-    fontSize: 12,
+    fontSize: 14, // Increased from 12
     fontWeight: '900',
     textAlign: 'center',
     letterSpacing: 0.5,

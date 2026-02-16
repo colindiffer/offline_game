@@ -387,4 +387,53 @@ export const GAME_TUTORIALS: Record<GameId, TutorialStep[]> = {
       tips: ['Say the colors out loud to help remember', 'The sequence grows by one color each turn'],
     },
   ],
+
+  'memory-match': [
+    {
+      title: 'Welcome to Memory!',
+      description: 'Find and match all the pairs of cards!',
+      icon: '🧠',
+    },
+    {
+      title: 'How to Play',
+      description: 'Tap two cards to flip them over. If they match, they stay up. If not, they flip back.',
+      tips: ['Pay close attention to where cards are located', 'Try to clear one section at a time'],
+    },
+    {
+      title: 'Progression',
+      description: 'Levels get harder with more cards and faster required matching!',
+      tips: ['Move quickly to beat the clock', 'Focus on your best patterns'],
+    },
+  ],
+
+  'word-guess': [
+    {
+      title: 'Welcome to Word Guess!',
+      description: 'Find the secret 5-letter word in 6 tries!',
+      icon: '🅰️',
+    },
+    {
+      title: 'Color Clues',
+      description: 'GREEN means the letter is correct and in the right spot. YELLOW means the letter is in the word but in the wrong spot. GREY means it is not in the word.',
+      tips: ['Start with words that have many vowels', 'Avoid reusing GREY letters'],
+    },
+  ],
+
+  'spider-solitaire': [
+    {
+      title: 'Welcome to Spider!',
+      description: 'Clear the board by creating descending runs of cards from King to Ace!',
+      icon: '🕷️',
+    },
+    {
+      title: 'How to Play',
+      description: 'Move cards into descending order (K, Q, J, 10...). You can move stacks if they are the same suit and in sequence.',
+      tips: ['Prioritize uncovering face-down cards', 'Empty columns are very powerful - use them to reorganize stacks'],
+    },
+    {
+      title: 'Winning',
+      description: 'Complete a full suit (King to Ace) to remove it from the board. Remove all 8 suits to win!',
+      tips: ['Plan several moves ahead', 'Don\'t deal new cards until you have no other moves left'],
+    },
+  ],
 };

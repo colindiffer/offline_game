@@ -1,0 +1,223 @@
+import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, Animated, Dimensions, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Header from '../../components/Header';
+import GameOverOverlay from '../../components/GameOverOverlay';
+import PremiumButton from '../../components/PremiumButton';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useSound } from '../../contexts/SoundContext';
+import { getHighScore, setHighScore, getLevel, setLevel } from '../../utils/storage';
+import { recordGameResult } from '../../utils/stats';
+import { Difficulty } from '../../types';
+import { ThemeColors } from '../../utils/themes';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
+import { initializeMemoryMatch, MemoryCard } from './logic';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const GRID_WIDTH = SCREEN_WIDTH - 32;
+
+export default function MemoryMatch({ difficulty }: Props) {
+  const { colors } = useTheme();
+  const { playSound } = useSound();
+  const styles = useMemo(() => getStyles(colors), [colors]);
+
+  const [level, setLevelState] = useState(1);
+  const [cards, setCards] = useState<MemoryCard[]>([]);
+  const [flippedCards, setFlippedCards] = useState<number[]>([]);
+  const [moves, setMoves] = useState(0);
+  const [gameWon, setGameWon] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [isReady, setIsReady] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const startTimeRef = useRef<number | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const cardAnims = useRef<Animated.Value[]>([]).current;
+
+  // Initialize animations
+  if (cardAnims.length === 0) {
+    for (let i = 0; i < 36; i++) { // Max grid 6x6
+      cardAnims.push(new Animated.Value(0));
+    }
+  }
+
+  const init = useCallback(async () => {
+    const savedLevel = await getLevel('memory-match', difficulty);
+    const initialCards = initializeMemoryMatch(difficulty, savedLevel);
+    setLevelState(savedLevel);
+    setCards(initialCards);
+    setFlippedCards([]);
+    setMoves(0);
+    setGameWon(false);
+    setElapsedTime(0);
+    setIsReady(true);
+    startTimeRef.current = Date.now();
+    cardAnims.forEach(anim => anim.setValue(0));
+  }, [difficulty, cardAnims]);
+
+  useEffect(() => {
+    init();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [init]);
+
+  useEffect(() => {
+    if (!gameWon && isReady && startTimeRef.current) {
+      timerRef.current = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTimeRef.current!) / 1000));
+      }, 1000);
+    } else if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, [gameWon, isReady]);
+
+  const handleCardPress = useCallback((index: number) => {
+    if (isProcessing || gameWon || cards[index].isMatched || flippedCards.includes(index) || flippedCards.length >= 2) return;
+
+    const newFlipped = [...flippedCards, index];
+    setFlippedCards(newFlipped);
+    playSound('tap');
+
+    // Flip animation
+    Animated.spring(cardAnims[index], { toValue: 1, friction: 8, tension: 100, useNativeDriver: true }).start();
+
+    if (newFlipped.length === 2) {
+      setMoves(m => m + 1);
+      setIsProcessing(true);
+      
+      const [first, second] = newFlipped;
+      if (cards[first].type === cards[second].type) {
+        // Match
+        setTimeout(() => {
+          setCards(prev => {
+            const next = [...prev];
+            next[first].isMatched = true;
+            next[second].isMatched = true;
+            
+            if (next.every(c => c.isMatched)) {
+              setGameWon(true);
+              playSound('win');
+              const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
+              recordGameResult('memory-match', 'win', finalTime);
+              const nextLvl = level + 1;
+              setLevel('memory-match', difficulty, nextLvl);
+            }
+            return next;
+          });
+          setFlippedCards([]);
+          setIsProcessing(false);
+          playSound('drop');
+        }, 500);
+      } else {
+        // No match
+        setTimeout(() => {
+          Animated.parallel([
+            Animated.spring(cardAnims[first], { toValue: 0, useNativeDriver: true }),
+            Animated.spring(cardAnims[second], { toValue: 0, useNativeDriver: true }),
+          ]).start();
+          setFlippedCards([]);
+          setIsProcessing(false);
+        }, 1000);
+      }
+    }
+  }, [cards, flippedCards, isProcessing, gameWon, playSound, cardAnims, level, difficulty]);
+
+  const nextLevel = useCallback(async () => {
+    await init();
+  }, [init]);
+
+  const resetLevel = useCallback(() => {
+    init();
+  }, [init]);
+
+  if (!isReady) return <View style={styles.container} />;
+
+  const cols = cards.length > 24 ? 6 : cards.length > 12 ? 4 : 3;
+  const cardSize = Math.floor((GRID_WIDTH - (cols * 8)) / cols);
+
+  return (
+    <View style={styles.container}>
+      <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
+      <Header title="Memory" score={moves} scoreLabel="MOVES" highScore={level} highScoreLabel="LEVEL" />
+      
+      <View style={styles.levelHeader}>
+        <View style={styles.difficultyBadge}>
+          <Text style={styles.difficultyText}>{difficulty.toUpperCase()}</Text>
+        </View>
+        <Text style={styles.levelText}>Level {level}</Text>
+      </View>
+
+      <View style={styles.gameArea}>
+        <View style={[styles.grid, { width: GRID_WIDTH }]}>
+          {cards.map((card, index) => {
+            const rotateY = cardAnims[index].interpolate({
+              inputRange: [0, 1],
+              outputRange: ['0deg', '180deg']
+            });
+
+            return (
+              <TouchableOpacity
+                key={card.id}
+                onPress={() => handleCardPress(index)}
+                activeOpacity={0.9}
+                style={{ width: cardSize, height: cardSize * 1.3, margin: 4 }}
+              >
+                <Animated.View style={[styles.card, { transform: [{ rotateY }] }]}>
+                  {/* Back of card */}
+                  <View style={styles.cardBack}>
+                    <LinearGradient colors={['#4834d4', '#686de0']} style={StyleSheet.absoluteFill} />
+                    <Text style={styles.cardBackLogo}>?</Text>
+                  </View>
+                  
+                  {/* Front of card (shown when flipped) */}
+                  <Animated.View style={[styles.cardFront, { transform: [{ rotateY: '180deg' }] }]}>
+                    <Text style={[styles.cardIcon, { fontSize: cardSize * 0.6 }]}>{card.type}</Text>
+                    {card.isMatched && <View style={styles.matchedOverlay} />}
+                  </Animated.View>
+                </Animated.View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </View>
+
+      <View style={styles.footer}>
+        <PremiumButton variant="secondary" height={50} onPress={resetLevel}>
+          <Text style={styles.footerText}>RESET LEVEL</Text>
+        </PremiumButton>
+      </View>
+
+      {gameWon && (
+        <GameOverOverlay 
+          result="win" 
+          title="MATCHED!" 
+          subtitle={`Completed in ${moves} moves.`} 
+          onPlayAgain={nextLevel}
+          onPlayAgainLabel="NEXT LEVEL"
+        />
+      )}
+    </View>
+  );
+}
+
+interface Props {
+  difficulty: Difficulty;
+}
+
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  levelHeader: { alignItems: 'center', marginTop: spacing.md },
+  difficultyBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 2, borderRadius: radius.sm, marginBottom: 4 },
+  difficultyText: { color: '#fab1a0', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+  levelText: { color: '#fff', fontSize: 24, fontWeight: '900' },
+  gameArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
+  card: { flex: 1, position: 'relative', ...shadows.md, backfaceVisibility: 'hidden' },
+  cardBack: { ...StyleSheet.absoluteFillObject, borderRadius: 8, borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
+  cardBackLogo: { fontSize: 32, fontWeight: '900', color: 'rgba(255,255,255,0.3)' },
+  cardFront: { ...StyleSheet.absoluteFillObject, backgroundColor: '#fff', borderRadius: 8, justifyContent: 'center', alignItems: 'center', backfaceVisibility: 'hidden' },
+  cardIcon: { color: '#000' },
+  matchedOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: 8 },
+  footer: { padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
+  footerText: { color: colors.text, fontWeight: 'bold' },
+});

@@ -150,6 +150,27 @@ export const GAMES: GameMetadata[] = [
     description: 'Repeat the growing sequence of colors!',
     color: '#74b9ff',
   },
+  {
+    id: 'memory-match',
+    name: 'Memory',
+    icon: '🧠',
+    description: 'Match pairs of hidden cards!',
+    color: '#a29bfe',
+  },
+  {
+    id: 'word-guess',
+    name: 'Word Guess',
+    icon: '🅰️',
+    description: 'Guess the secret 5-letter word!',
+    color: '#6ab04c',
+  },
+  {
+    id: 'spider-solitaire',
+    name: 'Spider',
+    icon: '🕷️',
+    description: 'Classic Spider Solitaire challenge!',
+    color: '#2d3436',
+  },
 ];
 
 export const SNAKE_GRID_SIZE = 15;

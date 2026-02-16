@@ -92,6 +92,11 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   settingsBtn: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(255,255,255,0.05)', padding: 2 },
   settingsBtnInner: { flex: 1, borderRadius: 23, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   settingsEmoji: { fontSize: 22 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  grid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+  },
   footerSpacer: { height: 100 },
 });

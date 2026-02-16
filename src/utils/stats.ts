@@ -27,6 +27,9 @@ const createEmptyStats = (): Record<GameId, GameStats> => ({
   'mahjong': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
   'hangman': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
   'simon-says': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'memory-match': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'word-guess': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'spider-solitaire': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
 });
 
 export function getEmptyStats(): Record<GameId, GameStats> {

@@ -58,6 +58,9 @@ function AppContent() {
               'mahjong': 'Mahjong',
               'hangman': 'Hangman',
               'simon-says': 'Simon Says',
+              'memory-match': 'Memory Match',
+              'word-guess': 'Word Guess',
+              'spider-solitaire': 'Spider Solitaire',
             };
             return {
               title: titles[route.params.gameId],

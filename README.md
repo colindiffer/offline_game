@@ -34,16 +34,23 @@ A comprehensive mobile + web app with **15 classic games** built with React Nati
 19. **Mahjong** — Match identical tiles in 3D layered layouts
 20. **Hangman** — Guess the word with premium character drawing
 21. **Simon Says** — Test your memory with high-speed color sequences
+22. **Memory Match** — Classic card matching with level-based grid growth
+23. **Word Guess** — Daily-style word logic puzzle with premium feedback
+24. **Spider Solitaire** — Advanced solitaire challenge with dynamic layouts
 
 ---
 
 ## ✨ Key Features
 
-### ✅ Phase 10: Professional UI & High Scores
-- **Overhauled Icons**: Made game icons 40% larger on the homepage for better "fit" and recognition.
-- **Fixed Visibility**: Resolved "invisible text" in Tutorials and High Scores by using theme-aware contrast logic.
-- **Granular Data Control**: Added ability to clear high scores for individual difficulty levels.
-- **Consistent Progress**: Fixed high score logic for time-based games to handle "cleared" states correctly.
+### ✅ Phase 11: Memory & Strategy (3 Games)
+Added Memory Match, Word Guess, and Spider Solitaire to reach 24 games.
+
+### ✅ Phase 10: Professional UI Overhaul & UX Fixes
+- **2-Column Home Screen**: Switched to a high-impact 2-column layout with 40% larger game icons for a premium look.
+- **Full-Screen Tutorials**: Overhauled "How to Play" sections into a dedicated full-screen experience with large, readable text and pro tips.
+- **Header Refresh**: Added centered game titles to the header for a more integrated, professional feel.
+- **High Score System**: Fixed cross-difficulty score saving and added individual score clearing functionality.
+- **Visual Polish**: Added thematic background watermarks to all 21 games to utilize empty vertical space.
 
 ### ✅ Phase 9: Logic & Memory (3 Games)
 Added Mahjong, Hangman, and Simon Says to reach 21 games.
