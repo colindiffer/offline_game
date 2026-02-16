@@ -46,11 +46,11 @@ export default function TicTacToe({ difficulty }: Props) {
   }
 
   useEffect(() => {
-    getHighScore('tic-tac-toe').then(setHigh);
+    getHighScore('tic-tac-toe', difficulty).then(setHigh);
     AsyncStorage.getItem('@tutorial_tic-tac-toe').then((shown) => {
       if (!shown) setShowTutorial(true);
     });
-  }, []);
+  }, [difficulty]);
 
   useEffect(() => {
     startTimeRef.current = Date.now();
@@ -124,7 +124,7 @@ export default function TicTacToe({ difficulty }: Props) {
           setScore(newScore);
           if (newScore > highScore) {
             setHigh(newScore);
-            setHighScore('tic-tac-toe', newScore);
+            setHighScore('tic-tac-toe', newScore, difficulty);
           }
         }
       } else if (isDraw(newBoard)) {

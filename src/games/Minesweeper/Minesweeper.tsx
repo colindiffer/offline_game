@@ -39,6 +39,7 @@ export default function Minesweeper({ difficulty }: Props) {
   const [minesRemaining, setMinesRemaining] = useState(0);
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [highScore, setHighScoreState] = useState<number | null>(null);
   const [isReady, setIsReady] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -49,7 +50,9 @@ export default function Minesweeper({ difficulty }: Props) {
   useEffect(() => {
     const init = async () => {
       const savedLevel = await getLevel('minesweeper', difficulty);
+      const best = await getHighScore('minesweeper', difficulty);
       setLevelState(savedLevel);
+      setHighScoreState(best);
       const config = getGameConfig(difficulty, savedLevel);
       setMinesRemaining(config.mines);
       setIsReady(true);
@@ -121,6 +124,11 @@ export default function Minesweeper({ difficulty }: Props) {
           playSound('win');
           const finalTime = Math.floor((Date.now() - (startTime || Date.now())) / 1000);
           recordGameResult('minesweeper', 'win', finalTime);
+          
+          if (highScore === null || finalTime < highScore || highScore === 0) {
+            setHighScoreState(finalTime);
+            setHighScore('minesweeper', finalTime, difficulty);
+          }
           
           const nextLvl = level + 1;
           setLevel('minesweeper', difficulty, nextLvl);
@@ -213,7 +221,7 @@ export default function Minesweeper({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Header score={minesRemaining} scoreLabel="MINES" highScore={level} highScoreLabel="LEVEL" />
+      <Header score={minesRemaining} scoreLabel="MINES" highScore={highScore || 0} highScoreLabel="BEST" />
       
       <View style={styles.levelHeader}>
         <View style={styles.difficultyBadge}>

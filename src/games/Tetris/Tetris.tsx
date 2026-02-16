@@ -65,8 +65,8 @@ export default function Tetris({ difficulty }: Props) {
   const lastXRef = useRef(0);
 
   useEffect(() => {
-    getHighScore('tetris').then(setHighScoreState);
-  }, []);
+    getHighScore('tetris', difficulty).then(setHighScoreState);
+  }, [difficulty]);
 
   const stopGameLoop = useCallback(() => {
     if (fallIntervalRef.current) {
@@ -110,7 +110,7 @@ export default function Tetris({ difficulty }: Props) {
             const newScore = s + calculateScore(clearedLines, levelRef.current);
             if (newScore > highScore) {
               setHighScoreState(newScore);
-              setHighScore('tetris', newScore);
+              setHighScore('tetris', newScore, difficulty);
             }
             return newScore;
           });
@@ -208,7 +208,7 @@ export default function Tetris({ difficulty }: Props) {
             const newScore = s + calculateScore(clearedLines, level);
             if (newScore > highScore) {
               setHighScoreState(newScore);
-              setHighScore('tetris', newScore);
+              setHighScore('tetris', newScore, difficulty);
             }
             return newScore;
           });

@@ -103,13 +103,13 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     gameTitle: {
       ...typography.heading,
-      color: colors.text,
+      color: '#2d3436', // Dark for light modal
       textAlign: 'center',
       marginBottom: spacing.xs,
     },
     subtitle: {
       ...typography.body,
-      color: colors.textSecondary,
+      color: '#636e72',
       textAlign: 'center',
       marginBottom: spacing.xl,
     },
@@ -122,39 +122,39 @@ const getStyles = (colors: ThemeColors) =>
     icon: {
       fontSize: 64,
       marginBottom: spacing.lg,
-      color: colors.text,
+      color: '#2d3436',
     },
     stepTitle: {
       ...typography.subheading,
-      color: colors.text,
+      color: '#2d3436',
       textAlign: 'center',
       marginBottom: spacing.md,
     },
     description: {
       ...typography.body,
-      color: colors.textSecondary,
+      color: '#2d3436',
       textAlign: 'center',
       marginBottom: spacing.lg,
       paddingHorizontal: spacing.md,
     },
     tipsContainer: {
-      backgroundColor: colors.card,
+      backgroundColor: '#f1f2f6',
       borderRadius: radius.sm,
       padding: spacing.lg,
       width: '100%',
       marginTop: spacing.sm,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: '#dfe4ea',
     },
     tipsTitle: {
       ...typography.bodyBold,
-      color: colors.text,
+      color: '#2d3436',
       marginBottom: spacing.sm,
     },
     tip: {
       ...typography.label,
       fontWeight: '400',
-      color: colors.text,
+      color: '#2d3436',
       marginBottom: spacing.xs,
     },
     pagination: {
@@ -168,7 +168,7 @@ const getStyles = (colors: ThemeColors) =>
       width: 8,
       height: 8,
       borderRadius: radius.full,
-      backgroundColor: colors.textSecondary,
+      backgroundColor: '#b2bec3',
       opacity: 0.3,
     },
     activeDot: {

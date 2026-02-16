@@ -1,12 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GameId, Difficulty } from '../types';
 
-const highScoreKey = (gameId: GameId, difficulty?: Difficulty) => 
-  difficulty ? `@highscore_${gameId}_${difficulty}` : `@highscore_${gameId}`;
+const highScoreKey = (gameId: GameId, difficulty: Difficulty) => 
+  `@highscore_${gameId}_${difficulty}`;
 
 const activeGameKey = (gameId: GameId) => `@active_game_${gameId}`;
 
-export async function getHighScore(gameId: GameId, difficulty?: Difficulty): Promise<number> {
+export async function getHighScore(gameId: GameId, difficulty: Difficulty): Promise<number> {
   try {
     const value = await AsyncStorage.getItem(highScoreKey(gameId, difficulty));
     return value ? parseInt(value, 10) : 0;
@@ -15,7 +15,7 @@ export async function getHighScore(gameId: GameId, difficulty?: Difficulty): Pro
   }
 }
 
-export async function setHighScore(gameId: GameId, score: number, difficulty?: Difficulty): Promise<void> {
+export async function setHighScore(gameId: GameId, score: number, difficulty: Difficulty): Promise<void> {
   try {
     await AsyncStorage.setItem(highScoreKey(gameId, difficulty), score.toString());
   } catch {

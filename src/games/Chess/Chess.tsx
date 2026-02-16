@@ -35,6 +35,11 @@ export default function Chess({ difficulty }: Props) {
 
   const [gameState, setGameState] = useState<GameState>(() => initializeGame());
   const [isAIThinking, setIsAIThinking] = useState(false);
+  const [highScore, setHighScoreState] = useState(0);
+
+  useEffect(() => {
+    getHighScore('chess', difficulty).then(setHighScoreState);
+  }, [difficulty]);
 
   useEffect(() => {
     // Reset game when difficulty changes
@@ -113,6 +118,9 @@ export default function Chess({ difficulty }: Props) {
 
     if (isCheckmate && nextPlayer === 'black') {
       playSound('win');
+      const newScore = highScore + 1;
+      setHighScoreState(newScore);
+      setHighScore('chess', newScore, difficulty);
     }
   }, [gameState, playSound]);
 

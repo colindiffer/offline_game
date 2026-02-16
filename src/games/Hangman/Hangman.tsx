@@ -24,6 +24,7 @@ export default function Hangman({ difficulty }: Props) {
 
   const [level, setLevelState] = useState(1);
   const [gameState, setGameState] = useState<HangmanState | null>(null);
+  const [highScore, setHighScoreState] = useState(0);
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function Hangman({ difficulty }: Props) {
       const savedLevel = await getLevel('hangman', difficulty);
       const best = await getHighScore('hangman', difficulty);
       setLevelState(savedLevel);
+      setHighScoreState(best);
       setGameState(initializeHangman(difficulty, savedLevel));
       setIsReady(true);
     };
@@ -47,6 +49,12 @@ export default function Hangman({ difficulty }: Props) {
       playSound('win');
       const nextLvl = level + 1;
       setLevel('hangman', difficulty, nextLvl);
+      
+      if (nextLvl > highScore) {
+        setHighScoreState(nextLvl);
+        setHighScore('hangman', nextLvl, difficulty);
+      }
+
       recordGameResult('hangman', 'win', 0);
     } else if (newState.gameOver) {
       playSound('lose');
@@ -91,7 +99,7 @@ export default function Hangman({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Header score={level} scoreLabel="LEVEL" highScore={gameState.maxAttempts - gameState.incorrectAttempts} highScoreLabel="LIVES" />
+      <Header score={level} scoreLabel="LEVEL" highScore={highScore} highScoreLabel="BEST" />
       
       <View style={styles.levelHeader}>
         <Text style={styles.themeText}>{gameState.theme}</Text>

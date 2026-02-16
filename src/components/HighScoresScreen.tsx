@@ -126,13 +126,13 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     gameTitle: {
       ...typography.heading,
-      color: colors.text,
+      color: '#2d3436',
       textAlign: 'center',
       marginBottom: spacing.xs,
     },
     subtitle: {
       ...typography.body,
-      color: colors.textSecondary,
+      color: '#636e72',
       textAlign: 'center',
       marginBottom: spacing.xl,
     },
@@ -143,14 +143,14 @@ const getStyles = (colors: ThemeColors) =>
       gap: spacing.md,
     },
     scoreRow: {
-      backgroundColor: colors.card,
+      backgroundColor: '#f1f2f6',
       borderRadius: radius.md,
       padding: spacing.md,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: '#dfe4ea',
       ...shadows.sm,
     },
     difficultyInfo: {
@@ -164,17 +164,17 @@ const getStyles = (colors: ThemeColors) =>
     difficultyLabel: {
       ...typography.small,
       fontWeight: 'bold',
-      color: colors.textSecondary,
+      color: '#636e72',
       textTransform: 'uppercase',
       letterSpacing: 1,
     },
     scoreValue: {
       ...typography.heading,
-      color: colors.warning,
+      color: '#ffa502',
       fontSize: 24,
     },
     noScore: {
-      color: colors.textSecondary,
+      color: '#a4b0be',
       ...typography.label,
       fontStyle: 'italic',
       fontSize: 16,

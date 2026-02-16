@@ -63,10 +63,10 @@ export default function Solitaire({ difficulty }: Props) {
   const pilePositions = useRef<Map<string, { x: number; y: number; width: number; height: number }>>(new Map());
 
   useEffect(() => {
-    getHighScore('solitaire').then((score) => {
+    getHighScore('solitaire', difficulty).then((score) => {
       setHighScoreState(score);
     });
-  }, []);
+  }, [difficulty]);
 
   useEffect(() => {
     resetGame();
@@ -152,7 +152,7 @@ export default function Solitaire({ difficulty }: Props) {
           recordGameResult('solitaire', 'win', finalTime);
           if (highScore === null || finalTime < highScore) {
             setHighScoreState(finalTime);
-            setHighScore('solitaire', finalTime);
+            setHighScore('solitaire', finalTime, difficulty);
           }
         }
       }

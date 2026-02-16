@@ -65,11 +65,11 @@ export default function Snake({ difficulty }: Props) {
   const foodScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    getHighScore('snake').then(setHigh);
+    getHighScore('snake', difficulty).then(setHigh);
     AsyncStorage.getItem('@tutorial_snake').then((shown) => {
       if (!shown) setShowTutorial(true);
     });
-  }, []);
+  }, [difficulty]);
 
   useEffect(() => {
     if (started && !gameOver) {
@@ -140,7 +140,7 @@ export default function Snake({ difficulty }: Props) {
         setScore(newScore);
         setHigh((prev) => {
           if (newScore > prev) {
-            setHighScore('snake', newScore);
+            setHighScore('snake', newScore, difficulty);
             return newScore;
           }
           return prev;

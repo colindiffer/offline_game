@@ -34,6 +34,7 @@ export default function SimonSays({ difficulty }: Props) {
   const [gameOver, setGameOver] = useState(false);
   const [gameWon, setGameWon] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [highScore, setHighScoreState] = useState(0);
 
   const startTimeRef = useRef<number | null>(null);
   const padAnims = useRef([
@@ -46,7 +47,9 @@ export default function SimonSays({ difficulty }: Props) {
   useEffect(() => {
     const init = async () => {
       const savedLevel = await getLevel('simon-says', difficulty);
+      const best = await getHighScore('simon-says', difficulty);
       setLevelState(savedLevel);
+      setHighScoreState(best);
       setIsReady(true);
       startLevel(savedLevel);
     };
@@ -103,6 +106,10 @@ export default function SimonSays({ difficulty }: Props) {
         playSound('win');
         const nextLvl = level + 1;
         setLevel('simon-says', difficulty, nextLvl);
+        if (nextLvl > highScore) {
+          setHighScoreState(nextLvl);
+          setHighScore('simon-says', nextLvl, difficulty);
+        }
         recordGameResult('simon-says', 'win', 0);
       } else {
         setPlayerIndex(nextIndex);

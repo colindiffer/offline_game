@@ -46,8 +46,8 @@ export default function ConnectFour({ difficulty }: Props) {
   const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
-    getHighScore('connect-four').then(setHighScoreState);
-  }, []);
+    getHighScore('connect-four', difficulty).then(setHighScoreState);
+  }, [difficulty]);
 
   useEffect(() => {
     startTimeRef.current = Date.now();
@@ -112,11 +112,10 @@ export default function ConnectFour({ difficulty }: Props) {
               if (winPlayer === 'R') {
                 setScore((prev) => {
                   const newScore = prev + 1;
-                  if (newScore > highScore) {
-                    setHighScoreState(newScore);
-                    setHighScore('connect-four', newScore);
-                  }
-                  return newScore;
+                                if (newScore > highScore) {
+                                  setHighScoreState(newScore);
+                                  setHighScore('connect-four', newScore, difficulty);
+                                }                  return newScore;
                 });
                 playSound('win');
               } else {

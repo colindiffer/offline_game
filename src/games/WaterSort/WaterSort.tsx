@@ -110,6 +110,11 @@ export default function WaterSort({ difficulty }: Props) {
           const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
           recordGameResult('water-sort', 'win', finalTime);
           
+          if (moves + 1 < highScore || highScore === 0) {
+            setHighScoreState(moves + 1);
+            setHighScore('water-sort', moves + 1, difficulty);
+          }
+          
           // Next level logic
           const nextLevel = level + 1;
           setLevel('water-sort', difficulty, nextLevel);

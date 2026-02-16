@@ -51,7 +51,7 @@ export default function Blackjack({ difficulty }: Props) {
 
   useEffect(() => {
     getHighScore('blackjack', difficulty).then(score => {
-      setHighScore(score || INITIAL_BANKROLL);
+      setHighScore(score || INITIAL_CHIPS);
     });
     AsyncStorage.getItem('@tutorial_blackjack').then(shown => {
       if (!shown) setShowTutorial(true);

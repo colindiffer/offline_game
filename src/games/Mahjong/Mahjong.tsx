@@ -24,7 +24,10 @@ export default function Mahjong({ difficulty }: Props) {
   const [tiles, setTiles] = useState<Tile[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [gameWon, setGameWon] = useState(false);
+  const [highScore, setHighScoreState] = useState(0);
   const [isReady, setIsReady] = useState(false);
+
+  const startTimeRef = useRef<number | null>(null);
 
   const metrics = useMemo(() => {
     if (tiles.length === 0) return { tileWidth: 50, tileHeight: 65, width: 0, height: 0 };
@@ -55,8 +58,10 @@ export default function Mahjong({ difficulty }: Props) {
       const savedLevel = await getLevel('mahjong', difficulty);
       const best = await getHighScore('mahjong', difficulty);
       setLevelState(savedLevel);
+      setHighScoreState(best);
       setTiles(initializeMahjong(difficulty, savedLevel));
       setIsReady(true);
+      startTimeRef.current = Date.now();
     };
     init();
   }, [difficulty]);
@@ -89,7 +94,12 @@ export default function Mahjong({ difficulty }: Props) {
           playSound('win');
           const nextLvl = level + 1;
           setLevel('mahjong', difficulty, nextLvl);
-          recordGameResult('mahjong', 'win', 0);
+          const finalTime = Math.floor((Date.now() - (startTimeRef.current || Date.now())) / 1000);
+          if (finalTime < highScore || highScore === 0) {
+            setHighScoreState(finalTime);
+            setHighScore('mahjong', finalTime, difficulty);
+          }
+          recordGameResult('mahjong', 'win', finalTime);
         }
       } else {
         setSelectedId(tile.id);

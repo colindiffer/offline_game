@@ -36,6 +36,11 @@ export default function Checkers({ difficulty }: Props) {
 
   const [gameState, setGameState] = useState<GameState>(() => initializeGame());
   const [isAIThinking, setIsAIThinking] = useState(false);
+  const [highScore, setHighScoreState] = useState(0);
+
+  useEffect(() => {
+    getHighScore('checkers', difficulty).then(setHighScoreState);
+  }, [difficulty]);
 
   useEffect(() => {
     // Reset game when difficulty changes
@@ -102,6 +107,9 @@ export default function Checkers({ difficulty }: Props) {
 
       if (winner === 'black') {
         playSound('win');
+        const newScore = highScore + 1;
+        setHighScoreState(newScore);
+        setHighScore('checkers', newScore, difficulty);
       }
     } else {
       let blackPieces = 0;

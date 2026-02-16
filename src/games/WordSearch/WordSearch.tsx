@@ -114,6 +114,11 @@ export default function WordSearch({ difficulty }: Props) {
               const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
               recordGameResult('word-search', 'win', finalTime);
               
+              if (finalTime < highScore || highScore === 0) {
+                setHighScoreState(finalTime);
+                setHighScore('word-search', finalTime, difficulty);
+              }
+
               const nextLvl = level + 1;
               setLevel('word-search', difficulty, nextLvl);
             }

@@ -29,11 +29,16 @@ export default function Reversi({ difficulty }: Props) {
   const [gameState, setGameState] = useState<GameState>(() => initializeGame());
   const [selectedCell, setSelectedCell] = useState<Position | null>(null);
   const [isAIThinking, setIsAIThinking] = useState(false);
+  const [highScore, setHighScoreState] = useState(0);
   const [flipAnimations] = useState(() =>
     Array(8).fill(null).map(() =>
       Array(8).fill(null).map(() => new Animated.Value(1))
     )
   );
+
+  useEffect(() => {
+    getHighScore('reversi', difficulty).then(setHighScoreState);
+  }, [difficulty]);
 
   useEffect(() => {
     // Reset game when difficulty changes
@@ -109,6 +114,9 @@ export default function Reversi({ difficulty }: Props) {
 
       if (winner === 'black') {
         playSound('win');
+        const newScore = highScore + 1;
+        setHighScoreState(newScore);
+        setHighScore('reversi', newScore, difficulty);
       }
     } else if (validMoves.length === 0) {
       // Next player has no moves, pass turn back

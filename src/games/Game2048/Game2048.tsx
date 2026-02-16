@@ -67,11 +67,11 @@ export default function Game2048({ difficulty }: Props) {
   ).current;
 
   useEffect(() => {
-    getHighScore('2048').then(setHigh);
+    getHighScore('2048', difficulty).then(setHigh);
     AsyncStorage.getItem('@tutorial_2048').then((shown) => {
       if (!shown) setShowTutorial(true);
     });
-  }, []);
+  }, [difficulty]);
 
   useEffect(() => {
     startTimeRef.current = Date.now();
@@ -126,7 +126,7 @@ export default function Game2048({ difficulty }: Props) {
       setScore(newScore);
       if (newScore > highScore) {
         setHigh(newScore);
-        setHighScore('2048', newScore);
+        setHighScore('2048', newScore, difficulty);
       }
 
       if (!won && !keepPlaying && hasWon(newBoard)) {
