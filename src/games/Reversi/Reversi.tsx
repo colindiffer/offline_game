@@ -7,6 +7,7 @@ import PremiumButton from '../../components/PremiumButton';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
+import { getHighScore, setHighScore } from '../../utils/storage';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
