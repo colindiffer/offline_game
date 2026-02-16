@@ -1,0 +1,1 @@
+snake looks fine, bit the actual snake an controls should work from touch screen not the arroews at the bottom

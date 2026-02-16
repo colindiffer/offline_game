@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Dimensions, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
 import PlayingCard from '../../components/PlayingCard';
 import TutorialScreen from '../../components/TutorialScreen';
+import PremiumButton from '../../components/PremiumButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { getHighScore, setHighScore as saveHighScore } from '../../utils/storage';
@@ -12,6 +14,7 @@ import { ThemeColors } from '../../utils/themes';
 import { GAME_TUTORIALS } from '../../utils/tutorials';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { HeartsGameState } from './types';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import {
   initializeHeartsGame,
   passCards,
@@ -20,10 +23,19 @@ import {
   getAICardsToPass,
   getAICardToPlay,
   startNewRound,
+  collectTrick,
 } from './logic';
 import { Card } from '../../types/cards';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_PADDING = 16;
+const AVAILABLE_WIDTH = SCREEN_WIDTH - (SCREEN_PADDING * 2);
+const CARD_WIDTH = Math.floor(AVAILABLE_WIDTH / 4.5); // Slightly larger cards
+const CARD_HEIGHT = Math.floor(CARD_WIDTH * 1.4);
+
+// To fill the width with 13 cards: 12 * (CARD_WIDTH - Overlap) + CARD_WIDTH = AVAILABLE_WIDTH
+// 12 * Overlap = 13 * CARD_WIDTH - AVAILABLE_WIDTH
+const OVERLAP = (13 * CARD_WIDTH - AVAILABLE_WIDTH) / 12;
 
 interface Props {
   difficulty: Difficulty;
@@ -33,14 +45,14 @@ export default function Hearts({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
-  
-  const [gameState, setGameState] = useState<HeartsGameState>(() => 
+
+  const [gameState, setGameState] = useState<HeartsGameState>(() =>
     initializeHeartsGame(difficulty)
   );
   const [highScore, setHighScore] = useState(0);
   const [showTutorial, setShowTutorial] = useState(false);
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
-  
+
   const startTimeRef = useRef<number>(Date.now());
   const roundStartTimeRef = useRef<number>(Date.now());
   const aiProcessingRef = useRef<boolean>(false);
@@ -54,12 +66,10 @@ export default function Hearts({ difficulty }: Props) {
     });
   }, [difficulty]);
 
-  // Update high score (lower is better, so we store as negative for sorting)
   useEffect(() => {
     if (gameState.gamePhase === 'gameOver') {
       const playerScore = gameState.players[0].totalScore;
-      // Store negative score so lower scores appear higher in leaderboard
-      const scoreValue = 1000 - playerScore; // Max 1000, lower actual score = higher stored score
+      const scoreValue = 1000 - playerScore;
       if (scoreValue > highScore) {
         setHighScore(scoreValue);
         saveHighScore('hearts', scoreValue, difficulty);
@@ -67,61 +77,72 @@ export default function Hearts({ difficulty }: Props) {
     }
   }, [gameState.gamePhase, gameState.players, highScore, difficulty]);
 
-  // Auto-process AI turns during passing phase
+  // AI Passing
   useEffect(() => {
-    if (gameState.gamePhase === 'passing' && !aiProcessingRef.current) {
+    if (gameState.gamePhase !== 'passing' || aiProcessingRef.current) return;
+
+    const needsPassing = gameState.players.some(
+      p => !p.isHuman && !gameState.passedCards.some(pc => pc.fromId === p.id)
+    );
+
+    if (needsPassing) {
       aiProcessingRef.current = true;
-      
       const timer = setTimeout(() => {
-        let newState = { ...gameState };
-        
-        // Get AI players who haven't passed yet
-        const aiPlayersNeedingToPass = gameState.players.filter(
-          p => !p.isHuman && !gameState.passedCards.some(pc => pc.fromId === p.id)
-        );
+        setGameState(prev => {
+          let newState = { ...prev };
+          const aiPlayersNeedingToPass = prev.players.filter(
+            p => !p.isHuman && !prev.passedCards.some(pc => pc.fromId === p.id)
+          );
 
-        aiPlayersNeedingToPass.forEach(player => {
-          const cardsToPass = getAICardsToPass(player, difficulty);
-          newState = passCards(newState, player.id, cardsToPass);
+          aiPlayersNeedingToPass.forEach(player => {
+            const cardsToPass = getAICardsToPass(player, difficulty);
+            newState = passCards(newState, player.id, cardsToPass);
+          });
+
+          aiProcessingRef.current = false;
+          return newState;
         });
-
-        setGameState(newState);
-        aiProcessingRef.current = false;
       }, 500);
-
       return () => clearTimeout(timer);
     }
-  }, [gameState, difficulty]);
+  }, [gameState.gamePhase, gameState.passedCards.length, difficulty]);
 
-  // Auto-process AI turns during playing phase
+  // AI Playing
   useEffect(() => {
-    if (gameState.gamePhase === 'playing' && !aiProcessingRef.current) {
-      const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-      
-      if (currentPlayer && !currentPlayer.isHuman) {
-        aiProcessingRef.current = true;
-        
-        const timer = setTimeout(() => {
-          const cardToPlay = getAICardToPlay(gameState, gameState.currentPlayerIndex, difficulty);
-          const newState = playCard(gameState, gameState.currentPlayerIndex, cardToPlay);
-          setGameState(newState);
-          playSound('tap');
+    if (gameState.gamePhase !== 'playing' || aiProcessingRef.current || gameState.currentTrick.cards.length === 4) return;
+
+    const currentPlayer = gameState.players[gameState.currentPlayerIndex];
+    if (currentPlayer && !currentPlayer.isHuman) {
+      aiProcessingRef.current = true;
+      const timer = setTimeout(() => {
+        setGameState(prev => {
+          const cardToPlay = getAICardToPlay(prev, prev.currentPlayerIndex, difficulty);
+          const newState = playCard(prev, prev.currentPlayerIndex, cardToPlay);
           aiProcessingRef.current = false;
-        }, 800);
-
-        return () => clearTimeout(timer);
-      }
+          return newState;
+        });
+        playSound('tap');
+      }, 600);
+      return () => clearTimeout(timer);
     }
-  }, [gameState, difficulty, playSound]);
+  }, [gameState.currentPlayerIndex, gameState.gamePhase, gameState.currentTrick.cards.length, difficulty, playSound]);
 
-  // Handle round end
+  // Trick Completion Delay
+  useEffect(() => {
+    if (gameState.gamePhase === 'playing' && gameState.currentTrick.cards.length === 4) {
+      const timer = setTimeout(() => {
+        setGameState(prev => collectTrick(prev));
+      }, 1500); // 1.5s delay to see the cards
+      return () => clearTimeout(timer);
+    }
+  }, [gameState.currentTrick.cards.length, gameState.gamePhase]);
+
+  // Round End / Game Over
   useEffect(() => {
     if (gameState.gamePhase === 'roundEnd') {
       const roundDuration = Math.floor((Date.now() - roundStartTimeRef.current) / 1000);
       const playerScore = gameState.players[0].score;
-      
-      if (playerScore === 0) {
-        // Player did well (shot the moon or avoided points)
+      if (playerScore === 0 && gameState.completedTricks.length > 0) {
         recordGameResult('hearts', 'win', roundDuration);
         playSound('win');
       } else if (playerScore >= 13) {
@@ -131,7 +152,7 @@ export default function Hearts({ difficulty }: Props) {
         playSound('tap');
       }
     }
-  }, [gameState.gamePhase, gameState.players, playSound]);
+  }, [gameState.gamePhase, playSound]);
 
   const handleTutorialClose = useCallback(() => {
     AsyncStorage.setItem('@tutorial_hearts', 'true');
@@ -140,7 +161,6 @@ export default function Hearts({ difficulty }: Props) {
 
   const handleCardSelect = useCallback((card: Card) => {
     if (gameState.gamePhase === 'passing') {
-      // Toggle card selection for passing
       const isSelected = selectedCards.some(c => c.id === card.id);
       if (isSelected) {
         setSelectedCards(selectedCards.filter(c => c.id !== card.id));
@@ -149,7 +169,6 @@ export default function Hearts({ difficulty }: Props) {
       }
       playSound('tap');
     } else if (gameState.gamePhase === 'playing' && gameState.currentPlayerIndex === 0) {
-      // Play card
       const player = gameState.players[0];
       if (canPlayCard(gameState, player, card)) {
         const newState = playCard(gameState, 0, card);
@@ -195,25 +214,23 @@ export default function Hearts({ difficulty }: Props) {
     }
   };
 
-  const renderPlayer = (playerIndex: number, position: 'top' | 'left' | 'right') => {
+  const renderPlayerBadge = (playerIndex: number, position: 'top' | 'left' | 'right') => {
     const player = gameState.players[playerIndex];
     if (!player) return null;
-
-    const containerStyle = position === 'top' ? styles.topPlayer :
-                          position === 'left' ? styles.leftPlayer :
-                          styles.rightPlayer;
+    const isCurrent = gameState.currentPlayerIndex === playerIndex;
 
     return (
-      <View style={containerStyle}>
-        <View style={styles.playerInfo}>
-          <Text style={styles.playerName}>{player.name}</Text>
-          <Text style={styles.playerScore}>
-            {player.score > 0 && `+${player.score} `}
-            Total: {player.totalScore}
-          </Text>
+      <View style={[styles.playerBadge, position === 'top' ? styles.topPlayer : position === 'left' ? styles.leftPlayer : styles.rightPlayer]}>
+        <View style={[styles.avatarContainer, isCurrent && styles.activeAvatar]}>
+          <Text style={styles.avatarText}>{player.name.charAt(0)}</Text>
         </View>
-        <View style={styles.playerCardCount}>
-          <Text style={styles.cardCountText}>{player.cards.length} cards</Text>
+        <View style={styles.playerMeta}>
+          <Text style={styles.playerNameText}>{player.name}</Text>
+          <Text style={styles.playerScoreText}>Score: {player.totalScore}</Text>
+          {player.score > 0 && <Text style={styles.roundPoints}>+{player.score}</Text>}
+        </View>
+        <View style={styles.cardIndicator}>
+          <Text style={styles.cardIndicatorText}>{player.cards.length} C</Text>
         </View>
       </View>
     );
@@ -221,21 +238,18 @@ export default function Hearts({ difficulty }: Props) {
 
   const renderTrick = () => {
     if (gameState.currentTrick.cards.length === 0) return null;
-
     return (
-      <View style={styles.trickContainer}>
+      <View style={styles.trickTable}>
         {gameState.currentTrick.cards.map((tc, index) => {
-          const player = gameState.players[tc.playerId];
-          const positionStyle = 
+          const positionStyle =
             tc.playerId === 0 ? styles.trickCardBottom :
-            tc.playerId === 1 ? styles.trickCardLeft :
-            tc.playerId === 2 ? styles.trickCardTop :
-            styles.trickCardRight;
+              tc.playerId === 1 ? styles.trickCardLeft :
+                tc.playerId === 2 ? styles.trickCardTop :
+                  styles.trickCardRight;
 
           return (
-            <View key={index} style={[styles.trickCard, positionStyle]}>
-              <PlayingCard card={tc.card} size="medium" faceDown={false} />
-              <Text style={styles.trickPlayerName}>{player.name}</Text>
+            <View key={index} style={[styles.trickCardStack, positionStyle]}>
+              <PlayingCard card={tc.card} width={CARD_WIDTH} height={CARD_HEIGHT} faceDown={false} />
             </View>
           );
         })}
@@ -255,373 +269,222 @@ export default function Hearts({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Header 
-        title="Hearts"
+      <LinearGradient colors={['#1b4332', '#081c15']} style={StyleSheet.absoluteFill} />
+
+      <Header
+        score={gameState.players[0].totalScore}
+        scoreLabel="TOTAL"
         highScore={highScore}
-        highScoreLabel={`Best: ${1000 - highScore} pts`}
+        highScoreLabel={`BEST: ${1000 - highScore} PTS`}
       />
 
-      <ScrollView style={styles.gameArea} contentContainerStyle={styles.gameContent}>
-        {/* Top Player */}
-        {renderPlayer(2, 'top')}
+      <View style={styles.tableArea}>
+        {renderPlayerBadge(2, 'top')}
+        <View style={styles.sidePlayers}>
+          {renderPlayerBadge(1, 'left')}
+          {renderPlayerBadge(3, 'right')}
+        </View>
 
-        {/* Middle Section with Left Player, Trick Area, Right Player */}
-        <View style={styles.middleSection}>
-          {renderPlayer(1, 'left')}
-          
-          <View style={styles.centerArea}>
+        <View style={styles.centerFelt}>
+          <View style={styles.feltInner}>
             {renderTrick()}
-            
             {gameState.gamePhase === 'playing' && (
-              <View style={styles.gameInfo}>
-                {gameState.heartsBroken && (
-                  <Text style={styles.infoText}>♥ Hearts Broken</Text>
-                )}
-                {gameState.leadSuit && (
-                  <Text style={styles.infoText}>
-                    Lead: {gameState.leadSuit}
-                  </Text>
-                )}
-                <Text style={styles.infoText}>Round {gameState.roundNumber}</Text>
+              <View style={styles.tableInfo}>
+                <Text style={styles.roundLabel}>ROUND {gameState.roundNumber}</Text>
+                {gameState.heartsBroken && <Text style={styles.brokenLabel}>♥ BROKEN</Text>}
+                {gameState.leadSuit && <Text style={styles.suitLabel}>LEAD: {gameState.leadSuit.toUpperCase()}</Text>}
               </View>
             )}
           </View>
-          
-          {renderPlayer(3, 'right')}
         </View>
 
-        {/* Human Player */}
-        <View style={styles.humanPlayer}>
-          <View style={styles.playerInfo}>
-            <Text style={styles.playerName}>{gameState.players[0].name}</Text>
-            <Text style={styles.playerScore}>
-              {gameState.players[0].score > 0 && `+${gameState.players[0].score} `}
-              Total: {gameState.players[0].totalScore}
-            </Text>
+        <View style={styles.humanSection}>
+          <View style={styles.humanDashboard}>
+            <View style={styles.humanIdentity}>
+              <Text style={styles.humanNameText}>{gameState.players[0].name}</Text>
+              <Text style={styles.humanScoreLabel}>TOTAL: {gameState.players[0].totalScore} | ROUND: {gameState.players[0].score}</Text>
+            </View>
+            {gameState.gamePhase === 'passing' && gameState.passDirection !== 'none' && (
+              <View style={styles.passingActions}>
+                <Text style={styles.passHint}>{getPassDirectionText().toUpperCase()}</Text>
+                <PremiumButton
+                  variant="primary"
+                  height={40}
+                  style={styles.passButton}
+                  disabled={selectedCards.length !== 3}
+                  onPress={handlePassCards}
+                >
+                  <Text style={styles.passButtonLabel}>PASS {selectedCards.length}/3</Text>
+                </PremiumButton>
+              </View>
+            )}
           </View>
 
-          {gameState.gamePhase === 'passing' && gameState.passDirection !== 'none' && (
-            <View style={styles.passingSection}>
-              <Text style={styles.passDirectionText}>{getPassDirectionText()}</Text>
-              <TouchableOpacity
-                style={[
-                  styles.passButton,
-                  selectedCards.length !== 3 && styles.passButtonDisabled
-                ]}
-                onPress={handlePassCards}
-                disabled={selectedCards.length !== 3}
-              >
-                <Text style={styles.passButtonText}>
-                  Pass Cards ({selectedCards.length}/3)
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <ScrollView 
-            horizontal 
-            style={styles.handScrollView}
-            contentContainerStyle={styles.handContainer}
+          <ScrollView
+            horizontal
+            style={styles.handScroller}
+            contentContainerStyle={styles.handList}
             showsHorizontalScrollIndicator={false}
           >
             {gameState.players[0].cards.map((card, index) => {
               const isSelected = selectedCards.some(c => c.id === card.id);
-              const isLegal = gameState.gamePhase === 'playing' && 
-                             gameState.currentPlayerIndex === 0 &&
-                             canPlayCard(gameState, gameState.players[0], card);
-              
+              const isLegal = gameState.gamePhase === 'playing' &&
+                gameState.currentPlayerIndex === 0 &&
+                canPlayCard(gameState, gameState.players[0], card);
+
               return (
                 <TouchableOpacity
                   key={card.id}
                   onPress={() => handleCardSelect(card)}
-                  disabled={
-                    (gameState.gamePhase === 'playing' && gameState.currentPlayerIndex !== 0) ||
-                    (gameState.gamePhase === 'playing' && !isLegal)
-                  }
+                  disabled={(gameState.gamePhase === 'playing' && (gameState.currentPlayerIndex !== 0 || !isLegal))}
                   style={[
-                    styles.cardWrapper,
-                    isSelected && styles.selectedCard,
+                    styles.myCardWrapper, 
+                    isSelected && styles.selectedHandCard,
+                    { zIndex: index } // Ensure consistent stacking
                   ]}
                 >
-                  <PlayingCard 
-                    card={card} 
-                    size="medium" 
-                    faceDown={false} 
-                    style={!isLegal && gameState.gamePhase === 'playing' && gameState.currentPlayerIndex === 0 
-                      ? styles.illegalCard 
-                      : undefined
-                    }
+                  <PlayingCard
+                    card={card}
+                    width={CARD_WIDTH}
+                    height={CARD_HEIGHT}
+                    faceDown={false}
+                    style={!isLegal && gameState.gamePhase === 'playing' && !isSelected ? styles.dimmedCard : undefined}
                   />
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
         </View>
+      </View>
 
-        {/* Round End Screen */}
-        {gameState.gamePhase === 'roundEnd' && (
-          <View style={styles.modal}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Round {gameState.roundNumber} Complete</Text>
-              
-              {gameState.players.map(player => (
-                <View key={player.id} style={styles.scoreRow}>
-                  <Text style={styles.scoreName}>{player.name}</Text>
-                  <Text style={styles.scoreValue}>
-                    +{player.score} (Total: {player.totalScore})
-                  </Text>
-                </View>
-              ))}
-
-              {gameState.players.some(p => p.score === 0 && gameState.completedTricks.length > 0) && (
-                <Text style={styles.moonText}>
-                  {gameState.players.find(p => p.score === 0)?.name} shot the moon!
-                </Text>
-              )}
-
-              <TouchableOpacity style={styles.continueButton} onPress={handleNewRound}>
-                <Text style={styles.continueButtonText}>Continue</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* Game Over Screen */}
-        {gameState.gamePhase === 'gameOver' && (
-          <View style={styles.modal}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>Game Over</Text>
-              
-              {[...gameState.players]
-                .sort((a, b) => a.totalScore - b.totalScore)
-                .map((player, index) => (
-                  <View key={player.id} style={styles.scoreRow}>
-                    <Text style={styles.scoreName}>
-                      {index === 0 ? '🏆 ' : ''}{player.name}
+      {(gameState.gamePhase === 'roundEnd' || gameState.gamePhase === 'gameOver') && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContentBox}>
+            <Text style={styles.modalHeadingText}>
+              {gameState.gamePhase === 'roundEnd' ? `ROUND ${gameState.roundNumber} COMPLETE` : 'GAME OVER'}
+            </Text>
+            <View style={styles.scoreRowList}>
+              {gameState.players
+                .sort((a, b) => gameState.gamePhase === 'gameOver' ? a.totalScore - b.totalScore : 0)
+                .map((p, idx) => (
+                  <View key={p.id} style={styles.scoreItem}>
+                    <Text style={styles.scoreName}>{idx === 0 && gameState.gamePhase === 'gameOver' ? '🏆 ' : ''}{p.name}</Text>
+                    <Text style={styles.scoreValue}>
+                      {p.totalScore} PTS {p.score > 0 ? `(+${p.score})` : ''}
                     </Text>
-                    <Text style={styles.scoreValue}>{player.totalScore} points</Text>
                   </View>
                 ))}
-
-              {gameState.players[0].totalScore === 
-                Math.min(...gameState.players.map(p => p.totalScore)) && (
-                <Text style={styles.winText}>You Win! 🎉</Text>
-              )}
-
-              <TouchableOpacity style={styles.continueButton} onPress={handleNewGame}>
-                <Text style={styles.continueButtonText}>New Game</Text>
-              </TouchableOpacity>
             </View>
+            {gameState.players.some(p => p.score === 0 && gameState.completedTricks.length > 0) && (
+              <Text style={styles.moonShotText}>🌑 SHOT THE MOON!</Text>
+            )}
+            <PremiumButton
+              variant="secondary"
+              height={50}
+              style={styles.modalAction}
+              onPress={gameState.gamePhase === 'roundEnd' ? handleNewRound : handleNewGame}
+            >
+              <Text style={styles.modalActionText}>
+                {gameState.gamePhase === 'roundEnd' ? 'CONTINUE' : 'PLAY AGAIN'}
+              </Text>
+            </PremiumButton>
           </View>
-        )}
-      </ScrollView>
+        </View>
+      )}
     </View>
   );
 }
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  gameArea: {
-    flex: 1,
-  },
-  gameContent: {
-    padding: 10,
-  },
-  topPlayer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  leftPlayer: {
-    width: 80,
-  },
-  rightPlayer: {
-    width: 80,
-  },
-  playerInfo: {
-    backgroundColor: colors.surface,
-    padding: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  playerName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: colors.text,
-  },
-  playerScore: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  playerCardCount: {
-    backgroundColor: colors.primary,
-    padding: 4,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  cardCountText: {
-    fontSize: 11,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  middleSection: {
+  container: { flex: 1, backgroundColor: colors.background },
+  tableArea: { flex: 1, padding: spacing.sm, justifyContent: 'space-between' },
+  playerBadge: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: spacing.xs,
+    borderRadius: radius.md,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginVertical: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+    width: 130,
   },
-  centerArea: {
-    flex: 1,
-    alignItems: 'center',
+  topPlayer: { alignSelf: 'center', marginBottom: spacing.md },
+  sidePlayers: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md },
+  leftPlayer: {},
+  rightPlayer: {},
+  avatarContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.primary,
     justifyContent: 'center',
-    marginHorizontal: 10,
+    alignItems: 'center',
+    marginRight: spacing.xs,
   },
-  trickContainer: {
-    width: 200,
-    height: 200,
-    position: 'relative',
+  activeAvatar: {
+    borderWidth: 2,
+    borderColor: '#fab1a0',
+    shadowColor: '#fab1a0',
+    shadowOpacity: 0.8,
+    shadowRadius: 5,
+  },
+  avatarText: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+  playerMeta: { flex: 1 },
+  playerNameText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
+  playerScoreText: { color: 'rgba(255,255,255,0.6)', fontSize: 9 },
+  roundPoints: { color: '#fab1a0', fontSize: 9, fontWeight: 'bold', position: 'absolute', right: 0, top: -12 },
+  cardIndicator: { backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 6 },
+  cardIndicatorText: { color: '#fff', fontSize: 8, fontWeight: 'bold' },
+  centerFelt: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  feltInner: {
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(0,0,0,0.15)',
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  trickCard: {
-    position: 'absolute',
-    alignItems: 'center',
-  },
-  trickCardBottom: {
-    bottom: 0,
-  },
-  trickCardTop: {
-    top: 0,
-  },
-  trickCardLeft: {
-    left: 0,
-  },
-  trickCardRight: {
-    right: 0,
-  },
-  trickPlayerName: {
-    fontSize: 10,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  gameInfo: {
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  infoText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginVertical: 2,
-  },
-  humanPlayer: {
-    marginTop: 20,
-  },
-  passingSection: {
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  passDirectionText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 8,
-  },
-  passButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  passButtonDisabled: {
-    backgroundColor: colors.textSecondary,
-  },
-  passButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  handScrollView: {
-    flexGrow: 0,
-  },
-  handContainer: {
+  trickTable: { width: CARD_WIDTH * 2.5, height: CARD_HEIGHT * 2, position: 'relative' },
+  trickCardStack: { position: 'absolute', ...shadows.md },
+  trickCardBottom: { bottom: 0, left: '25%' },
+  trickCardTop: { top: 0, left: '25%' },
+  trickCardLeft: { left: 0, top: '25%' },
+  trickCardRight: { right: 0, top: '25%' },
+  tableInfo: { position: 'absolute', bottom: -50, alignItems: 'center' },
+  roundLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 'bold', letterSpacing: 2 },
+  brokenLabel: { color: '#fab1a0', fontSize: 10, fontWeight: '900', marginTop: 2 },
+  suitLabel: { color: '#fff', fontSize: 9, fontWeight: 'bold', marginTop: 2 },
+  humanSection: { paddingVertical: spacing.md },
+  humanDashboard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md, paddingHorizontal: spacing.sm },
+  humanIdentity: { flex: 1 },
+  humanNameText: { color: '#fff', fontSize: 16, fontWeight: '900' },
+  humanScoreLabel: { color: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 'bold' },
+  passingActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  passHint: { color: '#fab1a0', fontSize: 10, fontWeight: '900' },
+  passButton: { minWidth: 110 },
+  passButtonLabel: { color: '#fff', fontSize: 12, fontWeight: '900' },
+  handScroller: { flexGrow: 0 },
+  handList: { 
+    width: AVAILABLE_WIDTH,
     flexDirection: 'row',
-    paddingHorizontal: 10,
-  },
-  cardWrapper: {
-    marginHorizontal: 2,
-  },
-  selectedCard: {
-    transform: [{ translateY: -20 }],
-  },
-  illegalCard: {
-    opacity: 0.5,
-  },
-  modal: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    justifyContent: 'center',
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: colors.surface,
-    padding: 20,
-    borderRadius: 12,
-    minWidth: 300,
-    alignItems: 'center',
+  myCardWrapper: { 
+    marginRight: -OVERLAP,
+    ...shadows.sm 
   },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 20,
-  },
-  scoreRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.textSecondary,
-  },
-  scoreName: {
-    fontSize: 16,
-    color: colors.text,
-    fontWeight: '600',
-  },
-  scoreValue: {
-    fontSize: 16,
-    color: colors.textSecondary,
-  },
-  moonText: {
-    fontSize: 14,
-    color: colors.primary,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-  winText: {
-    fontSize: 18,
-    color: colors.success,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-  continueButton: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 30,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 20,
-  },
-  continueButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
+  selectedHandCard: { transform: [{ translateY: -20 }] },
+  dimmedCard: { backgroundColor: '#dcdde1' },
+  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
+  modalContentBox: { backgroundColor: '#1b4332', padding: spacing.xl, borderRadius: radius.lg, width: '85%', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', ...shadows.xl },
+  modalHeadingText: { color: '#fff', fontSize: 20, fontWeight: '900', marginBottom: spacing.xl, letterSpacing: 2 },
+  scoreRowList: { width: '100%', gap: spacing.md, marginBottom: spacing.xl },
+  scoreItem: { flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)', paddingBottom: 8 },
+  scoreName: { color: '#fff', fontWeight: 'bold' },
+  scoreValue: { color: 'rgba(255,255,255,0.6)', fontWeight: 'bold' },
+  moonShotText: { color: '#fab1a0', fontWeight: '900', fontSize: 14, marginBottom: spacing.xl },
+  modalAction: { width: '100%' },
+  modalActionText: { color: '#fff', fontWeight: '900', fontSize: 16, letterSpacing: 1 },
 });

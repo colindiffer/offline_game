@@ -1,15 +1,20 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Header from '../../components/Header';
 import TutorialScreen from '../../components/TutorialScreen';
+import GameOverOverlay from '../../components/GameOverOverlay';
+import GameBoardContainer from '../../components/GameBoardContainer';
 import { SNAKE_GRID_SIZE } from '../../utils/constants';
 import { getHighScore, setHighScore } from '../../utils/storage';
 import { recordGameResult } from '../../utils/stats';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { Difficulty } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { ThemeColors } from '../../utils/themes';
 import { GAME_TUTORIALS } from '../../utils/tutorials';
+import PremiumButton from '../../components/PremiumButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Direction,
@@ -198,126 +203,141 @@ export default function Snake({ difficulty }: Props) {
     foodScale.setValue(1); // Reset food animation
   };
 
+  const panGesture = Gesture.Pan()
+    .minDistance(20)
+    .onEnd((e) => {
+      const { translationX, translationY } = e;
+      const absX = Math.abs(translationX);
+      const absY = Math.abs(translationY);
+
+      if (absX > absY) {
+        if (translationX > 0) {
+          changeDirection('RIGHT');
+        } else {
+          changeDirection('LEFT');
+        }
+      } else {
+        if (translationY > 0) {
+          changeDirection('DOWN');
+        } else {
+          changeDirection('UP');
+        }
+      }
+    });
+
   const snakeSet = new Set(snake.map((p) => `${p.x},${p.y}`));
   const headKey = `${snake[0].x},${snake[0].y}`;
   const foodKey = `${food.x},${food.y}`;
 
   return (
     <View style={styles.container}>
-      <Header title="Snake" score={score} highScore={highScore} />
-
-      <View style={styles.tutorialControls}>
-        <TouchableOpacity
-          style={styles.tutorialButton}
-          onPress={() => setShowTutorial(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.tutorialIcon}>❓</Text>
-        </TouchableOpacity>
-        
-        {started && !gameOver && (
-          <TouchableOpacity
-            style={styles.pauseButton}
-            onPress={() => setPaused(!paused)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.pauseIcon}>{paused ? '▶️' : '⏸️'}</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      <Header
+        score={score}
+        highScore={highScore}
+        onPause={() => setPaused(!paused)}
+        isPaused={paused}
+      />
 
       <View style={styles.boardContainer}>
-        <View style={[styles.board, { width: ACTUAL_BOARD, height: ACTUAL_BOARD }]}>
-          {Array.from({ length: SNAKE_GRID_SIZE }, (_, y) => (
-            <View key={y} style={styles.row}>
-              {Array.from({ length: SNAKE_GRID_SIZE }, (_, x) => {
-                const key = `${x},${y}`;
-                const isSnake = snakeSet.has(key);
-                const isHead = key === headKey;
-                const isFood = key === foodKey;
-                return (
-                  <Animated.View
-                    key={key}
-                    style={[
-                      styles.cell,
-                      { width: CELL_SIZE, height: CELL_SIZE },
-                      isHead && styles.headCell,
-                      isSnake && !isHead && styles.snakeCell,
-                      isFood && { transform: [{ scale: foodScale }] },
-                      isFood && styles.foodCell,
-                    ]}
-                  />
-                );
-              })}
-            </View>
-          ))}
-        </View>
-      </View>
+        <GestureDetector gesture={panGesture}>
+          <View>
+            <GameBoardContainer>
+              <View style={[styles.board, { width: ACTUAL_BOARD, height: ACTUAL_BOARD }]}>
+                {/* Checkered Background */}
+                <View style={StyleSheet.absoluteFill}>
+                  {Array.from({ length: SNAKE_GRID_SIZE }, (_, y) => (
+                    <View key={y} style={styles.row}>
+                      {Array.from({ length: SNAKE_GRID_SIZE }, (_, x) => (
+                        <View
+                          key={`${x},${y}`}
+                          style={[
+                            styles.cell,
+                            {
+                              width: CELL_SIZE,
+                              height: CELL_SIZE,
+                              backgroundColor: (x + y) % 2 === 0 ? colors.background : colors.surface,
+                              opacity: 0.5,
+                            },
+                          ]}
+                        />
+                      ))}
+                    </View>
+                  ))}
+                </View>
 
-      {!started && !gameOver && (
-        <Text style={styles.startText}>Press a direction to start!</Text>
-      )}
+                {/* Game Elements */}
+                {snake.map((p, i) => {
+                  const isHead = i === 0;
+                  const rotation = dirRef.current === 'UP' ? '0deg' :
+                    dirRef.current === 'DOWN' ? '180deg' :
+                      dirRef.current === 'LEFT' ? '270deg' : '90deg';
 
-      {/* D-pad controls */}
-      <View style={styles.controls}>
-        <View style={styles.controlRow}>
-          <TouchableOpacity
-            style={styles.dpadButton}
-            onPress={() => changeDirection('UP')}
-            activeOpacity={0.6}
-          >
-            <Text style={styles.dpadText}>▲</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.controlRow}>
-          <TouchableOpacity
-            style={styles.dpadButton}
-            onPress={() => changeDirection('LEFT')}
-            activeOpacity={0.6}
-          >
-            <Text style={styles.dpadText}>◀</Text>
-          </TouchableOpacity>
-          <View style={styles.dpadSpacer} />
-          <TouchableOpacity
-            style={styles.dpadButton}
-            onPress={() => changeDirection('RIGHT')}
-            activeOpacity={0.6}
-          >
-            <Text style={styles.dpadText}>▶</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.controlRow}>
-          <TouchableOpacity
-            style={styles.dpadButton}
-            onPress={() => changeDirection('DOWN')}
-            activeOpacity={0.6}
-          >
-            <Text style={styles.dpadText}>▼</Text>
-          </TouchableOpacity>
-        </View>
+                  return (
+                    <View
+                      key={`${p.x},${p.y}-${i}`}
+                      style={[
+                        styles.element,
+                        {
+                          width: CELL_SIZE,
+                          height: CELL_SIZE,
+                          left: p.x * CELL_SIZE,
+                          top: p.y * CELL_SIZE,
+                        },
+                      ]}
+                    >
+                      <View style={[
+                        isHead ? styles.headCell : styles.snakeCell,
+                        { width: CELL_SIZE - 2, height: CELL_SIZE - 2, borderRadius: isHead ? 6 : 4 }
+                      ]}>
+                        {isHead && (
+                          <View style={[styles.eyesContainer, { transform: [{ rotate: rotation }] }]}>
+                            <View style={styles.eye} />
+                            <View style={styles.eye} />
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+
+                <Animated.View
+                  style={[
+                    styles.element,
+                    {
+                      width: CELL_SIZE,
+                      height: CELL_SIZE,
+                      left: food.x * CELL_SIZE,
+                      top: food.y * CELL_SIZE,
+                      transform: [{ scale: foodScale }],
+                    },
+                  ]}
+                >
+                  <View style={styles.foodCell}>
+                    <View style={styles.appleLeaf} />
+                  </View>
+                </Animated.View>
+              </View>
+            </GameBoardContainer>
+          </View>
+        </GestureDetector>
       </View>
 
       {gameOver && (
-        <View style={styles.overlay}>
-          <Text style={styles.gameOverText}>Game Over!</Text>
-          <Text style={styles.finalScore}>Score: {score}</Text>
-          <TouchableOpacity style={styles.playAgain} onPress={resetGame} activeOpacity={0.7}>
-            <Text style={styles.playAgainText}>Play Again</Text>
-          </TouchableOpacity>
-        </View>
+        <GameOverOverlay
+          result="lose"
+          title="AWW, SNAP!"
+          subtitle={`You scored ${score} points.`}
+          onPlayAgain={resetGame}
+        />
       )}
 
       {paused && !gameOver && (
-        <View style={styles.overlay}>
-          <Text style={styles.pausedText}>Paused</Text>
-          <TouchableOpacity 
-            style={styles.resumeButton} 
-            onPress={() => setPaused(false)} 
-            activeOpacity={0.7}
-          >
-            <Text style={styles.playAgainText}>Resume</Text>
-          </TouchableOpacity>
-        </View>
+        <GameOverOverlay
+          result="draw"
+          title="PAUSED"
+          onPlayAgain={() => setPaused(false)}
+          onPlayAgainLabel="RESUME"
+        />
       )}
 
       {showTutorial && (
@@ -337,148 +357,67 @@ export default function Snake({ difficulty }: Props) {
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-  },
-  tutorialControls: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 10,
-    gap: 12,
-  },
-  tutorialButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  pauseButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  pauseIcon: {
-    fontSize: 20,
-  },
-  tutorialIcon: {
-    fontSize: 24,
+    padding: spacing.md,
+    backgroundColor: colors.background,
   },
   boardContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
   },
   board: {
     backgroundColor: '#0a0a1a',
-    borderRadius: 4,
+    borderRadius: radius.md,
     overflow: 'hidden',
+    borderWidth: 4,
+    borderColor: '#1e1e3a',
   },
   row: {
     flexDirection: 'row',
   },
   cell: {
-    backgroundColor: '#111125',
-    borderWidth: 0.5,
-    borderColor: '#1a1a30',
+    borderWidth: 0,
+  },
+  element: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headCell: {
-    backgroundColor: '#2ecc71',
-    borderRadius: 3,
+    backgroundColor: '#00b894',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  eyesContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 4,
+  },
+  eye: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: '#fff',
   },
   snakeCell: {
-    backgroundColor: '#27ae60',
+    backgroundColor: '#55efc4',
   },
   foodCell: {
-    backgroundColor: colors.primary,
-    borderRadius: 10,
+    width: '80%',
+    height: '80%',
+    backgroundColor: '#ff7675',
+    borderRadius: radius.full,
+    position: 'relative',
   },
-  startText: {
-    color: colors.textSecondary,
-    fontSize: 16,
-    textAlign: 'center',
-    marginTop: 16,
-  },
-  controls: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  controlRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  dpadButton: {
-    width: 56,
-    height: 56,
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: 3,
-  },
-  dpadSpacer: {
-    width: 56,
-    height: 56,
-    margin: 3,
-  },
-  dpadText: {
-    color: colors.text,
-    fontSize: 22,
-  },
-  overlay: {
+  appleLeaf: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(26, 26, 46, 0.92)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  gameOverText: {
-    color: colors.primary,
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  finalScore: {
-    color: colors.text,
-    fontSize: 20,
-    marginBottom: 24,
-  },
-  playAgain: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-  },
-  playAgainText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  pausedText: {
-    color: colors.warning,
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 24,
-  },
-  resumeButton: {
-    backgroundColor: colors.success,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
+    top: -2,
+    right: 2,
+    width: 6,
+    height: 4,
+    backgroundColor: '#00b894',
+    borderRadius: 2,
+    transform: [{ rotate: '45deg' }],
   },
 });

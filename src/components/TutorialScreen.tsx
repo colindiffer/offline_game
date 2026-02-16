@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
+import { spacing, radius, shadows, typography } from '../utils/designTokens';
+import ModalContainer from './ModalContainer';
 
 export interface TutorialStep {
   title: string;
@@ -19,7 +21,7 @@ interface Props {
 export default function TutorialScreen({ gameName, steps, onClose }: Props) {
   const { colors } = useTheme();
   const [currentStep, setCurrentStep] = useState(0);
-  const styles = getStyles(colors);
+  const styles = useMemo(() => getStyles(colors), [colors]);
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
@@ -38,97 +40,78 @@ export default function TutorialScreen({ gameName, steps, onClose }: Props) {
   const step = steps[currentStep];
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.gameTitle}>{gameName}</Text>
-        <Text style={styles.subtitle}>How to Play</Text>
+    <ModalContainer onClose={onClose}>
+      <Text style={styles.gameTitle}>{gameName}</Text>
+      <Text style={styles.subtitle}>How to Play</Text>
 
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-          {step.icon && (
-            <Text style={styles.icon}>{step.icon}</Text>
-          )}
-          
-          <Text style={styles.stepTitle}>{step.title}</Text>
-          <Text style={styles.description}>{step.description}</Text>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {step.icon && (
+          <Text style={styles.icon}>{step.icon}</Text>
+        )}
 
-          {step.tips && step.tips.length > 0 && (
-            <View style={styles.tipsContainer}>
-              <Text style={styles.tipsTitle}>💡 Tips:</Text>
-              {step.tips.map((tip, index) => (
-                <Text key={index} style={styles.tip}>• {tip}</Text>
-              ))}
-            </View>
-          )}
-        </ScrollView>
+        <Text style={styles.stepTitle}>{step.title}</Text>
+        <Text style={styles.description}>{step.description}</Text>
 
-        <View style={styles.pagination}>
-          {steps.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                index === currentStep && styles.activeDot,
-              ]}
-            />
-          ))}
-        </View>
+        {step.tips && step.tips.length > 0 && (
+          <View style={styles.tipsContainer}>
+            <Text style={styles.tipsTitle}>Tips:</Text>
+            {step.tips.map((tip, index) => (
+              <Text key={index} style={styles.tip}>- {tip}</Text>
+            ))}
+          </View>
+        )}
+      </ScrollView>
 
-        <View style={styles.buttons}>
-          {currentStep > 0 && (
-            <TouchableOpacity
-              style={[styles.button, styles.prevButton]}
-              onPress={handlePrev}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.buttonText}>← Previous</Text>
-            </TouchableOpacity>
-          )}
+      <View style={styles.pagination}>
+        {steps.map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.dot,
+              index === currentStep && styles.activeDot,
+            ]}
+          />
+        ))}
+      </View>
 
+      <View style={styles.buttons}>
+        {currentStep > 0 && (
           <TouchableOpacity
-            style={[styles.button, styles.nextButton]}
-            onPress={handleNext}
+            style={[styles.button, styles.prevButton]}
+            onPress={handlePrev}
             activeOpacity={0.7}
           >
-            <Text style={styles.buttonText}>
-              {currentStep === steps.length - 1 ? 'Got it!' : 'Next →'}
-            </Text>
+            <Text style={styles.prevButtonText}>Previous</Text>
           </TouchableOpacity>
-        </View>
+        )}
+
+        <TouchableOpacity
+          style={[styles.button, styles.nextButton]}
+          onPress={handleNext}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.nextButtonText}>
+            {currentStep === steps.length - 1 ? 'Got it!' : 'Next'}
+          </Text>
+        </TouchableOpacity>
       </View>
-    </View>
+    </ModalContainer>
   );
 }
 
 const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    container: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0, 0, 0, 0.9)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 20,
-      zIndex: 1000,
-    },
-    content: {
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      padding: 24,
-      width: '100%',
-      maxWidth: 500,
-      maxHeight: '80%',
-    },
     gameTitle: {
-      fontSize: 24,
-      fontWeight: 'bold',
+      ...typography.heading,
       color: colors.text,
       textAlign: 'center',
-      marginBottom: 4,
+      marginBottom: spacing.xs,
     },
     subtitle: {
-      fontSize: 16,
+      ...typography.body,
       color: colors.textSecondary,
       textAlign: 'center',
-      marginBottom: 20,
+      marginBottom: spacing.xl,
     },
     scrollView: {
       flex: 1,
@@ -138,52 +121,51 @@ const getStyles = (colors: ThemeColors) =>
     },
     icon: {
       fontSize: 64,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     stepTitle: {
-      fontSize: 20,
-      fontWeight: '600',
+      ...typography.subheading,
       color: colors.text,
       textAlign: 'center',
-      marginBottom: 12,
+      marginBottom: spacing.md,
     },
     description: {
-      fontSize: 16,
+      ...typography.body,
       color: colors.text,
       textAlign: 'center',
-      lineHeight: 24,
-      marginBottom: 16,
+      marginBottom: spacing.lg,
     },
     tipsContainer: {
       backgroundColor: colors.card,
-      borderRadius: 8,
-      padding: 16,
+      borderRadius: radius.sm,
+      padding: spacing.lg,
       width: '100%',
-      marginTop: 8,
+      marginTop: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
     tipsTitle: {
-      fontSize: 16,
-      fontWeight: '600',
+      ...typography.bodyBold,
       color: colors.text,
-      marginBottom: 8,
+      marginBottom: spacing.sm,
     },
     tip: {
-      fontSize: 14,
+      ...typography.label,
+      fontWeight: '400',
       color: colors.text,
-      lineHeight: 20,
-      marginBottom: 4,
+      marginBottom: spacing.xs,
     },
     pagination: {
       flexDirection: 'row',
       justifyContent: 'center',
       alignItems: 'center',
-      marginVertical: 16,
-      gap: 8,
+      marginVertical: spacing.lg,
+      gap: spacing.sm,
     },
     dot: {
       width: 8,
       height: 8,
-      borderRadius: 4,
+      borderRadius: radius.full,
       backgroundColor: colors.textSecondary,
       opacity: 0.3,
     },
@@ -196,24 +178,31 @@ const getStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      gap: 8,
+      gap: spacing.sm,
     },
     button: {
-      paddingVertical: 12,
-      paddingHorizontal: 20,
-      borderRadius: 8,
+      paddingVertical: spacing.md,
+      paddingHorizontal: spacing.xl,
+      borderRadius: radius.sm,
       flex: 1,
+      ...shadows.sm,
     },
     prevButton: {
       backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    prevButtonText: {
+      color: colors.text,
+      ...typography.bodyBold,
+      textAlign: 'center',
     },
     nextButton: {
       backgroundColor: colors.primary,
     },
-    buttonText: {
-      color: colors.text,
-      fontSize: 16,
-      fontWeight: '600',
+    nextButtonText: {
+      color: colors.textOnPrimary,
+      ...typography.bodyBold,
       textAlign: 'center',
     },
   });

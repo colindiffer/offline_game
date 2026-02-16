@@ -31,10 +31,11 @@ export interface Player {
   hand?: PokerHand;
 }
 
-export type GamePhase = 'betting' | 'discard' | 'finalBetting' | 'showdown' | 'finished';
+export type GamePhase = 'preFlop' | 'flop' | 'turn' | 'river' | 'showdown' | 'finished';
 
 export interface PokerGameState {
   players: Player[];
+  communityCards: Card[];
   pot: number;
   currentPlayerIndex: number;
   gamePhase: GamePhase;

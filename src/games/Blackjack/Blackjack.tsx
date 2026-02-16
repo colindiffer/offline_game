@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Dimensions, Platform } from 'react-native';
 import Header from '../../components/Header';
 import PlayingCard from '../../components/PlayingCard';
 import TutorialScreen from '../../components/TutorialScreen';
+import PremiumButton from '../../components/PremiumButton';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { getHighScore, setHighScore as saveHighScore } from '../../utils/storage';
@@ -12,6 +14,7 @@ import { ThemeColors } from '../../utils/themes';
 import { GAME_TUTORIALS } from '../../utils/tutorials';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BlackjackGameState } from './types';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import {
   initializeBlackjackGame,
   dealInitialHand,
@@ -22,6 +25,8 @@ import {
 } from './logic';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_WIDTH = Math.floor((SCREEN_WIDTH - 64) / 4);
+const CARD_HEIGHT = Math.floor(CARD_WIDTH * 1.4);
 const BET_OPTIONS = [10, 25, 50, 100];
 const INITIAL_BANKROLL = 100;
 
@@ -33,14 +38,14 @@ export default function Blackjack({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
-  
-  const [gameState, setGameState] = useState<BlackjackGameState>(() => 
+
+  const [gameState, setGameState] = useState<BlackjackGameState>(() =>
     initializeBlackjackGame(difficulty, INITIAL_BANKROLL)
   );
   const [highScore, setHighScore] = useState(INITIAL_BANKROLL);
   const [showTutorial, setShowTutorial] = useState(false);
   const [selectedBet, setSelectedBet] = useState(10);
-  
+
   const startTimeRef = useRef<number>(Date.now());
   const handStartTimeRef = useRef<number>(Date.now());
 
@@ -65,7 +70,7 @@ export default function Blackjack({ difficulty }: Props) {
   useEffect(() => {
     if (gameState.gamePhase === 'finished' && gameState.result) {
       const handDuration = Math.floor((Date.now() - handStartTimeRef.current) / 1000);
-      
+
       if (gameState.result === 'win' || gameState.result === 'blackjack') {
         recordGameResult('blackjack', 'win', handDuration);
         playSound('win');
@@ -96,7 +101,7 @@ export default function Blackjack({ difficulty }: Props) {
 
   const handleBetSelect = useCallback((bet: number) => {
     if (bet > gameState.tokens) return;
-    
+
     playSound('tap');
     handStartTimeRef.current = Date.now();
     const newState = dealInitialHand(gameState, bet);
@@ -123,7 +128,7 @@ export default function Blackjack({ difficulty }: Props) {
 
   const handleNewHand = useCallback(() => {
     playSound('tap');
-    
+
     if (gameState.tokens <= 0) {
       // Game over - restart with initial tokens
       const totalGameDuration = Math.floor((Date.now() - startTimeRef.current) / 1000);
@@ -141,7 +146,7 @@ export default function Blackjack({ difficulty }: Props) {
 
   const getResultText = () => {
     if (!gameState.result) return '';
-    
+
     switch (gameState.result) {
       case 'blackjack':
         return 'BLACKJACK! 🎉';
@@ -157,30 +162,20 @@ export default function Blackjack({ difficulty }: Props) {
   };
 
   const getResultColor = () => {
-    if (!gameState.result) return colors.text;
-    
+    if (!gameState.result) return '#fff';
+
     switch (gameState.result) {
       case 'blackjack':
       case 'win':
-        return colors.success;
+        return '#55efc4';
       case 'loss':
-        return colors.error;
+        return '#ff7675';
       case 'push':
-        return colors.warning;
+        return '#ffeaa7';
       default:
-        return colors.text;
+        return '#fff';
     }
   };
-
-  if (showTutorial && GAME_TUTORIALS.blackjack) {
-    return (
-      <TutorialScreen
-        gameName="Blackjack"
-        steps={GAME_TUTORIALS.blackjack}
-        onClose={handleTutorialClose}
-      />
-    );
-  }
 
   const isGameOver = gameState.tokens <= 0 && gameState.gamePhase === 'finished';
   const showDealerSecondCard = gameState.gamePhase === 'dealer' || gameState.gamePhase === 'finished';
@@ -188,169 +183,157 @@ export default function Blackjack({ difficulty }: Props) {
   return (
     <View style={styles.container}>
       <Header
-        title="Blackjack"
         score={gameState.tokens}
-        scoreLabel="Tokens"
+        scoreLabel="CHIPS"
         highScore={highScore}
-        highScoreLabel="Best"
+        highScoreLabel="BEST"
       />
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {/* Tokens and Bet Display */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>Tokens</Text>
-            <Text style={styles.statValue}>{gameState.tokens}</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statLabel}>High Score</Text>
-            <Text style={styles.statValue}>{highScore}</Text>
-          </View>
-          {gameState.bet > 0 && (
-            <View style={styles.statBox}>
-              <Text style={styles.statLabel}>Current Bet</Text>
-              <Text style={styles.statValue}>{gameState.bet}</Text>
-            </View>
-          )}
-        </View>
+      <View style={styles.table}>
+        <LinearGradient
+          colors={['#1b4332', '#081c15']}
+          style={StyleSheet.absoluteFill}
+        />
 
-        {/* Dealer's Hand */}
-        <View style={styles.handSection}>
-          <Text style={styles.handLabel}>
-            Dealer's Hand
-            {showDealerSecondCard && !gameState.dealerHand.isBust && 
-              ` (${gameState.dealerHand.value})`}
-            {gameState.dealerHand.isBust && ' (BUST!)'}
-          </Text>
-          <View style={styles.cardsContainer}>
+        <View style={styles.dealerSection}>
+          <View style={styles.handInfo}>
+            <Text style={styles.handTitle}>DEALER</Text>
+            {showDealerSecondCard && (
+              <View style={styles.scoreBadge}>
+                <Text style={styles.scoreText}>
+                  {gameState.dealerHand.isBust ? 'BUST' : gameState.dealerHand.value}
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.cardsRow}>
             {gameState.dealerHand.cards.map((card, index) => (
-              <PlayingCard
-                key={card.id}
-                card={card}
-                faceDown={index === 1 && !showDealerSecondCard}
-                size="medium"
-              />
+              <View key={card.id} style={styles.cardWrapper}>
+                <PlayingCard
+                  card={card}
+                  faceDown={index === 1 && !showDealerSecondCard}
+                  width={CARD_WIDTH}
+                  height={CARD_HEIGHT}
+                />
+              </View>
             ))}
             {gameState.dealerHand.cards.length === 0 && (
-              <>
-                <PlayingCard card={null} size="medium" />
-                <PlayingCard card={null} size="medium" />
-              </>
+              <View style={styles.placeholderHand}>
+                <PlayingCard card={null} width={CARD_WIDTH} height={CARD_HEIGHT} />
+                <PlayingCard card={null} width={CARD_WIDTH} height={CARD_HEIGHT} />
+              </View>
             )}
           </View>
         </View>
 
-        {/* Player's Hand */}
-        <View style={styles.handSection}>
-          <Text style={styles.handLabel}>
-            Your Hand ({gameState.playerHand.value})
-            {gameState.playerHand.isBlackjack && ' - BLACKJACK!'}
-            {gameState.playerHand.isBust && ' - BUST!'}
-            {gameState.playerHand.isSoft && gameState.playerHand.value <= 21 && ' (Soft)'}
-          </Text>
-          <View style={styles.cardsContainer}>
+        <View style={styles.centerArea}>
+          {gameState.result ? (
+            <View style={styles.resultBanner}>
+              <Text style={[styles.resultText, { color: getResultColor() }]}>
+                {getResultText()}
+              </Text>
+            </View>
+          ) : gameState.gamePhase === 'dealer' ? (
+            <View style={styles.dealerThinking}>
+              <Text style={styles.thinkingText}>Dealer is playing...</Text>
+            </View>
+          ) : (
+            <View style={styles.betDisplay}>
+              <Text style={styles.betLabel}>CURRENT BET</Text>
+              <Text style={styles.betValue}>{gameState.bet}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.playerSection}>
+          <View style={styles.cardsRow}>
             {gameState.playerHand.cards.map(card => (
-              <PlayingCard key={card.id} card={card} size="medium" />
+              <View key={card.id} style={styles.cardWrapper}>
+                <PlayingCard card={card} width={CARD_WIDTH} height={CARD_HEIGHT} />
+              </View>
             ))}
             {gameState.playerHand.cards.length === 0 && (
-              <>
-                <PlayingCard card={null} size="medium" />
-                <PlayingCard card={null} size="medium" />
-              </>
+              <View style={styles.placeholderHand}>
+                <PlayingCard card={null} width={CARD_WIDTH} height={CARD_HEIGHT} />
+                <PlayingCard card={null} width={CARD_WIDTH} height={CARD_HEIGHT} />
+              </View>
+            )}
+          </View>
+          <View style={styles.handInfo}>
+            <Text style={styles.handTitle}>PLAYER</Text>
+            {gameState.playerHand.cards.length > 0 && (
+              <View style={styles.scoreBadge}>
+                <Text style={styles.scoreText}>
+                  {gameState.playerHand.isBust ? 'BUST' : gameState.playerHand.value}
+                </Text>
+              </View>
             )}
           </View>
         </View>
+      </View>
 
-        {/* Result Display */}
-        {gameState.result && (
-          <View style={styles.resultContainer}>
-            <Text style={[styles.resultText, { color: getResultColor() }]}>
-              {getResultText()}
-            </Text>
-          </View>
-        )}
-
-        {/* Game Over Message */}
-        {isGameOver && (
-          <View style={styles.gameOverContainer}>
-            <Text style={styles.gameOverText}>GAME OVER</Text>
-            <Text style={styles.gameOverSubtext}>You ran out of chips!</Text>
-          </View>
-        )}
-
-        {/* Action Buttons */}
-        <View style={styles.actionContainer}>
-          {gameState.gamePhase === 'betting' && (
-            <View style={styles.bettingContainer}>
-              <Text style={styles.bettingLabel}>Select Your Bet:</Text>
-              <View style={styles.betButtonsContainer}>
-                {BET_OPTIONS.map(bet => (
-                  <TouchableOpacity
-                    key={bet}
-                    style={[
-                      styles.betButton,
-                      bet > gameState.tokens && styles.betButtonDisabled,
-                    ]}
-                    onPress={() => handleBetSelect(bet)}
-                    disabled={bet > gameState.tokens}
-                  >
-                    <Text style={[
-                      styles.betButtonText,
-                      bet > gameState.tokens && styles.betButtonTextDisabled,
-                    ]}>
-                      {bet}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {gameState.gamePhase === 'playing' && (
-            <View style={styles.playButtonsContainer}>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.hitButton]}
-                onPress={handleHit}
-              >
-                <Text style={styles.actionButtonText}>HIT</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, styles.standButton]}
-                onPress={handleStand}
-              >
-                <Text style={styles.actionButtonText}>STAND</Text>
-              </TouchableOpacity>
-
-              {gameState.canDouble && (
+      <View style={styles.controls}>
+        {gameState.gamePhase === 'betting' && (
+          <View style={styles.bettingPhase}>
+            <Text style={styles.phaseTitle}>PLACE YOUR BET</Text>
+            <View style={styles.chipContainer}>
+              {BET_OPTIONS.map(bet => (
                 <TouchableOpacity
-                  style={[styles.actionButton, styles.doubleButton]}
-                  onPress={handleDouble}
+                  key={bet}
+                  style={[styles.chip, bet > gameState.tokens && styles.chipDisabled]}
+                  onPress={() => handleBetSelect(bet)}
+                  disabled={bet > gameState.tokens}
                 >
-                  <Text style={styles.actionButtonText}>DOUBLE</Text>
+                  <LinearGradient
+                    colors={bet === 10 ? ['#74b9ff', '#0984e3'] : bet === 25 ? ['#ff7675', '#d63031'] : bet === 50 ? ['#55efc4', '#00b894'] : ['#a29bfe', '#6c5ce7']}
+                    style={styles.chipGradient}
+                  >
+                    <View style={styles.chipInner}>
+                      <Text style={styles.chipText}>{bet}</Text>
+                    </View>
+                  </LinearGradient>
                 </TouchableOpacity>
-              )}
+              ))}
             </View>
-          )}
+          </View>
+        )}
 
-          {gameState.gamePhase === 'dealer' && (
-            <View style={styles.dealerPlayingContainer}>
-              <Text style={styles.dealerPlayingText}>Dealer is playing...</Text>
+        {gameState.gamePhase === 'playing' && (
+          <View style={styles.playingPhase}>
+            <View style={styles.mainActions}>
+              <PremiumButton variant="primary" height={64} style={styles.actionBtn} onPress={handleHit}>
+                <Text style={styles.actionBtnText}>HIT</Text>
+              </PremiumButton>
+              <PremiumButton variant="secondary" height={64} style={styles.actionBtn} onPress={handleStand}>
+                <Text style={styles.actionBtnText}>STAND</Text>
+              </PremiumButton>
             </View>
-          )}
+            {gameState.canDouble && (
+              <PremiumButton variant="secondary" height={50} style={styles.doubleBtn} onPress={handleDouble}>
+                <Text style={styles.doubleBtnText}>DOUBLE DOWN</Text>
+              </PremiumButton>
+            )}
+          </View>
+        )}
 
-          {gameState.gamePhase === 'finished' && (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.newHandButton]}
-              onPress={handleNewHand}
-            >
-              <Text style={styles.actionButtonText}>
-                {isGameOver ? 'PLAY AGAIN' : 'NEW HAND'}
+        {gameState.gamePhase === 'finished' && (
+          <View style={styles.finishedPhase}>
+            <PremiumButton variant="primary" height={60} style={styles.newHandBtn} onPress={handleNewHand}>
+              <Text style={styles.actionBtnText}>
+                {isGameOver ? 'RE-BUY CHIPS' : 'NEXT HAND'}
               </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </ScrollView>
+            </PremiumButton>
+          </View>
+        )}
+      </View>
+
+      {showTutorial && GAME_TUTORIALS.blackjack && (
+        <TutorialScreen
+          gameName="Blackjack"
+          steps={GAME_TUTORIALS.blackjack}
+          onClose={handleTutorialClose}
+        />
+      )}
     </View>
   );
 }
@@ -361,152 +344,184 @@ const getStyles = (colors: ThemeColors) =>
       flex: 1,
       backgroundColor: colors.background,
     },
-    content: {
+    table: {
       flex: 1,
+      margin: spacing.sm,
+      borderRadius: radius.lg,
+      overflow: 'hidden',
+      borderWidth: 8,
+      borderColor: '#2d3436', // Dark frame
+      justifyContent: 'space-between',
+      paddingVertical: spacing.xl,
     },
-    contentContainer: {
-      padding: 16,
-      gap: 20,
-    },
-    statsContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      gap: 10,
-    },
-    statBox: {
-      backgroundColor: colors.surface,
-      padding: 12,
-      borderRadius: 8,
-      flex: 1,
+    dealerSection: {
       alignItems: 'center',
+      gap: spacing.md,
     },
-    statLabel: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      marginBottom: 4,
+    playerSection: {
+      alignItems: 'center',
+      gap: spacing.md,
     },
-    statValue: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: colors.primary,
-    },
-    handSection: {
-      backgroundColor: colors.surface,
-      padding: 16,
-      borderRadius: 12,
-    },
-    handLabel: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: colors.text,
-      marginBottom: 12,
-    },
-    cardsContainer: {
+    handInfo: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 8,
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    handTitle: {
+      color: 'rgba(255,255,255,0.7)',
+      fontWeight: '900',
+      fontSize: 14,
+      letterSpacing: 2,
+    },
+    scoreBadge: {
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.2)',
+    },
+    scoreText: {
+      color: '#fff',
+      fontWeight: 'bold',
+      fontSize: 14,
+    },
+    cardsRow: {
+      flexDirection: 'row',
       justifyContent: 'center',
+      minHeight: CARD_HEIGHT + 20,
     },
-    resultContainer: {
+    cardWrapper: {
+      marginHorizontal: -CARD_WIDTH * 0.25, // Overlap cards based on width
+      ...shadows.md,
+    },
+    placeholderHand: {
+      flexDirection: 'row',
+      opacity: 0.1,
+      marginHorizontal: -CARD_WIDTH * 0.25,
+    },
+    centerArea: {
+      height: 100,
+      justifyContent: 'center',
       alignItems: 'center',
-      padding: 16,
+    },
+    betDisplay: {
+      alignItems: 'center',
+    },
+    betLabel: {
+      color: 'rgba(255,255,255,0.4)',
+      fontSize: 10,
+      fontWeight: 'bold',
+      letterSpacing: 1,
+    },
+    betValue: {
+      color: '#fab1a0',
+      fontSize: 24,
+      fontWeight: '900',
+    },
+    resultBanner: {
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      paddingHorizontal: 30,
+      paddingVertical: 12,
+      borderRadius: radius.full,
+      borderWidth: 2,
+      borderColor: 'rgba(255,255,255,0.1)',
     },
     resultText: {
-      fontSize: 28,
-      fontWeight: 'bold',
+      fontSize: 22,
+      fontWeight: '900',
+      letterSpacing: 1,
     },
-    gameOverContainer: {
-      alignItems: 'center',
-      padding: 20,
-      backgroundColor: colors.error + '20',
-      borderRadius: 12,
+    dealerThinking: {
+      opacity: 0.7,
     },
-    gameOverText: {
-      fontSize: 32,
-      fontWeight: 'bold',
-      color: colors.error,
-      marginBottom: 8,
-    },
-    gameOverSubtext: {
-      fontSize: 16,
-      color: colors.text,
-    },
-    actionContainer: {
-      marginTop: 8,
-    },
-    bettingContainer: {
-      alignItems: 'center',
-    },
-    bettingLabel: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: colors.text,
-      marginBottom: 16,
-    },
-    betButtonsContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-      justifyContent: 'center',
-    },
-    betButton: {
-      backgroundColor: colors.primary,
-      paddingVertical: 16,
-      paddingHorizontal: 28,
-      borderRadius: 8,
-      minWidth: 80,
-      alignItems: 'center',
-    },
-    betButtonDisabled: {
-      backgroundColor: colors.textSecondary,
-      opacity: 0.5,
-    },
-    betButtonText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#FFFFFF',
-    },
-    betButtonTextDisabled: {
-      color: colors.surface,
-    },
-    playButtonsContainer: {
-      flexDirection: 'row',
-      gap: 12,
-      justifyContent: 'center',
-      flexWrap: 'wrap',
-    },
-    actionButton: {
-      paddingVertical: 16,
-      paddingHorizontal: 32,
-      borderRadius: 8,
-      minWidth: 100,
-      alignItems: 'center',
-    },
-    hitButton: {
-      backgroundColor: colors.primary,
-    },
-    standButton: {
-      backgroundColor: colors.warning,
-    },
-    doubleButton: {
-      backgroundColor: colors.accent,
-    },
-    newHandButton: {
-      backgroundColor: colors.success,
-      alignSelf: 'center',
-    },
-    actionButtonText: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#FFFFFF',
-    },
-    dealerPlayingContainer: {
-      alignItems: 'center',
-      padding: 20,
-    },
-    dealerPlayingText: {
-      fontSize: 18,
+    thinkingText: {
+      color: '#fff',
       fontStyle: 'italic',
+      fontSize: 16,
+    },
+    controls: {
+      padding: spacing.lg,
+      paddingBottom: Platform.OS === 'ios' ? spacing.xxl : spacing.lg,
+      backgroundColor: colors.surface,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    bettingPhase: {
+      alignItems: 'center',
+      gap: spacing.lg,
+    },
+    phaseTitle: {
       color: colors.textSecondary,
+      fontWeight: '900',
+      fontSize: 14,
+      letterSpacing: 1,
+    },
+    chipContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      width: '100%',
+    },
+    chip: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      overflow: 'hidden',
+      ...shadows.md,
+    },
+    chipDisabled: {
+      opacity: 0.3,
+    },
+    chipGradient: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    chipInner: {
+      width: 54,
+      height: 54,
+      borderRadius: 27,
+      borderWidth: 2,
+      borderColor: 'rgba(255,255,255,0.4)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    chipText: {
+      color: '#fff',
+      fontWeight: '900',
+      fontSize: 20,
+      textShadowColor: 'rgba(0,0,0,0.5)',
+      textShadowOffset: { width: 1, height: 1 },
+      textShadowRadius: 2,
+    },
+    playingPhase: {
+      gap: spacing.md,
+    },
+    mainActions: {
+      flexDirection: 'row',
+      gap: spacing.md,
+    },
+    actionBtn: {
+      flex: 1,
+    },
+    actionBtnText: {
+      color: '#fff',
+      fontWeight: '900',
+      fontSize: 18,
+      letterSpacing: 1,
+    },
+    doubleBtn: {
+      width: '100%',
+    },
+    doubleBtnText: {
+      color: colors.text,
+      fontWeight: 'bold',
+      fontSize: 14,
+    },
+    finishedPhase: {
+      alignItems: 'center',
+    },
+    newHandBtn: {
+      width: '80%',
     },
   });

@@ -3,6 +3,8 @@ import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View, ScrollV
 import Header from '../../components/Header';
 import TutorialScreen from '../../components/TutorialScreen';
 import HintButton from '../../components/HintButton';
+import GameOverOverlay from '../../components/GameOverOverlay';
+import GameBoardContainer from '../../components/GameBoardContainer';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { getHighScore, setHighScore } from '../../utils/storage';
@@ -11,10 +13,12 @@ import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
 import { generateSudoku, isSolved, getConflicts, SudokuBoard } from './logic';
 import { GAME_TUTORIALS } from '../../utils/tutorials';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
+import PremiumButton from '../../components/PremiumButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CELL_SIZE = Math.floor((Math.min(SCREEN_WIDTH - 60, 360)) / 9);
+const CELL_SIZE = Math.floor((SCREEN_WIDTH - 32) / 9);
 
 interface Props {
   difficulty: Difficulty;
@@ -78,7 +82,7 @@ export default function Sudoku({ difficulty }: Props) {
   const handleCellPress = useCallback(
     (row: number, col: number) => {
       if (gameWon || board[row][col].isFixed) return;
-      
+
       if (!startTimeRef.current) {
         startTimeRef.current = Date.now();
       }
@@ -127,7 +131,7 @@ export default function Sudoku({ difficulty }: Props) {
           // Find valid numbers for this cell
           const usedInRow = new Set(board[row].filter(c => c.value > 0).map(c => c.value));
           const usedInCol = new Set(board.map(r => r[col]).filter(c => c.value > 0).map(c => c.value));
-          
+
           const boxRow = Math.floor(row / 3) * 3;
           const boxCol = Math.floor(col / 3) * 3;
           const usedInBox = new Set<number>();
@@ -150,7 +154,7 @@ export default function Sudoku({ difficulty }: Props) {
             setRemainingHints(prev => prev - 1);
             setHintCooldown(10);
             playSound('tap');
-            
+
             // Clear hint after 3 seconds
             setTimeout(() => setHintCell(null), 3000);
             return;
@@ -238,10 +242,10 @@ export default function Sudoku({ difficulty }: Props) {
                       backgroundColor: isHint
                         ? colors.success + '60'
                         : isSelected
-                        ? colors.primary + '40'
-                        : cell.isFixed
-                        ? colors.card
-                        : colors.surface,
+                          ? colors.primary + '40'
+                          : cell.isFixed
+                            ? colors.card
+                            : colors.surface,
                       borderTopWidth: isThickTop ? 3 : 1,
                       borderLeftWidth: isThickLeft ? 3 : 1,
                       borderRightWidth: c === 8 ? 3 : 1,
@@ -272,72 +276,84 @@ export default function Sudoku({ difficulty }: Props) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
+    <ScrollView contentContainerStyle={styles.scrollContainer} style={styles.viewRoot}>
       <View style={styles.container}>
         <Header
-          title="Sudoku"
           score={elapsedTime}
-          scoreLabel="Time"
+          scoreLabel="TIME"
           highScore={highScore || 0}
-          highScoreLabel="Best"
+          highScoreLabel="BEST"
         />
 
-        <View style={styles.controls}>
-          <TouchableOpacity
-            style={styles.tutorialButton}
-            onPress={() => setShowTutorial(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.tutorialIcon}>❓</Text>
-          </TouchableOpacity>
-          
-          <HintButton
-            onPress={handleHint}
-            disabled={remainingHints <= 0 || hintCooldown > 0 || gameWon}
-            cooldown={hintCooldown}
-            remainingHints={remainingHints}
-          />
+        <View style={styles.statsRow}>
+          <View style={styles.hintsContainer}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Text key={i} style={[styles.heart, i >= remainingHints && styles.heartEmpty]}>
+                {i < remainingHints ? '❤️' : '🖤'}
+              </Text>
+            ))}
+          </View>
+          <View style={styles.difficultyBadge}>
+            <Text style={styles.difficultyText}>{difficulty.toUpperCase()}</Text>
+          </View>
         </View>
 
-        <View style={styles.gameContainer}>
+        <GameBoardContainer style={styles.gameContainer}>
           {renderBoard()}
 
           <View style={styles.numberPad}>
             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-              <TouchableOpacity
+              <PremiumButton
                 key={num}
-                style={styles.numberButton}
+                variant="secondary"
+                height={52}
                 onPress={() => handleNumberPress(num)}
                 disabled={!selectedCell || gameWon}
+                style={styles.numberButton}
               >
                 <Text style={styles.numberText}>{num}</Text>
-              </TouchableOpacity>
+              </PremiumButton>
             ))}
-            <TouchableOpacity
-              style={[styles.numberButton, styles.clearButton]}
+            <PremiumButton
+              variant="danger"
+              height={52}
               onPress={handleClear}
               disabled={!selectedCell || gameWon}
+              style={styles.numberButton}
             >
-              <Text style={styles.numberText}>✕</Text>
-            </TouchableOpacity>
+              <Text style={[styles.numberText, { color: '#fff' }]}>✕</Text>
+            </PremiumButton>
           </View>
 
-          <TouchableOpacity style={styles.newGameBtn} onPress={resetGame} activeOpacity={0.7}>
-            <Text style={styles.newGameText}>New Game</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.actions}>
+            <PremiumButton
+              variant="primary"
+              height={56}
+              onPress={resetGame}
+              style={styles.actionBtn}
+            >
+              <Text style={styles.actionText}>NEW GAME</Text>
+            </PremiumButton>
+
+            <PremiumButton
+              variant="secondary"
+              height={56}
+              onPress={handleHint}
+              disabled={remainingHints <= 0 || hintCooldown > 0 || gameWon}
+              style={styles.actionBtn}
+            >
+              <Text style={styles.actionText}>{hintCooldown > 0 ? `WAIT ${hintCooldown}s` : 'HINT'}</Text>
+            </PremiumButton>
+          </View>
+        </GameBoardContainer>
 
         {gameWon && (
-          <View style={styles.overlay}>
-            <Text style={styles.winText}>You Win!</Text>
-            <Text style={styles.timeText}>Time: {elapsedTime}s</Text>
-            {highScore !== null && elapsedTime < highScore && (
-              <Text style={styles.recordText}>New Record!</Text>
-            )}
-            <TouchableOpacity style={styles.playAgain} onPress={resetGame} activeOpacity={0.7}>
-              <Text style={styles.playAgainText}>Play Again</Text>
-            </TouchableOpacity>
-          </View>
+          <GameOverOverlay
+            result="win"
+            title="SUDOKU MASTER!"
+            subtitle={`Finished in ${elapsedTime} seconds.`}
+            onPlayAgain={resetGame}
+          />
         )}
 
         {showTutorial && (
@@ -354,42 +370,54 @@ export default function Sudoku({ difficulty }: Props) {
 
 const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
+    viewRoot: {
+      backgroundColor: colors.background,
+    },
     scrollContainer: {
       flexGrow: 1,
     },
     container: {
       flex: 1,
-      padding: 20,
+      padding: spacing.md,
     },
-    controls: {
+    statsRow: {
       flexDirection: 'row',
-      justifyContent: 'center',
+      justifyContent: 'space-between',
       alignItems: 'center',
-      gap: 15,
-      marginTop: 10,
+      marginTop: spacing.sm,
+      paddingHorizontal: spacing.sm,
     },
-    tutorialButton: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      backgroundColor: colors.card,
-      justifyContent: 'center',
-      alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 5,
+    hintsContainer: {
+      flexDirection: 'row',
+      gap: 4,
     },
-    tutorialIcon: {
-      fontSize: 24,
+    heart: {
+      fontSize: 20,
+    },
+    heartEmpty: {
+      opacity: 0.3,
+    },
+    difficultyBadge: {
+      backgroundColor: colors.surface,
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    difficultyText: {
+      fontSize: 10,
+      fontWeight: '900',
+      color: colors.textSecondary,
     },
     gameContainer: {
       alignItems: 'center',
-      marginTop: 20,
+      marginTop: spacing.lg,
     },
     board: {
-      backgroundColor: colors.background,
+      backgroundColor: '#1e1e3a',
+      padding: 2,
+      borderRadius: radius.xs,
     },
     row: {
       flexDirection: 'row',
@@ -397,85 +425,47 @@ const getStyles = (colors: ThemeColors) =>
     cell: {
       justifyContent: 'center',
       alignItems: 'center',
-      borderColor: colors.textSecondary,
+      borderColor: '#2b2b45',
     },
     cellText: {
-      fontSize: 20,
+      fontSize: 22,
       fontWeight: 'bold',
-      color: colors.text,
+      color: '#fff',
     },
     fixedText: {
-      color: colors.textSecondary,
+      color: '#a29bfe', // Soft purple for fixed
     },
     conflictText: {
-      color: '#ff0000',
+      color: '#ff7675', // Red for conflict
     },
     numberPad: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'center',
-      marginTop: 20,
-      gap: 10,
+      marginTop: spacing.xl,
+      gap: spacing.sm,
     },
     numberButton: {
-      width: 50,
-      height: 50,
-      backgroundColor: colors.card,
-      borderRadius: 8,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    clearButton: {
-      backgroundColor: colors.error,
+      width: 60,
     },
     numberText: {
-      fontSize: 20,
-      fontWeight: 'bold',
+      fontSize: 22,
+      fontWeight: '900',
       color: colors.text,
     },
-    newGameBtn: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      marginTop: 20,
+    actions: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginTop: spacing.xl,
+      width: '100%',
     },
-    newGameText: {
-      color: colors.text,
+    actionBtn: {
+      flex: 1,
+    },
+    actionText: {
+      fontWeight: '900',
       fontSize: 14,
-      fontWeight: '600',
-    },
-    overlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0,0,0,0.7)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    winText: {
-      color: colors.warning,
-      fontSize: 36,
-      fontWeight: 'bold',
-      marginBottom: 16,
-    },
-    timeText: {
       color: colors.text,
-      fontSize: 24,
-      marginBottom: 8,
-    },
-    recordText: {
-      color: colors.success,
-      fontSize: 20,
-      marginBottom: 24,
-    },
-    playAgain: {
-      backgroundColor: colors.primary,
-      borderRadius: 12,
-      paddingVertical: 14,
-      paddingHorizontal: 24,
-    },
-    playAgainText: {
-      color: colors.text,
-      fontSize: 16,
-      fontWeight: '600',
+      letterSpacing: 0.5,
     },
   });

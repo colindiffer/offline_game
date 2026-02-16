@@ -3,14 +3,18 @@ import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View, Animate
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Header from '../../components/Header';
 import TutorialScreen from '../../components/TutorialScreen';
+import GameBoardContainer from '../../components/GameBoardContainer';
+import GameOverOverlay from '../../components/GameOverOverlay';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { getHighScore, setHighScore } from '../../utils/storage';
 import { recordGameResult } from '../../utils/stats';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { Difficulty } from '../../types';
 import { Board2048, addRandomTile, hasWon, initBoard, isGameOver, swipe } from './logic';
 import { ThemeColors } from '../../utils/themes';
 import { GAME_TUTORIALS } from '../../utils/tutorials';
+import PremiumButton from '../../components/PremiumButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -20,18 +24,18 @@ const TILE_GAP = 6;
 const TILE_SIZE = (BOARD_SIZE - BOARD_PADDING * 2 - TILE_GAP * 5) / 4;
 
 const TILE_COLORS: Record<number, { bg: string; text: string }> = {
-  0:    { bg: '#3d3a50', text: 'transparent' },
-  2:    { bg: '#eee4da', text: '#776e65' },
-  4:    { bg: '#ede0c8', text: '#776e65' },
-  8:    { bg: '#f2b179', text: '#f9f6f2' },
-  16:   { bg: '#f59563', text: '#f9f6f2' },
-  32:   { bg: '#f67c5f', text: '#f9f6f2' },
-  64:   { bg: '#f65e3b', text: '#f9f6f2' },
-  128:  { bg: '#edcf72', text: '#f9f6f2' },
-  256:  { bg: '#edcc61', text: '#f9f6f2' },
-  512:  { bg: '#edc850', text: '#f9f6f2' },
-  1024: { bg: '#edc53f', text: '#f9f6f2' },
-  2048: { bg: '#edc22e', text: '#f9f6f2' },
+  0: { bg: '#3d3d5c', text: 'transparent' },
+  2: { bg: '#f0f3ff', text: '#2d3436' },
+  4: { bg: '#dff9fb', text: '#2d3436' },
+  8: { bg: '#ffeaa7', text: '#2d3436' },
+  16: { bg: '#fab1a0', text: '#fff' },
+  32: { bg: '#ff7675', text: '#fff' },
+  64: { bg: '#fd79a8', text: '#fff' },
+  128: { bg: '#a29bfe', text: '#fff' },
+  256: { bg: '#55efc4', text: '#2d3436' },
+  512: { bg: '#81ecec', text: '#2d3436' },
+  1024: { bg: '#74b9ff', text: '#fff' },
+  2048: { bg: '#00b894', text: '#fff' },
 };
 
 function getTileStyle(value: number) {
@@ -98,7 +102,6 @@ export default function Game2048({ difficulty }: Props) {
         return prev;
       }
 
-      // Save to history (limit to last 5 moves)
       setHistory((h) => [...h.slice(-4), { board: prev, score }]);
 
       if (result.score > 0) {
@@ -109,17 +112,8 @@ export default function Game2048({ difficulty }: Props) {
       const newTiles: { r: number, c: number }[] = [];
       addRandomTile(newBoard, difficulty, newTiles);
 
-      // Animate merged tiles
-      // result.mergedTiles.forEach(({ r, c }) => {
-      //   Animated.sequence([
-      //     Animated.spring(tileAnimations[r][c], { toValue: 1.15, useNativeDriver: true }),
-      //     Animated.spring(tileAnimations[r][c], { toValue: 1, useNativeDriver: true }),
-      //   ]).start();
-      // });
-
-      // Animate new tiles
       newTiles.forEach(({ r, c }) => {
-        tileAnimations[r][c].setValue(0); // Reset scale
+        tileAnimations[r][c].setValue(0);
         Animated.spring(tileAnimations[r][c], {
           toValue: 1,
           friction: 8,
@@ -127,7 +121,6 @@ export default function Game2048({ difficulty }: Props) {
           useNativeDriver: true,
         }).start();
       });
-
 
       const newScore = score + result.score;
       setScore(newScore);
@@ -152,7 +145,7 @@ export default function Game2048({ difficulty }: Props) {
 
   const handleUndo = useCallback(() => {
     if (history.length === 0 || lost || (won && !keepPlaying)) return;
-    
+
     const lastState = history[history.length - 1];
     setBoard(lastState.board);
     setScore(lastState.score);
@@ -160,7 +153,6 @@ export default function Game2048({ difficulty }: Props) {
     playSound('tap');
   }, [history, lost, won, keepPlaying, playSound]);
 
-  // Keyboard support for web
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const handler = (e: KeyboardEvent) => {
@@ -196,107 +188,98 @@ export default function Game2048({ difficulty }: Props) {
 
   const resetGame = () => {
     processingRef.current = false;
-    tileAnimations.forEach(row => row.forEach(anim => anim.setValue(1))); // Reset tile animations to visible
+    tileAnimations.forEach(row => row.forEach(anim => anim.setValue(1)));
     setBoard(initBoard(difficulty));
     setScore(0);
     setWon(false);
     setLost(false);
     setKeepPlaying(false);
     setHistory([]);
-    startTimeRef.current = Date.now(); // Reset start time
+    startTimeRef.current = Date.now();
   };
 
   return (
     <View style={styles.container}>
-      <Header title="2048" score={score} highScore={highScore} />
-
-      <View style={styles.controls}>
-        <TouchableOpacity
-          style={styles.tutorialButton}
-          onPress={() => setShowTutorial(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.tutorialIcon}>❓</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.undoButton, history.length === 0 && styles.undoButtonDisabled]}
-          onPress={handleUndo}
-          disabled={history.length === 0 || lost || (won && !keepPlaying)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.undoText}>↶ Undo</Text>
-          <Text style={styles.undoCount}>({history.length}/5)</Text>
-        </TouchableOpacity>
-      </View>
+      <Header score={score} highScore={highScore} />
 
       <GestureDetector gesture={panGesture}>
         <View style={styles.boardContainer}>
-          <View style={styles.board}>
-            {board.map((row, r) => (
-              <View key={r} style={styles.row}>
-                {row.map((value, c) => {
-                  const tileStyle = getTileStyle(value);
-                  return (
-                    <Animated.View
-                      key={`${r}-${c}`}
-                      style={[
-                        styles.tile,
-                        { backgroundColor: tileStyle.bg },
-                        { transform: [{ scale: tileAnimations[r][c] }] }
-                      ]}
-                    >
-                      {value > 0 && (
-                        <Text
-                          style={[
-                            styles.tileText,
-                            { color: tileStyle.text },
-                            value >= 1000 && styles.smallText,
-                          ]}
-                        >
-                          {value}
-                        </Text>
-                      )}
-                    </Animated.View>
-                  );
-                })}
-              </View>
-            ))}
-          </View>
+          <GameBoardContainer>
+            <View style={styles.board}>
+              {board.map((row, r) => (
+                <View key={r} style={styles.row}>
+                  {row.map((value, c) => {
+                    const tileStyle = getTileStyle(value);
+                    return (
+                      <Animated.View
+                        key={`${r}-${c}`}
+                        style={[
+                          styles.tile,
+                          { backgroundColor: tileStyle.bg },
+                          { transform: [{ scale: tileAnimations[r][c] }] }
+                        ]}
+                      >
+                        {value > 0 && (
+                          <Text
+                            style={[
+                              styles.tileText,
+                              { color: tileStyle.text },
+                              value >= 100 && styles.smallText,
+                              value >= 1000 && styles.extraSmallText,
+                            ]}
+                          >
+                            {value}
+                          </Text>
+                        )}
+                      </Animated.View>
+                    );
+                  })}
+                </View>
+              ))}
+            </View>
+          </GameBoardContainer>
         </View>
       </GestureDetector>
 
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.newGameBtn} onPress={resetGame} activeOpacity={0.7}>
-          <Text style={styles.newGameText}>New Game</Text>
-        </TouchableOpacity>
+      <View style={styles.actions}>
+        <PremiumButton
+          variant="secondary"
+          height={54}
+          onPress={handleUndo}
+          disabled={history.length === 0}
+          style={styles.undoBtn}
+        >
+          <Text style={styles.actionText}>UNDO ({history.length})</Text>
+        </PremiumButton>
+
+        <PremiumButton
+          variant="primary"
+          height={54}
+          onPress={resetGame}
+          style={styles.newGameBtn}
+        >
+          <Text style={[styles.actionText, { color: '#fff' }]}>NEW GAME</Text>
+        </PremiumButton>
       </View>
 
       {won && !keepPlaying && (
-        <View style={styles.overlay}>
-          <Text style={styles.winText}>You Win!</Text>
-          <View style={styles.overlayButtons}>
-            <TouchableOpacity
-              style={styles.playAgain}
-              onPress={() => setKeepPlaying(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.playAgainText}>Keep Going</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.playAgain} onPress={resetGame} activeOpacity={0.7}>
-              <Text style={styles.playAgainText}>New Game</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        <GameOverOverlay
+          result="win"
+          title="YOU DID IT!"
+          onPlayAgain={resetGame}
+          onPlayAgainLabel="PLAY AGAIN"
+          secondaryAction={{ label: 'KEEP GOING', onPress: () => setKeepPlaying(true) }}
+        />
       )}
 
       {lost && (
-        <View style={styles.overlay}>
-          <Text style={styles.loseText}>Game Over!</Text>
-          <Text style={styles.finalScore}>Score: {score}</Text>
-          <TouchableOpacity style={styles.playAgain} onPress={resetGame} activeOpacity={0.7}>
-            <Text style={styles.playAgainText}>Try Again</Text>
-          </TouchableOpacity>
-        </View>
+        <GameOverOverlay
+          result="lose"
+          title="GAME OVER!"
+          subtitle={`Final Score: ${score}`}
+          onPlayAgain={resetGame}
+          onPlayAgainLabel="TRY AGAIN"
+        />
       )}
 
       {showTutorial && (
@@ -316,143 +299,60 @@ export default function Game2048({ difficulty }: Props) {
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: spacing.md,
+    backgroundColor: colors.background,
   },
   boardContainer: {
     alignItems: 'center',
-    marginTop: 12,
+    marginVertical: spacing.xl,
   },
   board: {
     width: BOARD_SIZE,
     height: BOARD_SIZE,
-    backgroundColor: '#2d2a3e',
-    borderRadius: 8,
+    backgroundColor: '#1e1e3a',
+    borderRadius: radius.md,
     padding: BOARD_PADDING,
-    justifyContent: 'space-evenly',
-  },
-  controls: {
-    alignItems: 'center',
-    marginVertical: 10,
-    flexDirection: 'row',
     justifyContent: 'center',
-    gap: 15,
-  },
-  tutorialButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  tutorialIcon: {
-    fontSize: 24,
-  },
-  undoButton: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  undoButtonDisabled: {
-    opacity: 0.5,
-  },
-  undoText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  undoCount: {
-    color: colors.textSecondary,
-    fontSize: 12,
+    borderWidth: 4,
+    borderColor: '#2b2b45',
   },
   row: {
     flexDirection: 'row',
-    justifyContent: 'space-evenly',
+    justifyContent: 'center',
   },
   tile: {
     width: TILE_SIZE,
     height: TILE_SIZE,
-    borderRadius: 6,
+    borderRadius: radius.sm,
     justifyContent: 'center',
     alignItems: 'center',
     margin: TILE_GAP / 2,
   },
   tileText: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: '900',
   },
   smallText: {
     fontSize: 20,
   },
-  buttonRow: {
-    alignItems: 'center',
-    marginTop: 20,
+  extraSmallText: {
+    fontSize: 16,
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  undoBtn: {
+    flex: 1,
   },
   newGameBtn: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    flex: 2,
   },
-  newGameText: {
-    color: colors.text,
+  actionText: {
+    fontWeight: '900',
     fontSize: 14,
-    fontWeight: '600',
-  },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(26, 26, 46, 0.92)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  winText: {
-    color: colors.warning,
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  loseText: {
-    color: colors.primary,
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  finalScore: {
     color: colors.text,
-    fontSize: 20,
-    marginBottom: 24,
-  },
-  overlayButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  playAgain: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-  },
-  playAgainText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '600',
+    letterSpacing: 0.5,
   },
 });

@@ -11,6 +11,13 @@ export interface ThemeColors {
   success: string;
   warning: string;
   error: string;
+  primaryGradientEnd: string;
+  surfaceGradientEnd: string;
+  border: string;
+  borderLight: string;
+  overlayBackground: string;
+  textOnPrimary: string;
+  shadow: string;
 }
 
 export const DEFAULT_THEME: ThemeId = 'dark';
@@ -27,6 +34,13 @@ export const THEMES: Record<ThemeId, ThemeColors> = {
     success: '#4ecca3',
     warning: '#f0a500',
     error: '#ff4d4d',
+    primaryGradientEnd: '#ff6b81',
+    surfaceGradientEnd: '#1c2d50',
+    border: 'rgba(255, 255, 255, 0.08)',
+    borderLight: 'rgba(255, 255, 255, 0.04)',
+    overlayBackground: 'rgba(10, 10, 20, 0.92)',
+    textOnPrimary: '#ffffff',
+    shadow: '#c03850',
   },
   light: {
     background: '#f7f7fb',
@@ -39,6 +53,13 @@ export const THEMES: Record<ThemeId, ThemeColors> = {
     success: '#2d9a6f',
     warning: '#d58f00',
     error: '#d72638',
+    primaryGradientEnd: '#ff6b81',
+    surfaceGradientEnd: '#f0f0f5',
+    border: 'rgba(0, 0, 0, 0.08)',
+    borderLight: 'rgba(0, 0, 0, 0.04)',
+    overlayBackground: 'rgba(0, 0, 0, 0.88)',
+    textOnPrimary: '#ffffff',
+    shadow: '#c93a52',
   },
   retro: {
     background: '#2b1e1e',
@@ -51,6 +72,13 @@ export const THEMES: Record<ThemeId, ThemeColors> = {
     success: '#6cc070',
     warning: '#ffb703',
     error: '#e04f5f',
+    primaryGradientEnd: '#ffc233',
+    surfaceGradientEnd: '#463535',
+    border: 'rgba(249, 228, 183, 0.08)',
+    borderLight: 'rgba(249, 228, 183, 0.04)',
+    overlayBackground: 'rgba(20, 14, 14, 0.92)',
+    textOnPrimary: '#1c1008',
+    shadow: '#c68400',
   },
   ocean: {
     background: '#0b1d2a',
@@ -63,5 +91,12 @@ export const THEMES: Record<ThemeId, ThemeColors> = {
     success: '#4ecca3',
     warning: '#ffd166',
     error: '#ef476f',
+    primaryGradientEnd: '#5ee6d8',
+    surfaceGradientEnd: '#163a50',
+    border: 'rgba(232, 244, 255, 0.08)',
+    borderLight: 'rgba(232, 244, 255, 0.04)',
+    overlayBackground: 'rgba(5, 12, 18, 0.92)',
+    textOnPrimary: '#ffffff',
+    shadow: '#24a397',
   },
 };

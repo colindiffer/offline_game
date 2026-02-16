@@ -119,7 +119,7 @@ export function passCards(
   newPlayers[playerIndex] = player;
 
   const newPassedCards = [...state.passedCards];
-  
+
   // Determine recipient based on pass direction
   let recipientId = playerIndex;
   if (state.passDirection === 'left') {
@@ -213,7 +213,7 @@ export function canPlayCard(state: HeartsGameState, player: Player, card: Card):
   if (state.completedTricks.length === 0) {
     if (card.suit === 'hearts' || (card.suit === 'spades' && card.rank === 'Q')) {
       // Unless they have no other cards
-      return player.cards.every(c => 
+      return player.cards.every(c =>
         c.suit === 'hearts' || (c.suit === 'spades' && c.rank === 'Q')
       );
     }
@@ -262,31 +262,38 @@ export function playCard(
     heartsBroken: newHeartsBroken,
   };
 
-  // Check if trick is complete (4 cards played)
+  // If trick is complete, mark the winner but don't clear yet
   if (newTrick.cards.length === 4) {
     const winnerId = evaluateTrick(newTrick, newLeadSuit!);
     newTrick.winner = winnerId;
-
-    const newCompletedTricks = [...state.completedTricks, newTrick];
-
-    newState = {
-      ...newState,
-      currentTrick: { cards: [], winner: null },
-      completedTricks: newCompletedTricks,
-      currentPlayerIndex: winnerId,
-      leadSuit: null,
-    };
-
-    // Check if round is over (all 13 tricks played)
-    if (newCompletedTricks.length === 13) {
-      return endRound(newState);
-    }
+    newState.currentTrick = newTrick;
   } else {
     // Move to next player
-    newState = {
-      ...newState,
-      currentPlayerIndex: (playerIndex + 1) % 4,
-    };
+    newState.currentPlayerIndex = (playerIndex + 1) % 4;
+  }
+
+  return newState;
+}
+
+/**
+ * Collect the current trick and advance the game
+ */
+export function collectTrick(state: HeartsGameState): HeartsGameState {
+  const { currentTrick, completedTricks } = state;
+  if (currentTrick.cards.length !== 4 || currentTrick.winner === null) return state;
+
+  const newCompletedTricks = [...completedTricks, currentTrick];
+  const newState = {
+    ...state,
+    currentTrick: { cards: [], winner: null },
+    completedTricks: newCompletedTricks,
+    currentPlayerIndex: currentTrick.winner,
+    leadSuit: null,
+  };
+
+  // Check if round is over (all 13 tricks played)
+  if (newCompletedTricks.length === 13) {
+    return endRound(newState);
   }
 
   return newState;
@@ -305,8 +312,8 @@ export function evaluateTrick(trick: Trick, leadSuit: string): number {
     const current = trick.cards[i];
     // Only cards of lead suit can win
     if (current.card.suit === leadSuit) {
-      if (highestCard.card.suit !== leadSuit || 
-          getRankValue(current.card.rank) > getRankValue(highestCard.card.rank)) {
+      if (highestCard.card.suit !== leadSuit ||
+        getRankValue(current.card.rank) > getRankValue(highestCard.card.rank)) {
         highestCard = current;
         winnerId = current.playerId;
       }
@@ -343,7 +350,7 @@ export function calculateScore(player: Player, tricks: Trick[]): number {
  */
 export function checkShootMoon(players: Player[]): Player[] {
   const moonShooter = players.find(p => p.score === 26);
-  
+
   if (moonShooter) {
     return players.map(p => ({
       ...p,
@@ -420,14 +427,14 @@ export function getAICardsToPass(player: Player, difficulty: Difficulty): Card[]
   // Medium/Hard: Pass high cards, especially spades and hearts
   const scored = cards.map(card => {
     let score = getRankValue(card.rank);
-    
+
     if (card.suit === 'spades') {
       if (card.rank === 'Q') score += 100; // Queen of spades priority
       else if (card.rank === 'A' || card.rank === 'K') score += 50; // High spades
     } else if (card.suit === 'hearts') {
       score += 30; // Hearts are bad
     }
-    
+
     return { card, score };
   });
 
@@ -466,20 +473,20 @@ export function getAICardToPlay(state: HeartsGameState, playerIndex: number, dif
   } else {
     // Following
     const leadCards = legalCards.filter(c => c.suit === leadSuit);
-    
+
     if (leadCards.length > 0) {
       // Must follow suit
       // Try to play under the current highest card
       const currentHighest = currentTrick.cards
         .filter(tc => tc.card.suit === leadSuit)
-        .reduce((highest, tc) => 
+        .reduce((highest, tc) =>
           getRankValue(tc.card.rank) > getRankValue(highest.card.rank) ? tc : highest
         );
-      
-      const underCards = leadCards.filter(c => 
+
+      const underCards = leadCards.filter(c =>
         getRankValue(c.rank) < getRankValue(currentHighest.card.rank)
       );
-      
+
       if (underCards.length > 0) {
         // Play highest card under the current highest
         underCards.sort((a, b) => getRankValue(b.rank) - getRankValue(a.rank));
@@ -493,13 +500,13 @@ export function getAICardToPlay(state: HeartsGameState, playerIndex: number, dif
       // Can't follow suit - dump high point cards
       const queenOfSpades = legalCards.find(c => c.suit === 'spades' && c.rank === 'Q');
       if (queenOfSpades) return queenOfSpades;
-      
+
       const hearts = legalCards.filter(c => c.suit === 'hearts');
       if (hearts.length > 0) {
         hearts.sort((a, b) => getRankValue(b.rank) - getRankValue(a.rank));
         return hearts[0];
       }
-      
+
       // Play highest card
       legalCards.sort((a, b) => getRankValue(b.rank) - getRankValue(a.rank));
       return legalCards[0];

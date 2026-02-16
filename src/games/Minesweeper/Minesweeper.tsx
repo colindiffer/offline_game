@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Header from '../../components/Header';
 import TutorialScreen from '../../components/TutorialScreen';
+import GameOverOverlay from '../../components/GameOverOverlay';
+import GameBoardContainer from '../../components/GameBoardContainer';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { getHighScore, setHighScore } from '../../utils/storage';
@@ -10,13 +12,14 @@ import { Difficulty } from '../../types';
 import { Board, Cell, createBoard, revealCell, toggleFlag, checkWin, checkLoss, GameConfig } from './logic';
 import { ThemeColors } from '../../utils/themes';
 import { GAME_TUTORIALS } from '../../utils/tutorials';
+import PremiumButton from '../../components/PremiumButton';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 const getCellSize = (cols: number) => {
-  const boardPadding = 20;
-  const boardSize = Math.min(SCREEN_WIDTH - boardPadding * 2, 400);
+  const boardSize = SCREEN_WIDTH - 32;
   return boardSize / cols;
 };
 
@@ -102,7 +105,7 @@ export default function Minesweeper({ difficulty }: Props) {
         toggleFlag(newBoard, row, col);
         setMinesRemaining(
           gameConfig.mines -
-            newBoard.flat().filter((c) => c.state === 'flagged').length
+          newBoard.flat().filter((c) => c.state === 'flagged').length
         );
         playSound('flag');
       } else {
@@ -145,7 +148,7 @@ export default function Minesweeper({ difficulty }: Props) {
       const isMine = cell.isMine;
       const isBlownMine = isRevealed && isMine;
 
-      let content = '';
+      let content: React.ReactNode = '';
       let textColor = colors.text;
 
       if (isFlagged) {
@@ -153,21 +156,23 @@ export default function Minesweeper({ difficulty }: Props) {
       } else if (isRevealed) {
         if (isMine) {
           content = '💣';
-          textColor = colors.error;
+          textColor = '#ff7675';
         } else if (cell.minesAround > 0) {
           content = String(cell.minesAround);
           switch (cell.minesAround) {
-            case 1: textColor = '#0000FF'; break; // Blue
-            case 2: textColor = '#008000'; break; // Green
-            case 3: textColor = '#FF0000'; break; // Red
-            case 4: textColor = '#800080'; break; // Purple
-            case 5: textColor = '#800000'; break; // Maroon
-            case 6: textColor = '#40E0D0'; break; // Turquoise
-            case 7: textColor = '#000000'; break; // Black
-            case 8: textColor = '#808080'; break; // Gray
+            case 1: textColor = '#0984e3'; break;
+            case 2: textColor = '#00b894'; break;
+            case 3: textColor = '#d63031'; break;
+            case 4: textColor = '#6c5ce7'; break;
+            case 5: textColor = '#e17055'; break;
+            case 6: textColor = '#00cec9'; break;
+            case 7: textColor = '#2d3436'; break;
+            case 8: textColor = '#636e72'; break;
           }
         }
       }
+
+      const isAlt = (cell.row + cell.col) % 2 === 0;
 
       return (
         <TouchableOpacity
@@ -177,15 +182,19 @@ export default function Minesweeper({ difficulty }: Props) {
             {
               width: CELL_SIZE,
               height: CELL_SIZE,
-              backgroundColor: isRevealed ? colors.surface : colors.card,
+              backgroundColor: isRevealed
+                ? (isAlt ? '#2d2d4d' : '#252545')
+                : (isAlt ? '#3d3d5c' : '#353555'),
             },
-            isBlownMine && { backgroundColor: colors.error },
+            isBlownMine && { backgroundColor: '#ff7675' },
           ]}
           onPress={() => handleCellPress(cell.row, cell.col)}
           onLongPress={() => handleCellPress(cell.row, cell.col, true)}
           disabled={gameOver || gameWon || isRevealed}
         >
-          <Text style={[styles.cellText, { color: textColor }]}>{content}</Text>
+          <Text style={[styles.cellText, { color: textColor, fontSize: CELL_SIZE * 0.6 }]}>
+            {content}
+          </Text>
         </TouchableOpacity>
       );
     },
@@ -195,62 +204,61 @@ export default function Minesweeper({ difficulty }: Props) {
   return (
     <View style={styles.container}>
       <Header
-        title="Minesweeper"
         score={minesRemaining}
-        scoreLabel="Mines"
+        scoreLabel="MINES"
         highScore={elapsedTime}
-        highScoreLabel="Time"
+        highScoreLabel="TIME"
       />
 
-      <View style={styles.controls}>
-        <TouchableOpacity
-          style={styles.tutorialButton}
-          onPress={() => setShowTutorial(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.tutorialIcon}>❓</Text>
-        </TouchableOpacity>
-      </View>
+      <GameBoardContainer style={styles.boardContainer}>
+        <View style={styles.boardFrame}>
+          {board ? (
+            board.map((row, r) => (
+              <View key={r} style={styles.row}>
+                {row.map((cell) => renderCell(cell))}
+              </View>
+            ))
+          ) : (
+            <TouchableOpacity
+              style={[
+                styles.boardPlaceholder,
+                {
+                  width: CELL_SIZE * gameConfig.cols,
+                  height: CELL_SIZE * gameConfig.rows,
+                  backgroundColor: '#3d3d5c',
+                },
+              ]}
+              activeOpacity={0.8}
+              onPress={() =>
+                handleCellPress(
+                  Math.floor(gameConfig.rows / 2),
+                  Math.floor(gameConfig.cols / 2)
+                )
+              }
+            >
+              <Text style={styles.placeholderText}>TAP TO START</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </GameBoardContainer>
 
-      <View style={styles.boardContainer}>
-        {board ? (
-          board.map((row, r) => (
-            <View key={r} style={styles.row}>
-              {row.map((cell) => renderCell(cell))}
-            </View>
-          ))
-        ) : (
-          <TouchableOpacity
-            style={[
-              styles.boardPlaceholder,
-              {
-                width: CELL_SIZE * gameConfig.cols,
-                height: CELL_SIZE * gameConfig.rows,
-                backgroundColor: colors.card,
-              },
-            ]}
-            activeOpacity={0.8}
-            onPress={() =>
-              handleCellPress(
-                Math.floor(gameConfig.rows / 2),
-                Math.floor(gameConfig.cols / 2)
-              )
-            }
-          >
-            <Text style={styles.placeholderText}>Tap to Start</Text>
-          </TouchableOpacity>
-        )}
+      <View style={styles.footer}>
+        <PremiumButton
+          variant="secondary"
+          height={50}
+          onPress={resetGame}
+          style={styles.resetBtn}
+        >
+          <Text style={styles.resetText}>RESET BOARD</Text>
+        </PremiumButton>
       </View>
 
       {(gameOver || gameWon) && (
-        <View style={styles.overlay}>
-          <Text style={styles.resultText}>
-            {gameWon ? 'You Won!' : 'Game Over!'}
-          </Text>
-          <TouchableOpacity style={styles.playAgain} onPress={resetGame} activeOpacity={0.7}>
-            <Text style={styles.playAgainText}>Play Again</Text>
-          </TouchableOpacity>
-        </View>
+        <GameOverOverlay
+          result={gameWon ? 'win' : 'lose'}
+          title={gameWon ? 'MISSION CLEAR!' : 'KA-BOOM!'}
+          onPlayAgain={resetGame}
+        />
       )}
 
       {showTutorial && (
@@ -270,79 +278,52 @@ export default function Minesweeper({ difficulty }: Props) {
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-  },
-  controls: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  tutorialButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  tutorialIcon: {
-    fontSize: 24,
+    padding: spacing.md,
+    backgroundColor: colors.background,
   },
   boardContainer: {
-    marginTop: 20,
-    alignSelf: 'center',
-    borderWidth: 2,
-    borderColor: colors.textSecondary,
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  boardFrame: {
+    borderWidth: 4,
+    borderColor: '#2b2b45',
+    borderRadius: radius.md,
+    overflow: 'hidden',
+    backgroundColor: '#1e1e3a',
   },
   boardPlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 5,
   },
   placeholderText: {
-    color: colors.textSecondary,
-    fontSize: 24,
-    fontWeight: 'bold',
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '900',
+    opacity: 0.5,
   },
   row: {
     flexDirection: 'row',
   },
   cell: {
-    borderWidth: 1,
-    borderColor: colors.textSecondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
   cellText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '900',
   },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  footer: {
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing.md,
   },
-  resultText: {
+  resetBtn: {
+    width: '100%',
+  },
+  resetText: {
+    fontWeight: '900',
+    fontSize: 14,
     color: colors.text,
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  playAgain: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  playAgainText: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: 'bold',
+    letterSpacing: 1,
   },
 });

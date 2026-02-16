@@ -6,6 +6,7 @@ export interface GameMetadata {
   name: string;
   icon: string;
   description: string;
+  color: string;
 }
 
 export interface GameStats {

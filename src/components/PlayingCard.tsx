@@ -1,15 +1,19 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, View, Animated } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Card } from '../types/cards';
 import { getSuitSymbol, getSuitColor } from '../utils/cardUtils';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
+import { radius, shadows, spacing } from '../utils/designTokens';
 
 interface Props {
   card: Card | null;
   faceDown?: boolean;
   size?: 'small' | 'medium' | 'large';
   style?: any;
+  width?: number;
+  height?: number;
 }
 
 const CARD_SIZES = {
@@ -18,13 +22,16 @@ const CARD_SIZES = {
   large: { width: 80, height: 120, fontSize: 32 },
 };
 
-export default function PlayingCard({ card, faceDown = false, size = 'medium', style }: Props) {
+export default function PlayingCard({ card, faceDown = false, size = 'medium', style, width, height }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
-  const cardSize = CARD_SIZES[size];
+  const cardSize = {
+    width: width || CARD_SIZES[size].width,
+    height: height || CARD_SIZES[size].height,
+    fontSize: (width ? width * 0.4 : CARD_SIZES[size].fontSize),
+  };
 
   if (!card) {
-    // Empty slot
     return (
       <View
         style={[
@@ -47,14 +54,19 @@ export default function PlayingCard({ card, faceDown = false, size = 'medium', s
           style,
         ]}
       >
+        <LinearGradient
+          colors={['#4834d4', '#686de0']}
+          style={styles.cardBackGradient}
+        />
         <View style={styles.cardBackPattern} />
+        <View style={styles.patternInner} />
       </View>
     );
   }
 
   const suitSymbol = getSuitSymbol(card.suit);
   const cardColor = getSuitColor(card.suit);
-  const textColor = cardColor === 'red' ? '#DC143C' : '#000000';
+  const textColor = cardColor === 'red' ? '#e74c3c' : '#2d3436';
 
   return (
     <View
@@ -65,28 +77,33 @@ export default function PlayingCard({ card, faceDown = false, size = 'medium', s
         style,
       ]}
     >
+      <LinearGradient
+        colors={['#ffffff', '#f1f2f6']}
+        style={StyleSheet.absoluteFill}
+      />
+
       <View style={styles.cardContent}>
-        <Text style={[styles.rankText, { fontSize: cardSize.fontSize, color: textColor }]}>
+        <Text style={[styles.rankText, { fontSize: cardSize.fontSize * 0.6, color: textColor }]}>
           {card.rank}
         </Text>
-        <Text style={[styles.suitText, { fontSize: cardSize.fontSize, color: textColor }]}>
+        <Text style={[styles.suitText, { fontSize: cardSize.fontSize * 0.4, color: textColor }]}>
           {suitSymbol}
         </Text>
       </View>
-      
-      {/* Center suit symbol for face cards */}
-      {['J', 'Q', 'K', 'A'].includes(card.rank) && (
-        <Text style={[styles.centerSuit, { fontSize: cardSize.fontSize * 1.5, color: textColor }]}>
-          {suitSymbol}
-        </Text>
-      )}
-      
-      {/* Bottom rank/suit (rotated) */}
+
+      <Text style={[styles.centerSuit, { 
+        fontSize: cardSize.fontSize * 1.2, 
+        color: textColor,
+        transform: [{ translateX: -cardSize.width * 0.2 }, { translateY: -cardSize.height * 0.2 }] 
+      }]}>
+        {suitSymbol}
+      </Text>
+
       <View style={[styles.cardContent, styles.bottomContent]}>
-        <Text style={[styles.rankText, { fontSize: cardSize.fontSize, color: textColor }]}>
+        <Text style={[styles.rankText, { fontSize: cardSize.fontSize * 0.6, color: textColor }]}>
           {card.rank}
         </Text>
-        <Text style={[styles.suitText, { fontSize: cardSize.fontSize, color: textColor }]}>
+        <Text style={[styles.suitText, { fontSize: cardSize.fontSize * 0.4, color: textColor }]}>
           {suitSymbol}
         </Text>
       </View>
@@ -97,33 +114,44 @@ export default function PlayingCard({ card, faceDown = false, size = 'medium', s
 const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     card: {
-      borderRadius: 8,
+      borderRadius: radius.sm,
       borderWidth: 1,
-      borderColor: '#ccc',
-      margin: 2,
+      borderColor: 'rgba(0,0,0,0.1)',
+      backgroundColor: '#ffffff',
+      overflow: 'hidden',
+      elevation: 4,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 3,
-      elevation: 3,
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
     },
     cardFace: {
       backgroundColor: '#ffffff',
       padding: 4,
-      position: 'relative',
     },
     cardBack: {
-      backgroundColor: '#2c5aa0',
+      backgroundColor: '#4834d4',
       justifyContent: 'center',
       alignItems: 'center',
     },
+    cardBackGradient: {
+      ...StyleSheet.absoluteFillObject,
+    },
     cardBackPattern: {
       width: '80%',
-      height: '90%',
-      borderWidth: 2,
-      borderColor: '#ffffff',
-      borderRadius: 4,
-      backgroundColor: '#4169E1',
+      height: '85%',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.3)',
+      borderRadius: radius.xs,
+    },
+    patternInner: {
+      position: 'absolute',
+      width: '60%',
+      height: '65%',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: radius.xs,
+      transform: [{ rotate: '45deg' }],
     },
     emptyCard: {
       backgroundColor: colors.surface,
@@ -132,26 +160,30 @@ const getStyles = (colors: ThemeColors) =>
       opacity: 0.3,
     },
     cardContent: {
+      position: 'absolute',
+      top: 2,
+      left: 2,
       alignItems: 'center',
-      gap: 2,
+      justifyContent: 'center',
+      minWidth: 16,
     },
     bottomContent: {
-      position: 'absolute',
-      bottom: 4,
-      right: 4,
+      top: undefined,
+      left: undefined,
+      bottom: 2,
+      right: 2,
       transform: [{ rotate: '180deg' }],
     },
     rankText: {
-      fontWeight: 'bold',
-      lineHeight: undefined,
+      fontWeight: '900',
     },
     suitText: {
-      lineHeight: undefined,
+      marginTop: -4,
     },
     centerSuit: {
       position: 'absolute',
       top: '50%',
       left: '50%',
-      transform: [{ translateX: -12 }, { translateY: -12 }],
+      opacity: 0.15,
     },
   });

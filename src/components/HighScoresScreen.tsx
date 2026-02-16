@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
 import { GameId, Difficulty } from '../types';
 import { getHighScore } from '../utils/storage';
+import { spacing, radius, shadows, typography } from '../utils/designTokens';
+import ModalContainer from './ModalContainer';
 
 interface Props {
   gameId: GameId;
@@ -15,7 +17,7 @@ const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
 
 export default function HighScoresScreen({ gameId, gameName, onClose }: Props) {
   const { colors } = useTheme();
-  const styles = getStyles(colors);
+  const styles = useMemo(() => getStyles(colors), [colors]);
   const [scores, setScores] = useState<Record<Difficulty, number | null>>({
     easy: null,
     medium: null,
@@ -23,19 +25,18 @@ export default function HighScoresScreen({ gameId, gameName, onClose }: Props) {
   });
 
   useEffect(() => {
-    // Load high scores for all difficulties
     const loadScores = async () => {
       const loadedScores: Record<Difficulty, number | null> = {
         easy: null,
         medium: null,
         hard: null,
       };
-      
+
       for (const diff of DIFFICULTIES) {
         const score = await getHighScore(gameId, diff);
         loadedScores[diff] = score || null;
       }
-      
+
       setScores(loadedScores);
     };
 
@@ -60,118 +61,102 @@ export default function HighScoresScreen({ gameId, gameName, onClose }: Props) {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.gameTitle}>{gameName}</Text>
-        <Text style={styles.subtitle}>High Scores</Text>
+    <ModalContainer onClose={onClose} maxWidth={400}>
+      <Text style={styles.gameTitle}>{gameName}</Text>
+      <Text style={styles.subtitle}>High Scores</Text>
 
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-          {DIFFICULTIES.map((diff) => (
-            <View key={diff} style={styles.scoreRow}>
-              <View style={styles.difficultyInfo}>
-                <Text style={styles.difficultyIcon}>{getDifficultyIcon(diff)}</Text>
-                <Text style={styles.difficultyLabel}>{getDifficultyLabel(diff)}</Text>
-              </View>
-              <Text style={[
-                styles.scoreValue,
-                scores[diff] === null && styles.noScore
-              ]}>
-                {formatScore(scores[diff])}
-              </Text>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {DIFFICULTIES.map((diff) => (
+          <View key={diff} style={styles.scoreRow}>
+            <View style={styles.difficultyInfo}>
+              <Text style={styles.difficultyIcon}>{getDifficultyIcon(diff)}</Text>
+              <Text style={styles.difficultyLabel}>{getDifficultyLabel(diff)}</Text>
             </View>
-          ))}
-        </ScrollView>
+            <Text style={[
+              styles.scoreValue,
+              scores[diff] === null && styles.noScore
+            ]}>
+              {formatScore(scores[diff])}
+            </Text>
+          </View>
+        ))}
+      </ScrollView>
 
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={onClose}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.closeButtonText}>Close</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={onClose}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.closeButtonText}>Close</Text>
+      </TouchableOpacity>
+    </ModalContainer>
   );
 }
 
 const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-    container: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0, 0, 0, 0.9)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 20,
-      zIndex: 1000,
-    },
-    content: {
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      padding: 24,
-      width: '100%',
-      maxWidth: 400,
-    },
     gameTitle: {
-      fontSize: 24,
-      fontWeight: 'bold',
+      ...typography.heading,
       color: colors.text,
       textAlign: 'center',
-      marginBottom: 4,
+      marginBottom: spacing.xs,
     },
     subtitle: {
-      fontSize: 16,
+      ...typography.body,
       color: colors.textSecondary,
       textAlign: 'center',
-      marginBottom: 24,
+      marginBottom: spacing.xl,
     },
     scrollView: {
       maxHeight: 300,
     },
     scrollContent: {
-      gap: 16,
+      gap: spacing.lg,
     },
     scoreRow: {
       backgroundColor: colors.card,
-      borderRadius: 12,
-      padding: 16,
+      borderRadius: radius.md,
+      padding: spacing.lg,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...shadows.sm,
     },
     difficultyInfo: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 12,
+      gap: spacing.md,
     },
     difficultyIcon: {
       fontSize: 24,
     },
     difficultyLabel: {
+      ...typography.bodyBold,
       fontSize: 18,
-      fontWeight: '600',
       color: colors.text,
     },
     scoreValue: {
-      fontSize: 20,
-      fontWeight: 'bold',
+      ...typography.subheading,
       color: colors.warning,
     },
     noScore: {
       color: colors.textSecondary,
-      fontSize: 14,
+      ...typography.label,
       fontStyle: 'italic',
     },
     closeButton: {
       backgroundColor: colors.primary,
-      borderRadius: 12,
-      paddingVertical: 14,
-      paddingHorizontal: 32,
-      marginTop: 20,
+      borderRadius: radius.md,
+      paddingVertical: spacing.md + 2,
+      paddingHorizontal: spacing.xxl,
+      marginTop: spacing.xl,
       alignItems: 'center',
+      ...shadows.sm,
     },
     closeButtonText: {
-      color: colors.text,
-      fontSize: 16,
-      fontWeight: '600',
+      color: colors.textOnPrimary,
+      ...typography.bodyBold,
     },
   });

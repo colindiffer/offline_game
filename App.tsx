@@ -24,6 +24,7 @@ function AppContent() {
           headerTintColor: colors.text,
           headerTitleStyle: { fontWeight: 'bold' },
           contentStyle: { backgroundColor: colors.background },
+          headerShadowVisible: true,
         }}
       >
         <Stack.Screen
@@ -52,10 +53,19 @@ function AppContent() {
               'poker': 'Poker',
               'hearts': 'Hearts',
             };
-            return { title: titles[route.params.gameId] };
+            return {
+              title: titles[route.params.gameId],
+              animation: 'slide_from_right',
+            };
           }}
         />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            animation: 'slide_from_bottom',
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

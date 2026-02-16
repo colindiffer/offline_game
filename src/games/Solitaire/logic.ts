@@ -1,7 +1,8 @@
 import { Difficulty } from '../../types';
-import { Card, Suit, Rank, Pile, GameState } from './types';
+import { Card, Pile, GameState } from './types';
+import { Suit, Rank } from '../../types/cards';
 
-const SUITS: Suit[] = ['♠', '♥', '♦', '♣'];
+const SUITS: Suit[] = ['spades', 'hearts', 'diamonds', 'clubs'];
 const RANKS: Rank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
 export interface SolitaireConfig {
@@ -24,7 +25,12 @@ function createDeck(): Card[] {
   const deck: Card[] = [];
   for (const suit of SUITS) {
     for (const rank of RANKS) {
-      deck.push({ suit, rank, faceUp: false });
+      deck.push({
+        suit,
+        rank,
+        faceUp: false,
+        id: `${rank}-${suit}`
+      });
     }
   }
   // Shuffle
@@ -74,7 +80,7 @@ export function getRankValue(rank: Rank): number {
 
 // Check if card is red
 export function isRed(suit: Suit): boolean {
-  return suit === '♥' || suit === '♦';
+  return suit === 'hearts' || suit === 'diamonds';
 }
 
 // Check if can move card to foundation

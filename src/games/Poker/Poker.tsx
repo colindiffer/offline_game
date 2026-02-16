@@ -1,31 +1,35 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Dimensions, Alert } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Dimensions, Alert, Platform } from 'react-native';
 import Header from '../../components/Header';
 import PlayingCard from '../../components/PlayingCard';
 import TutorialScreen from '../../components/TutorialScreen';
+import PremiumButton from '../../components/PremiumButton';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { getHighScore, setHighScore as saveHighScore } from '../../utils/storage';
 import { recordGameResult } from '../../utils/stats';
 import { Difficulty } from '../../types';
+import { Card } from '../../types/cards';
 import { ThemeColors } from '../../utils/themes';
 import { GAME_TUTORIALS } from '../../utils/tutorials';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { PokerGameState, HandRank } from './types';
+import { PokerGameState, HandRank, Player } from './types';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import {
   initializePokerGame,
   dealInitialHands,
-  drawCards,
   playerAction,
   getAIAction,
-  getAIDiscards,
   determineWinners,
   startNewRound,
   evaluateHand,
 } from './logic';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const INITIAL_CHIPS = 100;
+const CARD_WIDTH = Math.floor((SCREEN_WIDTH - 64) / 5);
+const CARD_HEIGHT = Math.floor(CARD_WIDTH * 1.4);
+const INITIAL_CHIPS = 1000; // Increased for Hold'em
 
 interface Props {
   difficulty: Difficulty;
@@ -35,16 +39,15 @@ export default function Poker({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
-  
+
   const [gameState, setGameState] = useState<PokerGameState>(() => {
     const initialState = initializePokerGame(difficulty, INITIAL_CHIPS);
-    return dealInitialHands(initialState);
+    return dealInitialHands(startNewRound(initialState));
   });
   const [highScore, setHighScore] = useState(INITIAL_CHIPS);
   const [showTutorial, setShowTutorial] = useState(false);
-  const [selectedCards, setSelectedCards] = useState<number[]>([]);
-  const [raiseAmount, setRaiseAmount] = useState(10);
-  
+  const [raiseAmount, setRaiseAmount] = useState(50);
+
   const startTimeRef = useRef<number>(Date.now());
   const roundStartTimeRef = useRef<number>(Date.now());
   const aiProcessingRef = useRef<boolean>(false);
@@ -58,7 +61,6 @@ export default function Poker({ difficulty }: Props) {
     });
   }, [difficulty]);
 
-  // Update high score when player tokens increase
   useEffect(() => {
     const playerTokens = gameState.players[0]?.tokens || 0;
     if (playerTokens > highScore) {
@@ -67,54 +69,24 @@ export default function Poker({ difficulty }: Props) {
     }
   }, [gameState.players, highScore, difficulty]);
 
-  // Auto-process AI turns
+  // AI Turn Handling
   useEffect(() => {
     if (aiProcessingRef.current) return;
-
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
-    
-    if (!currentPlayer || currentPlayer.folded) return;
-    
+    if (!currentPlayer || currentPlayer.folded || gameState.gamePhase === 'finished' || gameState.gamePhase === 'showdown') return;
+
     if (currentPlayer.isAI) {
       aiProcessingRef.current = true;
-      
       const timer = setTimeout(() => {
-        if (gameState.gamePhase === 'betting' || gameState.gamePhase === 'finalBetting') {
-          const aiDecision = getAIAction(gameState, gameState.currentPlayerIndex, difficulty);
-          const newState = playerAction(gameState, aiDecision.action, aiDecision.amount);
-          setGameState(newState);
-        } else if (gameState.gamePhase === 'discard') {
-          // AI discard phase
-          const discards = getAIDiscards(currentPlayer.cards, difficulty);
-          const newState = drawCards(gameState, gameState.currentPlayerIndex, discards);
-          
-          // Move to next player or final betting
-          let nextIndex = (gameState.currentPlayerIndex + 1) % newState.players.length;
-          while (newState.players[nextIndex].folded && nextIndex !== gameState.currentPlayerIndex) {
-            nextIndex = (nextIndex + 1) % newState.players.length;
-          }
-          
-          // Check if discard phase is complete
-          if (nextIndex === 0 || gameState.players.filter(p => !p.folded).length === 1) {
-            setGameState({
-              ...newState,
-              gamePhase: 'finalBetting',
-              currentPlayerIndex: (gameState.button + 1) % newState.players.length,
-            });
-          } else {
-            setGameState({
-              ...newState,
-              currentPlayerIndex: nextIndex,
-            });
-          }
-        }
-        
+        const aiDecision = getAIAction(gameState, gameState.currentPlayerIndex, difficulty);
+        const newState = playerAction(gameState, aiDecision.action, aiDecision.amount);
+        setGameState(newState);
         aiProcessingRef.current = false;
+        if (aiDecision.action !== 'fold') playSound('tap');
       }, 1000);
-      
       return () => clearTimeout(timer);
     }
-  }, [gameState, difficulty]);
+  }, [gameState, difficulty, playSound]);
 
   // Handle showdown
   useEffect(() => {
@@ -122,12 +94,8 @@ export default function Poker({ difficulty }: Props) {
       const timer = setTimeout(() => {
         const finalState = determineWinners(gameState);
         setGameState(finalState);
-        
-        // Record result
         const roundDuration = Math.floor((Date.now() - roundStartTimeRef.current) / 1000);
-        const playerWon = finalState.players[0].hand && 
-          finalState.players.filter(p => !p.folded && p.hand?.rank === finalState.players[0].hand?.rank).length > 0;
-        
+        const playerWon = finalState.players[0].tokens > gameState.players[0].tokens;
         if (playerWon) {
           recordGameResult('poker', 'win', roundDuration);
           playSound('win');
@@ -136,7 +104,6 @@ export default function Poker({ difficulty }: Props) {
           playSound('lose');
         }
       }, 2000);
-      
       return () => clearTimeout(timer);
     }
   }, [gameState.gamePhase, playSound]);
@@ -146,492 +113,207 @@ export default function Poker({ difficulty }: Props) {
     setShowTutorial(false);
   }, []);
 
-  const handleCardSelect = useCallback((index: number) => {
-    if (gameState.gamePhase !== 'discard' || gameState.currentPlayerIndex !== 0) return;
-    
-    playSound('tap');
-    setSelectedCards(prev => {
-      if (prev.includes(index)) {
-        return prev.filter(i => i !== index);
-      }
-      return [...prev, index];
-    });
-  }, [gameState.gamePhase, gameState.currentPlayerIndex, playSound]);
-
-  const handleDiscard = useCallback(() => {
-    if (gameState.gamePhase !== 'discard' || gameState.currentPlayerIndex !== 0) return;
-    
-    playSound('tap');
-    const newState = drawCards(gameState, 0, selectedCards);
-    setSelectedCards([]);
-    
-    // Move to next player or final betting
-    let nextIndex = 1;
-    while (nextIndex < newState.players.length && newState.players[nextIndex].folded) {
-      nextIndex++;
-    }
-    
-    if (nextIndex >= newState.players.length || newState.players.filter(p => !p.folded).length === 1) {
-      setGameState({
-        ...newState,
-        gamePhase: 'finalBetting',
-        currentPlayerIndex: (gameState.button + 1) % newState.players.length,
-      });
-    } else {
-      setGameState({
-        ...newState,
-        currentPlayerIndex: nextIndex,
-      });
-    }
-  }, [gameState, selectedCards, playSound]);
-
   const handleFold = useCallback(() => {
     if (gameState.currentPlayerIndex !== 0) return;
-    
+    setGameState(playerAction(gameState, 'fold'));
     playSound('tap');
-    const newState = playerAction(gameState, 'fold');
-    setGameState(newState);
   }, [gameState, playSound]);
 
   const handleCall = useCallback(() => {
     if (gameState.currentPlayerIndex !== 0) return;
-    
+    setGameState(playerAction(gameState, 'call'));
     playSound('tap');
-    const newState = playerAction(gameState, 'call');
-    setGameState(newState);
   }, [gameState, playSound]);
 
   const handleRaise = useCallback(() => {
     if (gameState.currentPlayerIndex !== 0) return;
-    
     const player = gameState.players[0];
     const callAmount = gameState.roundBet - player.bet;
-    
     if (player.tokens < callAmount + raiseAmount) {
-      Alert.alert('Insufficient Tokens', 'You do not have enough tokens to raise this amount.');
+      Alert.alert('Insufficient Tokens', 'Not enough chips for this raise.');
       return;
     }
-    
+    setGameState(playerAction(gameState, 'raise', raiseAmount));
     playSound('tap');
-    const newState = playerAction(gameState, 'raise', raiseAmount);
-    setGameState(newState);
   }, [gameState, raiseAmount, playSound]);
 
   const handleNewRound = useCallback(() => {
     playSound('tap');
-    
     const player = gameState.players[0];
     if (!player || player.tokens <= 0) {
-      // Game over - restart
-      const totalGameDuration = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      recordGameResult('poker', 'loss', totalGameDuration);
-      startTimeRef.current = Date.now();
-      roundStartTimeRef.current = Date.now();
       const newState = initializePokerGame(difficulty, INITIAL_CHIPS);
-      setGameState(dealInitialHands(newState));
+      setGameState(dealInitialHands(startNewRound(newState)));
     } else {
-      // Start new round
-      roundStartTimeRef.current = Date.now();
-      const newState = startNewRound(gameState);
-      setGameState(newState);
+      setGameState(dealInitialHands(startNewRound(gameState)));
     }
-    
-    setSelectedCards([]);
+    roundStartTimeRef.current = Date.now();
   }, [gameState, difficulty, playSound]);
 
   const getPhaseDescription = () => {
-    if (gameState.gamePhase === 'betting') return 'First Betting Round';
-    if (gameState.gamePhase === 'discard') return 'Discard & Draw Phase';
-    if (gameState.gamePhase === 'finalBetting') return 'Final Betting Round';
-    if (gameState.gamePhase === 'showdown') return 'Showdown!';
-    if (gameState.gamePhase === 'finished') return 'Round Complete';
-    return '';
+    switch (gameState.gamePhase) {
+      case 'preFlop': return 'Pre-Flop Betting';
+      case 'flop': return 'The Flop';
+      case 'turn': return 'The Turn';
+      case 'river': return 'The River';
+      case 'showdown': return 'Showdown!';
+      case 'finished': return 'Round Complete';
+      default: return '';
+    }
   };
 
-  const getCurrentPlayerName = () => {
-    const player = gameState.players[gameState.currentPlayerIndex];
-    return player ? player.name : '';
-  };
-
-  const getCallAmount = () => {
-    const player = gameState.players[0];
-    if (!player) return 0;
-    return Math.max(0, gameState.roundBet - player.bet);
-  };
-
-  const canCheck = () => {
-    const player = gameState.players[0];
-    return player && player.bet === gameState.roundBet;
-  };
-
-  const renderPlayer = (playerIndex: number, isTopPlayer: boolean = false) => {
-    const player = gameState.players[playerIndex];
-    if (!player) return null;
-
-    const isCurrentPlayer = gameState.currentPlayerIndex === playerIndex;
-    const isDealer = gameState.button === playerIndex;
-    const showCards = !player.isAI || gameState.gamePhase === 'showdown' || gameState.gamePhase === 'finished';
-
-    return (
-      <View style={[styles.playerContainer, isTopPlayer && styles.topPlayerContainer]}>
-        <View style={styles.playerInfo}>
-          <Text style={[styles.playerName, player.folded && styles.foldedText]}>
-            {player.name} {isDealer && '🔘'}
-          </Text>
-          <Text style={styles.playerChips}>💰 {player.tokens}</Text>
-          {player.bet > 0 && (
-            <Text style={styles.playerBet}>Bet: {player.bet}</Text>
-          )}
-          {player.folded && (
-            <Text style={styles.foldedLabel}>FOLDED</Text>
-          )}
-          {player.hand && (
-            <Text style={styles.handRank}>{player.hand.description}</Text>
-          )}
-        </View>
-        
-        {!player.folded && (
-          <View style={[styles.cardsContainer, isCurrentPlayer && styles.currentPlayerBorder]}>
-            {player.cards.map((card, i) => (
-              <TouchableOpacity
-                key={i}
-                onPress={() => handleCardSelect(i)}
-                disabled={playerIndex !== 0 || gameState.gamePhase !== 'discard'}
-              >
-                <View style={[
-                  styles.cardWrapper,
-                  playerIndex === 0 && selectedCards.includes(i) && styles.selectedCard,
-                ]}>
-                  <PlayingCard
-                    card={card}
-                    faceDown={!showCards}
-                    size="small"
-                  />
-                  {playerIndex === 0 && selectedCards.includes(i) && (
-                    <Text style={styles.discardLabel}>DISCARD</Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </View>
-    );
-  };
-
-  if (showTutorial) {
-    return (
-      <TutorialScreen
-        gameName="Poker"
-        steps={GAME_TUTORIALS.poker}
-        onClose={handleTutorialClose}
-      />
-    );
-  }
-
+  const isPlayerTurn = gameState.currentPlayerIndex === 0 && gameState.gamePhase !== 'showdown' && gameState.gamePhase !== 'finished';
   const player = gameState.players[0];
-  const isPlayerTurn = gameState.currentPlayerIndex === 0 && !player?.folded;
-  const callAmount = getCallAmount();
+  const callAmount = player ? Math.max(0, gameState.roundBet - player.bet) : 0;
+  const canCheck = player && player.bet === gameState.roundBet;
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Poker"
-        score={player?.tokens || 0}
-        scoreLabel="Tokens"
-        highScore={highScore}
-        highScoreLabel="Best"
-      />
+      <Header score={player?.tokens || 0} scoreLabel="CHIPS" highScore={highScore} highScoreLabel="BEST" />
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {/* Top AI players */}
-        <View style={styles.topPlayersRow}>
-          {gameState.players.slice(1).map((p, i) => renderPlayer(i + 1, true))}
-        </View>
+      <View style={styles.table}>
+        <LinearGradient colors={['#1b4332', '#081c15']} style={StyleSheet.absoluteFill} />
 
-        {/* Pot */}
-        <View style={styles.potContainer}>
-          <Text style={styles.potLabel}>POT</Text>
-          <Text style={styles.potAmount}>💰 {gameState.pot}</Text>
-          <Text style={styles.phaseText}>{getPhaseDescription()}</Text>
-          {!isPlayerTurn && gameState.gamePhase !== 'finished' && gameState.gamePhase !== 'showdown' && (
-            <Text style={styles.turnText}>{getCurrentPlayerName()}'s turn...</Text>
-          )}
-        </View>
-
-        {/* Player (bottom) */}
-        {player && renderPlayer(0)}
-
-        {/* Action buttons */}
-        {isPlayerTurn && (
-          <View style={styles.actionsContainer}>
-            {(gameState.gamePhase === 'betting' || gameState.gamePhase === 'finalBetting') && (
-              <>
-                <TouchableOpacity
-                  style={[styles.button, styles.foldButton]}
-                  onPress={handleFold}
-                >
-                  <Text style={styles.buttonText}>Fold</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.button, styles.callButton]}
-                  onPress={handleCall}
-                >
-                  <Text style={styles.buttonText}>
-                    {canCheck() ? 'Check' : `Call ${callAmount}`}
-                  </Text>
-                </TouchableOpacity>
-
-                {player.tokens > callAmount && (
-                  <View style={styles.raiseContainer}>
-                    <TouchableOpacity
-                      style={[styles.button, styles.raiseButton]}
-                      onPress={handleRaise}
-                    >
-                      <Text style={styles.buttonText}>Raise {raiseAmount}</Text>
-                    </TouchableOpacity>
-                    <View style={styles.raiseButtons}>
-                      <TouchableOpacity
-                        style={styles.raiseAdjustButton}
-                        onPress={() => setRaiseAmount(Math.max(10, raiseAmount - 10))}
-                      >
-                        <Text style={styles.raiseAdjustText}>-</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.raiseAdjustButton}
-                        onPress={() => setRaiseAmount(raiseAmount + 10)}
-                      >
-                        <Text style={styles.raiseAdjustText}>+</Text>
-                      </TouchableOpacity>
+        {/* Opponents */}
+        <View style={styles.opponentsRow}>
+          {gameState.players.slice(1).map((p, i) => (
+            <View key={i} style={styles.opponentSpot}>
+              <View style={[styles.playerAvatar, gameState.currentPlayerIndex === i + 1 && styles.activeAvatar]}>
+                <Text style={styles.avatarEmoji}>🤖</Text>
+              </View>
+              <Text style={styles.opponentName}>{p.name}</Text>
+              <Text style={styles.chipValue}>{p.tokens}</Text>
+              {!p.folded && (
+                <View style={styles.oppCards}>
+                  {p.cards.map((c, ci) => (
+                    <View key={ci} style={styles.miniCard}>
+                      <PlayingCard card={c} faceDown={gameState.gamePhase !== 'showdown' && gameState.gamePhase !== 'finished'} size="small" />
                     </View>
-                  </View>
-                )}
-              </>
-            )}
+                  ))}
+                </View>
+              )}
+              {p.folded && <View style={styles.foldedBadge}><Text style={styles.foldedText}>FOLD</Text></View>}
+              {p.bet > 0 && <View style={styles.betBubble}><Text style={styles.betText}>{p.bet}</Text></View>}
+            </View>
+          ))}
+        </View>
 
-            {gameState.gamePhase === 'discard' && (
-              <View style={styles.discardActions}>
-                <Text style={styles.discardInstructions}>
-                  Select cards to discard (tap cards above)
-                </Text>
-                <TouchableOpacity
-                  style={[styles.button, styles.drawButton]}
-                  onPress={handleDiscard}
-                >
-                  <Text style={styles.buttonText}>
-                    {selectedCards.length === 0 ? 'Stand Pat' : `Draw ${selectedCards.length}`}
-                  </Text>
-                </TouchableOpacity>
+        {/* Community Cards Area */}
+        <View style={styles.centerStage}>
+          <View style={styles.communityCardsRow}>
+            {[0, 1, 2, 3, 4].map((idx) => (
+              <View key={idx} style={styles.communityCardSpot}>
+                {gameState.communityCards[idx] ? (
+                  <PlayingCard card={gameState.communityCards[idx]} width={CARD_WIDTH} height={CARD_HEIGHT} />
+                ) : (
+                  <View style={styles.cardPlaceholder} />
+                )}
+              </View>
+            ))}
+          </View>
+          <View style={styles.potContainer}>
+            <Text style={styles.potLabel}>POT</Text>
+            <Text style={styles.potValue}>{gameState.pot}</Text>
+          </View>
+          <Text style={styles.phaseText}>{getPhaseDescription().toUpperCase()}</Text>
+        </View>
+
+        {/* Player Area */}
+        <View style={styles.playerZone}>
+          <View style={styles.playerMeta}>
+            <Text style={styles.playerName}>{player?.name}</Text>
+            {player?.hand && (
+              <View style={styles.handBadge}>
+                <Text style={styles.handText}>{player.hand.description.toUpperCase()}</Text>
               </View>
             )}
+            {player?.bet > 0 && <Text style={styles.playerBetText}>BET: {player.bet}</Text>}
           </View>
-        )}
+          <View style={styles.playerCardsRow}>
+            {player?.cards.map((card, i) => (
+              <View key={i} style={styles.playerCardWrapper}>
+                <PlayingCard card={card} width={CARD_WIDTH} height={CARD_HEIGHT} />
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
 
-        {/* New round button */}
-        {gameState.gamePhase === 'finished' && (
-          <TouchableOpacity
-            style={[styles.button, styles.newRoundButton]}
-            onPress={handleNewRound}
-          >
-            <Text style={styles.buttonText}>
-              {player && player.tokens > 0 ? 'Next Round' : 'New Game'}
-            </Text>
-          </TouchableOpacity>
+      <View style={styles.controls}>
+        {isPlayerTurn ? (
+          <View style={styles.actionGrid}>
+                        <View style={styles.primaryActions}>
+                          <PremiumButton variant="danger" height={55} style={styles.actionBtn} onPress={handleFold}><Text style={styles.btnLabel}>FOLD</Text></PremiumButton>
+                          <PremiumButton variant="primary" height={55} style={styles.actionBtn} onPress={handleCall}>                <Text style={styles.btnLabel}>{canCheck ? 'CHECK' : `CALL ${callAmount}`}</Text>
+              </PremiumButton>
+            </View>
+            <View style={styles.raiseZone}>
+              <View style={styles.raiseInput}>
+                <TouchableOpacity onPress={() => setRaiseAmount(Math.max(10, raiseAmount - 10))} style={styles.adjustBtn}><Text style={styles.adjustText}>-</Text></TouchableOpacity>
+                <Text style={styles.raiseValue}>{raiseAmount}</Text>
+                <TouchableOpacity onPress={() => setRaiseAmount(raiseAmount + 10)} style={styles.adjustBtn}><Text style={styles.adjustText}>+</Text></TouchableOpacity>
+              </View>
+              <PremiumButton variant="primary" height={50} style={styles.raiseBtn} onPress={handleRaise}><Text style={styles.btnLabelSmall}>RAISE</Text></PremiumButton>
+            </View>
+          </View>
+        ) : gameState.gamePhase === 'finished' ? (
+          <PremiumButton variant="primary" height={60} style={styles.fullBtn} onPress={handleNewRound}>
+            <Text style={styles.btnLabel}>{player && player.tokens > 0 ? 'NEXT ROUND' : 'RE-BUY'}</Text>
+          </PremiumButton>
+        ) : (
+          <View style={styles.waitingState}><Text style={styles.waitingText}>WAITING FOR OTHERS...</Text></View>
         )}
-      </ScrollView>
+      </View>
+
+      {showTutorial && <TutorialScreen gameName="Poker" steps={GAME_TUTORIALS.poker} onClose={handleTutorialClose} />}
     </View>
   );
 }
 
-function getStyles(colors: ThemeColors) {
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    content: {
-      flex: 1,
-    },
-    contentContainer: {
-      padding: 16,
-    },
-    topPlayersRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      marginBottom: 20,
-    },
-    playerContainer: {
-      marginBottom: 16,
-      padding: 12,
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: colors.primary + '30',
-    },
-    topPlayerContainer: {
-      flex: 1,
-      marginHorizontal: 4,
-      marginBottom: 0,
-    },
-    playerInfo: {
-      marginBottom: 8,
-    },
-    playerName: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: colors.text,
-      marginBottom: 4,
-    },
-    playerChips: {
-      fontSize: 14,
-      color: colors.success,
-      marginBottom: 2,
-    },
-    playerBet: {
-      fontSize: 12,
-      color: colors.warning,
-    },
-    foldedText: {
-      color: colors.textSecondary,
-      textDecorationLine: 'line-through',
-    },
-    foldedLabel: {
-      fontSize: 12,
-      color: colors.error,
-      fontWeight: 'bold',
-    },
-    handRank: {
-      fontSize: 12,
-      color: colors.accent,
-      fontWeight: 'bold',
-      marginTop: 4,
-    },
-    cardsContainer: {
-      flexDirection: 'row',
-      justifyContent: 'center',
-      gap: 8,
-    },
-    currentPlayerBorder: {
-      borderWidth: 2,
-      borderColor: colors.accent,
-      borderRadius: 8,
-      padding: 8,
-    },
-    cardWrapper: {
-      position: 'relative',
-    },
-    selectedCard: {
-      opacity: 0.6,
-      transform: [{ translateY: -10 }],
-    },
-    discardLabel: {
-      position: 'absolute',
-      top: -15,
-      left: 0,
-      right: 0,
-      textAlign: 'center',
-      fontSize: 10,
-      fontWeight: 'bold',
-      color: colors.error,
-    },
-    potContainer: {
-      alignItems: 'center',
-      padding: 20,
-      backgroundColor: colors.surface,
-      borderRadius: 16,
-      marginBottom: 20,
-      borderWidth: 3,
-      borderColor: colors.accent,
-    },
-    potLabel: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: colors.textSecondary,
-      marginBottom: 4,
-    },
-    potAmount: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: colors.success,
-      marginBottom: 8,
-    },
-    phaseText: {
-      fontSize: 14,
-      color: colors.accent,
-      fontWeight: '600',
-    },
-    turnText: {
-      fontSize: 12,
-      color: colors.textSecondary,
-      marginTop: 4,
-      fontStyle: 'italic',
-    },
-    actionsContainer: {
-      gap: 12,
-      marginTop: 16,
-    },
-    button: {
-      paddingVertical: 14,
-      paddingHorizontal: 24,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    buttonText: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: '#FFFFFF',
-    },
-    foldButton: {
-      backgroundColor: colors.error,
-    },
-    callButton: {
-      backgroundColor: colors.primary,
-    },
-    raiseContainer: {
-      flexDirection: 'row',
-      gap: 8,
-      alignItems: 'center',
-    },
-    raiseButton: {
-      flex: 1,
-      backgroundColor: colors.success,
-    },
-    raiseButtons: {
-      flexDirection: 'column',
-      gap: 4,
-    },
-    raiseAdjustButton: {
-      width: 40,
-      height: 28,
-      backgroundColor: colors.surface,
-      borderRadius: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: colors.primary,
-    },
-    raiseAdjustText: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: colors.text,
-    },
-    drawButton: {
-      backgroundColor: colors.accent,
-    },
-    newRoundButton: {
-      backgroundColor: colors.primary,
-      marginTop: 16,
-    },
-    discardActions: {
-      alignItems: 'center',
-    },
-    discardInstructions: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      textAlign: 'center',
-      marginBottom: 12,
-    },
-  });
-}
+const getStyles = (colors: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  table: { flex: 1, margin: spacing.sm, borderRadius: radius.lg, overflow: 'hidden', paddingVertical: spacing.md, justifyContent: 'space-between', borderWidth: 4, borderColor: '#2d3436' },
+  opponentsRow: { flexDirection: 'row', justifyContent: 'space-around', paddingHorizontal: spacing.sm },
+  opponentSpot: { alignItems: 'center', width: '25%' },
+  playerAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.1)' },
+  activeAvatar: { borderColor: '#fab1a0', ...shadows.md },
+  avatarEmoji: { fontSize: 18 },
+  opponentName: { color: '#fff', fontSize: 10, fontWeight: 'bold', marginTop: 4 },
+  chipValue: { color: '#fab1a0', fontSize: 10, fontWeight: '900' },
+  oppCards: { flexDirection: 'row', marginTop: 4 },
+  miniCard: { marginHorizontal: -12, transform: [{ scale: 0.85 }] },
+  foldedBadge: { backgroundColor: 'rgba(0,0,0,0.5)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, marginTop: 4 },
+  foldedText: { color: '#ff7675', fontSize: 8, fontWeight: '900' },
+  betBubble: { position: 'absolute', bottom: -15, backgroundColor: '#ffeaa7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  betText: { color: '#000', fontSize: 9, fontWeight: '900' },
+  centerStage: { alignItems: 'center', flex: 1, justifyContent: 'center' },
+  communityCardsRow: { flexDirection: 'row', gap: 6, marginBottom: spacing.lg },
+  communityCardSpot: { width: CARD_WIDTH, height: CARD_HEIGHT },
+  cardPlaceholder: { flex: 1, borderRadius: radius.xs, backgroundColor: 'rgba(0,0,0,0.2)', borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.1)' },
+  potContainer: { backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 30, paddingVertical: 10, borderRadius: radius.md, alignItems: 'center', marginBottom: spacing.sm },
+  potLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+  potValue: { color: '#fab1a0', fontSize: 24, fontWeight: '900' },
+  phaseText: { color: '#fff', fontSize: 14, fontWeight: '900', letterSpacing: 1, opacity: 0.8 },
+  playerZone: { paddingHorizontal: spacing.md, alignItems: 'center' },
+  playerMeta: { alignItems: 'center', marginBottom: spacing.sm },
+  playerName: { color: '#fff', fontSize: 12, fontWeight: '900', marginBottom: 4 },
+  handBadge: { backgroundColor: 'rgba(250, 177, 160, 0.2)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: 'rgba(250, 177, 160, 0.4)' },
+  handText: { color: '#fab1a0', fontSize: 10, fontWeight: '900' },
+  playerBetText: { color: '#ffeaa7', fontSize: 12, fontWeight: '900', marginTop: 4 },
+  playerCardsRow: { flexDirection: 'row', gap: 10 },
+  playerCardWrapper: { ...shadows.md },
+  controls: { padding: spacing.lg, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
+  actionGrid: { gap: spacing.md },
+  primaryActions: { flexDirection: 'row', gap: spacing.md },
+  actionBtn: { flex: 1 },
+  btnLabel: { color: '#fff', fontWeight: '900', fontSize: 16 },
+  btnLabelSmall: { color: '#fff', fontWeight: '900', fontSize: 14 },
+  raiseZone: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
+  raiseInput: { flexDirection: 'row', flex: 2, backgroundColor: colors.background, borderRadius: radius.md, alignItems: 'center', padding: 4, borderWidth: 1, borderColor: colors.border },
+  adjustBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.surface, borderRadius: 20 },
+  adjustText: { color: colors.text, fontSize: 20, fontWeight: 'bold' },
+  raiseValue: { flex: 1, textAlign: 'center', color: colors.success, fontWeight: '900', fontSize: 16 },
+  raiseBtn: { flex: 3 },
+  fullBtn: { width: '100%' },
+  waitingState: { height: 60, justifyContent: 'center', alignItems: 'center' },
+  waitingText: { color: colors.textSecondary, fontWeight: 'bold', letterSpacing: 1 },
+});

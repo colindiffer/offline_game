@@ -2,18 +2,22 @@ import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
 import Header from '../../components/Header';
 import TutorialScreen from '../../components/TutorialScreen';
+import GameOverOverlay from '../../components/GameOverOverlay';
+import GameBoardContainer from '../../components/GameBoardContainer';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { getHighScore, setHighScore } from '../../utils/storage';
 import { recordGameResult } from '../../utils/stats';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { Difficulty } from '../../types';
+import PremiumButton from '../../components/PremiumButton';
 import { Board, Cell, checkWinner, createEmptyBoard, getAIMove, getWinningLine, isDraw } from './logic';
 import { ThemeColors } from '../../utils/themes';
 import { GAME_TUTORIALS } from '../../utils/tutorials';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const BOARD_SIZE = Math.min(SCREEN_WIDTH - 40, 360);
+const BOARD_SIZE = SCREEN_WIDTH - 32;
 const CELL_SIZE = BOARD_SIZE / 3;
 
 interface Props {
@@ -151,8 +155,6 @@ export default function TicTacToe({ difficulty }: Props) {
         key={index}
         style={[
           styles.cell,
-          index % 3 !== 2 && styles.cellBorderRight,
-          index < 6 && styles.cellBorderBottom,
           isWinCell && styles.winCell,
         ]}
         onPress={() => handleCellPress(index)}
@@ -174,44 +176,48 @@ export default function TicTacToe({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Header title="Tic Tac Toe" score={score} highScore={highScore} />
-
-      <View style={styles.controls}>
-        <TouchableOpacity
-          style={styles.tutorialButton}
-          onPress={() => setShowTutorial(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.tutorialIcon}>❓</Text>
-        </TouchableOpacity>
-      </View>
+      <Header
+        score={score}
+        highScore={highScore}
+      />
 
       <View style={styles.boardContainer}>
-        <View style={styles.board}>
-          {[0, 1, 2].map((row) => (
-            <View key={row} style={styles.row}>
-              {[0, 1, 2].map((col) => renderCell(row * 3 + col))}
-            </View>
-          ))}
-        </View>
+        <GameBoardContainer>
+          <View style={styles.board}>
+            {/* Grid Lines */}
+            <View style={styles.gridLineV1} />
+            <View style={styles.gridLineV2} />
+            <View style={styles.gridLineH1} />
+            <View style={styles.gridLineH2} />
+
+            {[0, 1, 2].map((row) => (
+              <View key={row} style={styles.row}>
+                {[0, 1, 2].map((col) => renderCell(row * 3 + col))}
+              </View>
+            ))}
+          </View>
+        </GameBoardContainer>
       </View>
 
-      {!winner && !draw && (
-        <Text style={styles.turnText}>
-          {isPlayerTurn ? 'Your turn (X)' : 'AI thinking...'}
-        </Text>
-      )}
-
-      {(winner || draw) && (
-        <View style={styles.overlay}>
-          <Text style={styles.resultText}>
-            {winner === 'X' ? 'You Win!' : winner === 'O' ? 'AI Wins!' : "It's a Draw!"}
-          </Text>
-          <TouchableOpacity style={styles.playAgain} onPress={resetGame} activeOpacity={0.7}>
-            <Text style={styles.playAgainText}>Play Again</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <View style={styles.footer}>
+        {!winner && !draw ? (
+          <View style={styles.turnIndicator}>
+            <View style={[styles.turnDot, { backgroundColor: isPlayerTurn ? colors.primary : colors.success }]} />
+            <Text style={styles.turnText}>
+              {isPlayerTurn ? 'YOUR TURN (X)' : 'AI THINKING...'}
+            </Text>
+          </View>
+        ) : (
+          <PremiumButton
+            variant="primary"
+            height={56}
+            onPress={resetGame}
+            style={styles.newGameBtn}
+          >
+            <Text style={styles.newGameText}>PLAY AGAIN</Text>
+          </PremiumButton>
+        )}
+      </View>
 
       {showTutorial && (
         <TutorialScreen
@@ -230,92 +236,112 @@ export default function TicTacToe({ difficulty }: Props) {
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-  },
-  controls: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  tutorialButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  tutorialIcon: {
-    fontSize: 24,
+    padding: spacing.md,
+    backgroundColor: colors.background,
   },
   boardContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 20,
   },
   board: {
     width: BOARD_SIZE,
     height: BOARD_SIZE,
+    position: 'relative',
+    backgroundColor: '#1e1e3a',
+    borderRadius: radius.lg,
+    padding: 0,
+    borderWidth: 4,
+    borderColor: '#2b2b45',
+    overflow: 'hidden',
+  },
+  gridLineV1: {
+    position: 'absolute',
+    left: '33.33%',
+    top: 0,
+    bottom: 0,
+    width: 4,
+    backgroundColor: '#2b2b45',
+  },
+  gridLineV2: {
+    position: 'absolute',
+    left: '66.66%',
+    top: 0,
+    bottom: 0,
+    width: 4,
+    backgroundColor: '#2b2b45',
+  },
+  gridLineH1: {
+    position: 'absolute',
+    top: '33.33%',
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: '#2b2b45',
+  },
+  gridLineH2: {
+    position: 'absolute',
+    top: '66.66%',
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: '#2b2b45',
   },
   row: {
     flexDirection: 'row',
+    height: '33.33%',
   },
   cell: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  cellBorderRight: {
-    borderRightWidth: 3,
-    borderRightColor: colors.textSecondary,
-  },
-  cellBorderBottom: {
-    borderBottomWidth: 3,
-    borderBottomColor: colors.textSecondary,
-  },
   winCell: {
-    backgroundColor: 'rgba(78, 204, 163, 0.2)',
+    backgroundColor: colors.primary + '20',
+    borderRadius: radius.sm,
   },
   cellText: {
-    fontSize: 48,
-    fontWeight: 'bold',
+    fontSize: 64,
+    fontWeight: '900',
   },
   xText: {
-    color: colors.primary,
+    color: '#ff7675',
   },
   oText: {
-    color: colors.success,
+    color: '#55efc4',
+  },
+  footer: {
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.lg,
+  },
+  turnIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  turnDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10,
   },
   turnText: {
     color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  newGameBtn: {
+    width: '100%',
+  },
+  newGameText: {
+    color: '#fff',
+    fontWeight: '900',
     fontSize: 16,
-    textAlign: 'center',
-    marginTop: 24,
-  },
-  overlay: {
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  resultText: {
-    color: colors.text,
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
-  playAgain: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-  },
-  playAgainText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '600',
   },
 });

@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Header from '../../components/Header';
+import GameOverOverlay from '../../components/GameOverOverlay';
+import GameBoardContainer from '../../components/GameBoardContainer';
+import PremiumButton from '../../components/PremiumButton';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { getHighScore, setHighScore } from '../../utils/storage';
@@ -9,6 +13,7 @@ import { recordGameResult } from '../../utils/stats';
 import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
 import { generateMaze, canMove, hasWon, getMazeConfig, MazeGrid } from './logic';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const MAX_MAZE_SIZE = Math.min(SCREEN_WIDTH - 40, 400);
@@ -70,31 +75,39 @@ export default function Maze({ difficulty }: Props) {
         startTimeRef.current = Date.now();
       }
 
-      const { row, col } = playerPos;
+      let currentRow = playerPos.row;
+      let currentCol = playerPos.col;
+      let moved = false;
 
-      if (canMove(maze, row, col, direction)) {
-        let newRow = row;
-        let newCol = col;
-
+      // Keep moving in the direction until we hit a wall
+      while (canMove(maze, currentRow, currentCol, direction)) {
         switch (direction) {
           case 'up':
-            newRow--;
+            currentRow--;
             break;
           case 'down':
-            newRow++;
+            currentRow++;
             break;
           case 'left':
-            newCol--;
+            currentCol--;
             break;
           case 'right':
-            newCol++;
+            currentCol++;
             break;
         }
+        moved = true;
+        
+        // Check if we won at any point during the slide
+        if (hasWon(currentRow, currentCol, config.rows, config.cols)) {
+          break;
+        }
+      }
 
-        setPlayerPos({ row: newRow, col: newCol });
+      if (moved) {
+        setPlayerPos({ row: currentRow, col: currentCol });
         playSound('tap');
 
-        if (hasWon(newRow, newCol, config.rows, config.cols)) {
+        if (hasWon(currentRow, currentCol, config.rows, config.cols)) {
           setGameWon(true);
           playSound('win');
           const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
@@ -162,34 +175,42 @@ export default function Maze({ difficulty }: Props) {
 
   const renderMaze = () => {
     return maze.map((row, r) => (
-      <View key={r} style={[styles.mazeRow, { height: CELL_SIZE }]}>
+      <View key={`row-${r}`} style={styles.mazeRow}>
         {row.map((cell, c) => {
           const isPlayer = playerPos.row === r && playerPos.col === c;
-          const isStart = r === 0 && c === 0;
           const isExit = r === config.rows - 1 && c === config.cols - 1;
 
           return (
-            <View
-              key={`${r}-${c}`}
-              style={[
-                styles.cell,
-                {
-                  width: CELL_SIZE,
-                  height: CELL_SIZE,
-                  borderTopWidth: cell.walls.top ? 2 : 0,
-                  borderRightWidth: cell.walls.right ? 2 : 0,
-                  borderBottomWidth: cell.walls.bottom ? 2 : 0,
-                  borderLeftWidth: cell.walls.left ? 2 : 0,
-                  backgroundColor: isPlayer
-                    ? colors.primary
-                    : isStart
-                    ? colors.success
-                    : isExit
-                    ? colors.warning
-                    : colors.surface,
-                },
-              ]}
-            />
+            <View key={`cell-${r}-${c}`} style={[styles.cell, { width: CELL_SIZE, height: CELL_SIZE }]}>
+              {/* Walls */}
+              {cell.walls.top && <View style={[styles.wall, styles.wallTop]} />}
+              {cell.walls.right && <View style={[styles.wall, styles.wallRight]} />}
+              {cell.walls.bottom && <View style={[styles.wall, styles.wallBottom]} />}
+              {cell.walls.left && <View style={[styles.wall, styles.wallLeft]} />}
+
+              {/* Start/Exit Icons */}
+              {isExit && (
+                <View style={styles.exitPortal}>
+                  <LinearGradient
+                    colors={['#fdcb6e', '#e17055']}
+                    style={styles.exitGradient}
+                  />
+                </View>
+              )}
+
+              {/* Player */}
+              {isPlayer && (
+                <Animated.View style={styles.playerWrapper}>
+                  <View style={styles.player}>
+                    <LinearGradient
+                      colors={['#74b9ff', '#0984e3']}
+                      style={styles.playerGradient}
+                    />
+                    <View style={styles.playerGlow} />
+                  </View>
+                </Animated.View>
+              )}
+            </View>
           );
         })}
       </View>
@@ -199,44 +220,35 @@ export default function Maze({ difficulty }: Props) {
   return (
     <View style={styles.container}>
       <Header
-        title="Maze"
         score={elapsedTime}
-        scoreLabel="Time"
+        scoreLabel="TIME"
         highScore={highScore || 0}
-        highScoreLabel="Best"
+        highScoreLabel="BEST"
       />
 
       <GestureDetector gesture={panGesture}>
         <View style={styles.mazeContainer}>
-          <View
-            style={[
-              styles.maze,
-              {
-                width: CELL_SIZE * config.cols,
-                height: CELL_SIZE * config.rows,
-              },
-            ]}
-          >
-            {renderMaze()}
-          </View>
+          <GameBoardContainer style={styles.boardWrapper}>
+            <View style={styles.maze}>
+              {renderMaze()}
+            </View>
+          </GameBoardContainer>
         </View>
       </GestureDetector>
 
-      <TouchableOpacity style={styles.newGameBtn} onPress={resetGame} activeOpacity={0.7}>
-        <Text style={styles.newGameText}>New Maze</Text>
-      </TouchableOpacity>
+      <View style={styles.footer}>
+        <PremiumButton variant="secondary" height={56} onPress={resetGame} style={styles.newGameBtn}>
+          <Text style={styles.newGameText}>GENERATE NEW MAZE</Text>
+        </PremiumButton>
+      </View>
 
       {gameWon && (
-        <View style={styles.overlay}>
-          <Text style={styles.winText}>You Win!</Text>
-          <Text style={styles.timeText}>Time: {elapsedTime}s</Text>
-          {highScore !== null && elapsedTime < highScore && (
-            <Text style={styles.recordText}>New Record!</Text>
-          )}
-          <TouchableOpacity style={styles.playAgain} onPress={resetGame} activeOpacity={0.7}>
-            <Text style={styles.playAgainText}>Play Again</Text>
-          </TouchableOpacity>
-        </View>
+        <GameOverOverlay
+          result="win"
+          title="MAZE ESCAPED!"
+          subtitle={`TIME: ${elapsedTime}s${highScore !== null && elapsedTime < highScore ? ' \nNEW RECORD!' : ''}`}
+          onPlayAgain={resetGame}
+        />
       )}
     </View>
   );
@@ -246,65 +258,102 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      padding: 20,
-      alignItems: 'center',
+      padding: spacing.md,
+      backgroundColor: colors.background,
     },
     mazeContainer: {
-      marginTop: 20,
+      marginTop: spacing.xl,
       alignItems: 'center',
     },
+    boardWrapper: {
+      padding: 4,
+      backgroundColor: '#2d3436',
+      borderRadius: radius.sm,
+    },
     maze: {
-      backgroundColor: colors.surface,
+      backgroundColor: '#1e272e',
+      position: 'relative',
     },
     mazeRow: {
       flexDirection: 'row',
     },
     cell: {
-      borderColor: colors.textSecondary,
-    },
-    newGameBtn: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      marginTop: 20,
-    },
-    newGameText: {
-      color: colors.text,
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    overlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0,0,0,0.7)',
+      position: 'relative',
       justifyContent: 'center',
       alignItems: 'center',
     },
-    winText: {
-      color: colors.warning,
-      fontSize: 36,
-      fontWeight: 'bold',
-      marginBottom: 16,
+    wall: {
+      position: 'absolute',
+      backgroundColor: '#dfe6e9',
+      borderRadius: 2,
     },
-    timeText: {
+    wallTop: {
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 4,
+    },
+    wallRight: {
+      top: 0,
+      right: 0,
+      bottom: 0,
+      width: 4,
+    },
+    wallBottom: {
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 4,
+    },
+    wallLeft: {
+      top: 0,
+      left: 0,
+      bottom: 0,
+      width: 4,
+    },
+    playerWrapper: {
+      width: '80%',
+      height: '80%',
+      zIndex: 10,
+    },
+    player: {
+      flex: 1,
+      borderRadius: 100,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.4)',
+    },
+    playerGradient: {
+      flex: 1,
+    },
+    playerGlow: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(116, 185, 255, 0.2)',
+    },
+    exitPortal: {
+      width: '60%',
+      height: '60%',
+      borderRadius: 4,
+      overflow: 'hidden',
+      borderWidth: 2,
+      borderColor: '#fdcb6e',
+      transform: [{ rotate: '45deg' }],
+    },
+    exitGradient: {
+      flex: 1,
+    },
+    footer: {
+      marginTop: spacing.xl,
+      width: '100%',
+      paddingHorizontal: spacing.md,
+    },
+    newGameBtn: {
+      width: '100%',
+    },
+    newGameText: {
       color: colors.text,
-      fontSize: 24,
-      marginBottom: 8,
-    },
-    recordText: {
-      color: colors.success,
-      fontSize: 20,
-      marginBottom: 24,
-    },
-    playAgain: {
-      backgroundColor: colors.primary,
-      borderRadius: 12,
-      paddingVertical: 14,
-      paddingHorizontal: 24,
-    },
-    playAgainText: {
-      color: colors.text,
-      fontSize: 16,
-      fontWeight: '600',
+      fontWeight: '900',
+      fontSize: 14,
+      letterSpacing: 1,
     },
   });

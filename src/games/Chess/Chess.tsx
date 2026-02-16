@@ -1,10 +1,14 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Header from '../../components/Header';
+import GameOverOverlay from '../../components/GameOverOverlay';
+import GameBoardContainer from '../../components/GameBoardContainer';
+import PremiumButton from '../../components/PremiumButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import {
   initializeGame,
   makeMove,
@@ -16,6 +20,9 @@ import {
 } from './logic';
 import { getBestMove, getAIDifficulty } from './ai';
 import { GameState, Move, Position } from './types';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CELL_SIZE = Math.floor((SCREEN_WIDTH - 44) / 8);
 
 interface Props {
   difficulty: Difficulty;
@@ -168,93 +175,105 @@ export default function Chess({ difficulty }: Props) {
   return (
     <View style={styles.container}>
       <Header
-        title="Chess"
-        score={12 - gameState.capturedWhite.length}
-        scoreLabel="Your Pieces"
-        highScore={12 - gameState.capturedBlack.length}
-        highScoreLabel="AI Pieces"
+        score={16 - gameState.capturedWhite.length}
+        scoreLabel="PIECES"
+        highScore={16 - gameState.capturedBlack.length}
+        highScoreLabel="AI PIECES"
       />
 
       <View style={styles.infoRow}>
-        <Text style={styles.turnText}>
-          {gameState.isCheckmate
-            ? gameState.currentPlayer === 'black'
-              ? 'You Win!'
-              : 'AI Wins!'
-            : gameState.isStalemate
-            ? 'Stalemate!'
-            : isAIThinking
-            ? 'AI Thinking...'
-            : gameState.currentPlayer === 'white'
-            ? 'Your Turn'
-            : "AI's Turn"}
-        </Text>
+        <View style={styles.turnIndicator}>
+          {!gameState.isCheckmate && !gameState.isStalemate ? (
+            <>
+              <View style={[styles.turnDot, { backgroundColor: gameState.currentPlayer === 'white' ? '#fff' : '#000' }]} />
+              <Text style={styles.turnText}>
+                {isAIThinking ? 'AI IS THINKING...' : gameState.currentPlayer === 'white' ? 'YOUR TURN' : "AI'S TURN"}
+              </Text>
+            </>
+          ) : (
+            <Text style={styles.turnText}>STRATEGY COMPLETE</Text>
+          )}
+        </View>
         {gameState.isCheck && !gameState.isCheckmate && (
-          <Text style={styles.checkText}>⚠️ Check!</Text>
+          <View style={styles.checkAlert}>
+            <Text style={styles.checkText}>CHECK!</Text>
+          </View>
         )}
       </View>
 
-      <View style={styles.board}>
-        {gameState.board.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            {row.map((cell, colIndex) => {
-              const isLight = (rowIndex + colIndex) % 2 === 0;
-              const isSelected =
-                gameState.selectedPiece?.row === rowIndex &&
-                gameState.selectedPiece?.col === colIndex;
-              const isValidTarget = isValidMoveTarget(rowIndex, colIndex);
-              const isLastMoveSquare =
-                gameState.lastMove &&
-                ((gameState.lastMove.from.row === rowIndex && gameState.lastMove.from.col === colIndex) ||
-                 (gameState.lastMove.to.row === rowIndex && gameState.lastMove.to.col === colIndex));
-
-              return (
-                <TouchableOpacity
-                  key={colIndex}
-                  style={[
-                    styles.cell,
-                    isLight ? styles.lightCell : styles.darkCell,
-                    isSelected && styles.selectedCell,
-                    isValidTarget && styles.validTargetCell,
-                    isLastMoveSquare && styles.lastMoveCell,
-                  ]}
-                  onPress={() => handleCellPress(rowIndex, colIndex)}
-                  activeOpacity={0.7}
-                  disabled={gameState.isCheckmate || gameState.isStalemate || gameState.currentPlayer === 'black' || isAIThinking}
-                >
-                  {cell && (
-                    <Text style={styles.pieceText}>
-                      {getPieceSymbol(cell)}
-                    </Text>
-                  )}
-                  {isValidTarget && (
-                    <View style={[styles.validIndicator, cell && styles.captureIndicator]} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
+      {/* Captured Pieces Bar */}
+      <View style={styles.capturedBar}>
+        <View style={styles.capturedSet}>
+          {gameState.capturedBlack.map((p, i) => (
+            <Text key={`cb-${i}`} style={styles.capturedPieceSmall}>{getPieceSymbol(p)}</Text>
+          ))}
+        </View>
+        <View style={styles.capturedSet}>
+          {gameState.capturedWhite.map((p, i) => (
+            <Text key={`cw-${i}`} style={styles.capturedPieceSmall}>{getPieceSymbol(p)}</Text>
+          ))}
+        </View>
       </View>
 
-      <TouchableOpacity style={styles.newGameBtn} onPress={resetGame} activeOpacity={0.7}>
-        <Text style={styles.newGameText}>New Game</Text>
-      </TouchableOpacity>
+      <View style={styles.boardWrapper}>
+        <GameBoardContainer style={styles.boardContainer}>
+          <View style={styles.board}>
+            {gameState.board.map((row, rowIndex) => (
+              <View key={rowIndex} style={styles.row}>
+                {row.map((cell, colIndex) => {
+                  const isLight = (rowIndex + colIndex) % 2 === 0;
+                  const isSelected =
+                    gameState.selectedPiece?.row === rowIndex &&
+                    gameState.selectedPiece?.col === colIndex;
+                  const isValidTarget = isValidMoveTarget(rowIndex, colIndex);
+                  const isLastMoveSquare =
+                    gameState.lastMove &&
+                    ((gameState.lastMove.from.row === rowIndex && gameState.lastMove.from.col === colIndex) ||
+                      (gameState.lastMove.to.row === rowIndex && gameState.lastMove.to.col === colIndex));
+
+                  return (
+                    <TouchableOpacity
+                      key={colIndex}
+                      style={[
+                        styles.cell,
+                        isLight ? styles.lightCell : styles.darkCell,
+                        isSelected && styles.selectedCell,
+                        isLastMoveSquare && styles.lastMoveCell,
+                      ]}
+                      onPress={() => handleCellPress(rowIndex, colIndex)}
+                      activeOpacity={0.8}
+                      disabled={gameState.isCheckmate || gameState.isStalemate || gameState.currentPlayer === 'black' || isAIThinking}
+                    >
+                      {cell && (
+                        <Text style={[styles.pieceText, cell.color === 'black' ? styles.blackPiece : styles.whitePiece]}>
+                          {getPieceSymbol(cell)}
+                        </Text>
+                      )}
+                      {isValidTarget && (
+                        <View style={[styles.validIndicator, cell && styles.captureIndicator]} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            ))}
+          </View>
+        </GameBoardContainer>
+      </View>
+
+      <View style={styles.footer}>
+        <PremiumButton variant="secondary" height={56} onPress={resetGame} style={styles.newGameBtn}>
+          <Text style={styles.newGameText}>RESET BOARD</Text>
+        </PremiumButton>
+      </View>
 
       {(gameState.isCheckmate || gameState.isStalemate) && (
-        <View style={styles.overlay}>
-          <Text style={styles.gameOverText}>Game Over!</Text>
-          <Text style={styles.resultText}>
-            {gameState.isCheckmate
-              ? gameState.currentPlayer === 'black'
-                ? 'You Win!'
-                : 'AI Wins!'
-              : 'Stalemate!'}
-          </Text>
-          <TouchableOpacity style={styles.playAgain} onPress={resetGame} activeOpacity={0.7}>
-            <Text style={styles.playAgainText}>Play Again</Text>
-          </TouchableOpacity>
-        </View>
+        <GameOverOverlay
+          result={gameState.isCheckmate && gameState.currentPlayer === 'black' ? 'win' : gameState.isCheckmate ? 'lose' : 'draw'}
+          title={gameState.isCheckmate ? 'CHECKMATE!' : 'STALEMATE'}
+          subtitle={gameState.isCheckmate ? (gameState.currentPlayer === 'black' ? 'A masterful victory.' : 'The AI outplayed you.') : 'A deadlock was reached.'}
+          onPlayAgain={resetGame}
+        />
       )}
     </View>
   );
@@ -264,111 +283,150 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      padding: 10,
-      alignItems: 'center',
+      padding: spacing.md,
+      backgroundColor: colors.background,
     },
     infoRow: {
-      marginVertical: 10,
+      marginVertical: spacing.md,
       alignItems: 'center',
+      gap: spacing.xs,
+    },
+    turnIndicator: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      backgroundColor: colors.surface,
+      borderRadius: radius.full,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    turnDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginRight: 10,
+      borderWidth: 1,
+      borderColor: 'rgba(0,0,0,0.1)',
     },
     turnText: {
-      color: colors.text,
-      fontSize: 18,
-      fontWeight: '600',
-      textAlign: 'center',
+      color: colors.textSecondary,
+      fontSize: 12,
+      fontWeight: '900',
+      letterSpacing: 1,
+    },
+    checkAlert: {
+      backgroundColor: 'rgba(231, 76, 60, 0.1)',
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: radius.sm,
+      borderWidth: 1,
+      borderColor: 'rgba(231, 76, 60, 0.3)',
     },
     checkText: {
-      color: colors.warning,
+      color: '#e74c3c',
+      fontSize: 10,
+      fontWeight: '900',
+      letterSpacing: 1,
+    },
+    capturedBar: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.sm,
+      marginBottom: spacing.xs,
+      height: 24,
+    },
+    capturedSet: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      maxWidth: '45%',
+    },
+    capturedPieceSmall: {
       fontSize: 14,
-      fontWeight: 'bold',
-      marginTop: 4,
+      color: colors.textSecondary,
+      opacity: 0.6,
+      marginRight: 2,
+    },
+    boardWrapper: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    boardContainer: {
+      padding: 4,
+      backgroundColor: '#5d4037', // Dark wood frame
+      borderRadius: radius.sm,
+      borderWidth: 4,
+      borderColor: '#3e2723',
     },
     board: {
-      borderWidth: 2,
-      borderColor: colors.textSecondary,
-      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#3e2723',
     },
     row: {
       flexDirection: 'row',
     },
     cell: {
-      width: 40,
-      height: 40,
+      width: CELL_SIZE,
+      height: CELL_SIZE,
       justifyContent: 'center',
       alignItems: 'center',
     },
     lightCell: {
-      backgroundColor: '#f0d9b5',
+      backgroundColor: '#d7ccc8', // Light wood
     },
     darkCell: {
-      backgroundColor: '#b58863',
+      backgroundColor: '#8d6e63', // Dark wood
     },
     selectedCell: {
-      backgroundColor: '#baca44',
-    },
-    validTargetCell: {
-      backgroundColor: 'rgba(186, 202, 68, 0.6)',
+      backgroundColor: 'rgba(255, 255, 255, 0.4)',
     },
     lastMoveCell: {
-      backgroundColor: 'rgba(255, 255, 0, 0.3)',
+      backgroundColor: 'rgba(255, 255, 255, 0.15)',
     },
     pieceText: {
-      fontSize: 28,
+      fontSize: CELL_SIZE * 0.7,
+      ...shadows.sm,
+    },
+    whitePiece: {
+      color: '#ffffff',
+      textShadowColor: 'rgba(0,0,0,0.3)',
+      textShadowOffset: { width: 1, height: 1 },
+      textShadowRadius: 2,
+    },
+    blackPiece: {
+      color: '#2d3436',
+      textShadowColor: 'rgba(255,255,255,0.2)',
+      textShadowOffset: { width: 1, height: 1 },
+      textShadowRadius: 1,
     },
     validIndicator: {
       position: 'absolute',
       width: 12,
       height: 12,
       borderRadius: 6,
-      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+      backgroundColor: 'rgba(46, 204, 113, 0.4)',
     },
     captureIndicator: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      borderWidth: 3,
-      borderColor: 'rgba(0, 0, 0, 0.3)',
+      width: CELL_SIZE - 4,
+      height: CELL_SIZE - 4,
+      borderRadius: (CELL_SIZE - 4) / 2,
+      borderWidth: 2,
+      borderColor: 'rgba(46, 204, 113, 0.4)',
       backgroundColor: 'transparent',
     },
+    footer: {
+      width: '100%',
+      paddingHorizontal: spacing.md,
+    },
     newGameBtn: {
-      backgroundColor: colors.card,
-      borderRadius: 12,
-      paddingVertical: 12,
-      paddingHorizontal: 24,
-      marginTop: 20,
+      width: '100%',
     },
     newGameText: {
       color: colors.text,
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    overlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0,0,0,0.8)',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    gameOverText: {
-      color: colors.text,
-      fontSize: 32,
-      fontWeight: 'bold',
-      marginBottom: 16,
-    },
-    resultText: {
-      color: colors.warning,
-      fontSize: 24,
-      fontWeight: 'bold',
-      marginBottom: 24,
-    },
-    playAgain: {
-      backgroundColor: colors.primary,
-      borderRadius: 12,
-      paddingVertical: 14,
-      paddingHorizontal: 24,
-    },
-    playAgainText: {
-      color: colors.text,
+      fontWeight: '900',
       fontSize: 16,
-      fontWeight: '600',
+      letterSpacing: 1,
     },
   });

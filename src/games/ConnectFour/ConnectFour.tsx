@@ -1,10 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
+import GameBoardContainer from '../../components/GameBoardContainer';
+import GameOverOverlay from '../../components/GameOverOverlay';
+import PremiumButton from '../../components/PremiumButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { getHighScore, setHighScore } from '../../utils/storage';
 import { recordGameResult } from '../../utils/stats';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { Difficulty } from '../../types';
 import { Board, Player, checkWinner, createEmptyBoard, dropPiece, getAIMove, isBoardFull } from './logic';
 import { ThemeColors } from '../../utils/themes';
@@ -36,6 +41,7 @@ export default function ConnectFour({ difficulty }: Props) {
   const [isDraw, setIsDraw] = useState(false);
   const [score, setScore] = useState(0); // Player wins
   const [highScore, setHighScoreState] = useState(0);
+  const [droppingInfo, setDroppingInfo] = useState<{ col: number; row: number; player: Player } | null>(null);
 
   const startTimeRef = useRef<number | null>(null);
 
@@ -60,68 +66,73 @@ export default function ConnectFour({ difficulty }: Props) {
     }
   }, [winner, isDraw]);
 
-
   const columnAnimations = useRef(
     Array(BOARD_COLS)
       .fill(0)
-      .map(() => new Animated.Value(-CELL_SIZE - CELL_GAP))
+      .map(() => new Animated.Value(-CELL_SIZE - 20))
   ).current;
 
   const resetAnimations = useCallback(() => {
-    columnAnimations.forEach((anim) => anim.setValue(-CELL_SIZE - CELL_GAP));
+    columnAnimations.forEach((anim) => anim.setValue(-CELL_SIZE - 20));
   }, [columnAnimations]);
-
 
   const makeMove = useCallback(
     (col: number) => {
-      if (winner || isDraw) return;
-      const newBoard = dropPiece(board, col, currentPlayer);
-
-      if (newBoard) {
-        setBoard(newBoard);
-        playSound('drop');
-
-        let dropRow = -1;
-        for (let r = newBoard.length - 1; r >= 0; r--) {
-          if (newBoard[r][col] !== null) {
-            dropRow = r;
-            break;
-          }
-        }
-        Animated.timing(columnAnimations[col], {
-            toValue: BOARD_PADDING + dropRow * (CELL_SIZE + CELL_GAP),
-            duration: 200,
-            useNativeDriver: true,
-        }).start(() => {
-            columnAnimations[col].setValue(-CELL_SIZE - CELL_GAP); // Reset for next drop
-        });
-
-
-        const winPlayer = checkWinner(newBoard);
-        if (winPlayer) {
-          setWinner(winPlayer);
-          if (winPlayer === 'R') {
-            setScore((prev) => {
-              const newScore = prev + 1;
-              if (newScore > highScore) {
-                setHighScoreState(newScore);
-                setHighScore('connect-four', newScore);
-              }
-              return newScore;
-            });
-            playSound('win');
-          } else {
-            playSound('lose');
-          }
-        } else if (isBoardFull(newBoard)) {
-          setIsDraw(true);
-          playSound('lose'); // Draw sound
-        } else {
-          setCurrentPlayer(currentPlayer === 'R' ? 'Y' : 'R');
+      if (winner || isDraw || droppingInfo) return;
+      
+      // Calculate where it will land
+      let dropRow = -1;
+      for (let r = board.length - 1; r >= 0; r--) {
+        if (board[r][col] === null) {
+          dropRow = r;
+          break;
         }
       }
+
+      if (dropRow !== -1) {
+        const player = currentPlayer;
+        setDroppingInfo({ col, row: dropRow, player });
+        playSound('drop');
+
+        // Trigger falling animation
+        Animated.timing(columnAnimations[col], {
+          toValue: BOARD_PADDING + dropRow * (CELL_SIZE + CELL_GAP),
+          duration: 400,
+          useNativeDriver: true,
+        }).start(() => {
+          const newBoard = dropPiece(board, col, player);
+          if (newBoard) {
+            setBoard(newBoard);
+            setDroppingInfo(null);
+            columnAnimations[col].setValue(-CELL_SIZE - 20);
+
+            const winPlayer = checkWinner(newBoard);
+            if (winPlayer) {
+              setWinner(winPlayer);
+              if (winPlayer === 'R') {
+                setScore((prev) => {
+                  const newScore = prev + 1;
+                  if (newScore > highScore) {
+                    setHighScoreState(newScore);
+                    setHighScore('connect-four', newScore);
+                  }
+                  return newScore;
+                });
+                playSound('win');
+              } else {
+                playSound('lose');
+              }
+            } else if (isBoardFull(newBoard)) {
+              setIsDraw(true);
+              playSound('lose');
+            } else {
+              setCurrentPlayer(player === 'R' ? 'Y' : 'R');
+            }
+          }
+        });
+      }
     },
-    [board, currentPlayer, winner, isDraw, playSound, score, highScore, columnAnimations]
+    [board, currentPlayer, winner, isDraw, playSound, score, highScore, columnAnimations, droppingInfo]
   );
 
   useEffect(() => {
@@ -155,6 +166,7 @@ export default function ConnectFour({ difficulty }: Props) {
     setCurrentPlayer('R');
     setWinner(null);
     setIsDraw(false);
+    setDroppingInfo(null);
     startTimeRef.current = Date.now();
     resetAnimations();
   }, [difficulty, resetAnimations]);
@@ -162,48 +174,70 @@ export default function ConnectFour({ difficulty }: Props) {
   return (
     <View style={styles.container}>
       <Header
-        title="Connect Four"
         score={score}
         highScore={highScore}
       />
 
       <View style={styles.boardContainer}>
-        <View style={[styles.board, { width: BOARD_WIDTH, height: BOARD_HEIGHT }]}>
-          {board.map((row, r) => (
-            <View key={r} style={styles.row}>
-              {row.map((player, c) => (
-                <View
-                  key={`${r}-${c}`}
-                  style={[
-                    styles.cell,
-                    { width: CELL_SIZE, height: CELL_SIZE, borderRadius: CELL_SIZE / 2 },
-                    player === 'R' && styles.redPiece,
-                    player === 'Y' && styles.yellowPiece,
-                  ]}
-                />
+        <GameBoardContainer style={styles.gameBoard}>
+          <View style={styles.board}>
+            {/* Board Background (Holes) */}
+            {board.map((row, r) => (
+              <View key={r} style={styles.row}>
+                {row.map((_, c) => (
+                  <View key={`hole-${r}-${c}`} style={styles.cellHole} />
+                ))}
+              </View>
+            ))}
+
+            {/* Placed Pieces Layer */}
+            <View style={[StyleSheet.absoluteFill, { padding: BOARD_PADDING }]}>
+              {board.map((row, r) => (
+                <View key={`pieces-row-${r}`} style={styles.row}>
+                  {row.map((player, c) => {
+                    // Hide the piece if it is currently dropping into this spot
+                    const isDroppingHere = droppingInfo?.col === c && droppingInfo?.row === r;
+                    
+                    return (
+                      <View key={`piece-${r}-${c}`} style={styles.cell}>
+                        {player && !isDroppingHere && (
+                          <View style={[styles.piece, player === 'R' ? styles.redPiece : styles.yellowPiece]}>
+                            <LinearGradient
+                              colors={player === 'R' ? ['#ff7675', '#d63031'] : ['#ffeaa7', '#fdcb6e']}
+                              style={styles.pieceGradient}
+                            />
+                          </View>
+                        )}
+                      </View>
+                    );
+                  })}
+                </View>
               ))}
             </View>
-          ))}
-          {/* Animated pieces for visual drop */}
-          {board[0].map((_, col) => (
+
+            {/* Dropping Piece Animation */}
+            {droppingInfo && (
               <Animated.View
-                  key={`anim-${col}`}
-                  style={[
-                      styles.animatedPiece,
-                      {
-                          width: CELL_SIZE,
-                          height: CELL_SIZE,
-                          borderRadius: CELL_SIZE / 2,
-                          left: BOARD_PADDING + col * (CELL_SIZE + CELL_GAP),
-                          transform: [{ translateY: columnAnimations[col] }],
-                      },
-                      currentPlayer === 'R' && styles.redPiece,
-                      currentPlayer === 'Y' && styles.yellowPiece,
-                      (winner || isDraw) && { opacity: 0 } // Hide dropping piece when game ends
-                  ]}
-              />
-          ))}
-        </View>
+                key={`anim-${droppingInfo.col}`}
+                style={[
+                  styles.animatedPiece,
+                  {
+                    left: BOARD_PADDING + droppingInfo.col * (CELL_SIZE + CELL_GAP),
+                    transform: [{ translateY: columnAnimations[droppingInfo.col] }],
+                  },
+                ]}
+              >
+                <View style={[styles.piece, droppingInfo.player === 'R' ? styles.redPiece : styles.yellowPiece]}>
+                  <LinearGradient
+                    colors={droppingInfo.player === 'R' ? ['#ff7675', '#d63031'] : ['#ffeaa7', '#fdcb6e']}
+                    style={styles.pieceGradient}
+                  />
+                </View>
+              </Animated.View>
+            )}
+          </View>
+        </GameBoardContainer>
+
         <View style={styles.touchableColumns}>
           {Array.from({ length: 7 }).map((_, col) => (
             <TouchableOpacity
@@ -216,22 +250,27 @@ export default function ConnectFour({ difficulty }: Props) {
         </View>
       </View>
 
-      <Text style={styles.statusText}>
-        {winner
-          ? winner === 'R'
-            ? 'You Win!'
-            : 'AI Wins!'
-          : isDraw
-          ? "It's a Draw!"
-          : currentPlayer === 'R'
-          ? 'Your Turn (Red)'
-          : 'AI Turn (Yellow)'}
-      </Text>
+      <View style={styles.footer}>
+        {!winner && !isDraw ? (
+          <View style={styles.turnIndicator}>
+            <View style={[styles.turnDot, { backgroundColor: currentPlayer === 'R' ? '#ff7675' : '#ffeaa7' }]} />
+            <Text style={styles.statusText}>
+              {currentPlayer === 'R' ? 'YOUR TURN' : 'AI THINKING...'}
+            </Text>
+          </View>
+        ) : (
+          <PremiumButton variant="primary" height={56} onPress={resetGame} style={styles.playAgainBtn}>
+            <Text style={styles.playAgainText}>PLAY AGAIN</Text>
+          </PremiumButton>
+        )}
+      </View>
 
       {(winner || isDraw) && (
-        <TouchableOpacity style={styles.playAgainButton} onPress={resetGame} activeOpacity={0.7}>
-          <Text style={styles.playAgainText}>Play Again</Text>
-        </TouchableOpacity>
+        <GameOverOverlay
+          result={winner === 'R' ? 'win' : winner === 'Y' ? 'lose' : 'draw'}
+          title={winner === 'R' ? 'VICTORY!' : winner === 'Y' ? 'DEFEAT' : "STALEMATE"}
+          onPlayAgain={resetGame}
+        />
       )}
     </View>
   );
@@ -240,70 +279,111 @@ export default function ConnectFour({ difficulty }: Props) {
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: spacing.md,
+    backgroundColor: colors.background,
   },
   boardContainer: {
-    marginTop: 20,
+    alignItems: 'center',
+    marginVertical: spacing.xl,
     position: 'relative',
   },
-  board: {
-    backgroundColor: colors.surface,
-    borderRadius: 10,
-    flexDirection: 'column',
+  gameBoard: {
+    borderRadius: radius.md,
     overflow: 'hidden',
+    borderWidth: 4,
+    borderColor: '#2b2b45',
+  },
+  board: {
+    backgroundColor: '#3d3d5c',
     padding: BOARD_PADDING,
-    borderWidth: 5,
-    borderColor: colors.primary,
+    position: 'relative',
   },
   row: {
     flexDirection: 'row',
   },
+  cellHole: {
+    width: CELL_SIZE,
+    height: CELL_SIZE,
+    borderRadius: CELL_SIZE / 2,
+    backgroundColor: '#1e1e3a',
+    margin: CELL_GAP / 2,
+  },
   cell: {
-    backgroundColor: colors.background, // Empty slot color
-    marginRight: CELL_GAP,
-    marginBottom: CELL_GAP,
+    width: CELL_SIZE,
+    height: CELL_SIZE,
+    margin: CELL_GAP / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  piece: {
+    width: CELL_SIZE - 4,
+    height: CELL_SIZE - 4,
+    borderRadius: (CELL_SIZE - 4) / 2,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  pieceGradient: {
+    flex: 1,
   },
   redPiece: {
-    backgroundColor: '#FF4136', // Red
+    backgroundColor: '#ff7675',
   },
   yellowPiece: {
-    backgroundColor: '#FFDC00', // Yellow
+    backgroundColor: '#ffeaa7',
   },
   animatedPiece: {
-      position: 'absolute',
-      backgroundColor: 'transparent', // Will be set by currentPlayer
-      top: 0,
+    position: 'absolute',
+    top: 0,
+    width: CELL_SIZE,
+    height: CELL_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   touchableColumns: {
     flexDirection: 'row',
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 4,
+    left: 4,
+    right: 4,
+    bottom: 4,
   },
   columnTouch: {
-    flex: 1,
+    height: '100%',
+  },
+  footer: {
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
+    width: '100%',
+  },
+  turnIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  turnDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 10,
   },
   statusText: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 20,
-    textAlign: 'center',
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
-  playAgainButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    marginTop: 20,
+  playAgainBtn: {
+    width: '100%',
   },
   playAgainText: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: '#fff',
+    fontWeight: '900',
+    fontSize: 16,
   },
 });

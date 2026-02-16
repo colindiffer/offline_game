@@ -8,16 +8,16 @@ A comprehensive mobile + web app with **15 classic games** built with React Nati
 
 ### Classic Arcade (6 Games)
 1. **Tic Tac Toe** — Player (X) vs AI (O) on a 3x3 grid with minimax algorithm
-2. **Snake** — Grid-based snake game with D-pad controls (+ arrow keys on web)
+2. **Snake** — Grid-based snake game with intuitive swipe controls
 3. **2048** — Swipe-based tile merging with undo feature (+ arrow keys on web)
 4. **Minesweeper** — Classic mine-clearing game with flagging
-5. **Connect Four** — Player vs AI, get four in a row (vertical/horizontal/diagonal)
-6. **Tetris** — Classic falling block puzzle with pause functionality
+5. **Connect Four** — Player vs AI, get four in a row with smooth falling animations
+6. **Tetris** — Classic falling block puzzle with responsive swipe and tap gestures
 
 ### Puzzle & Strategy (3 Games)
-7. **Maze** — Navigate to the exit using swipe or arrow key controls
-8. **Solitaire** — Classic Klondike card game with smooth animations
-9. **Sudoku** — Number puzzle with smart hint system
+7. **Maze** — Navigate to the exit using smooth sliding movement
+8. **Solitaire** — Classic Klondike card game with large cards and undo system
+9. **Sudoku** — Number puzzle with smart hint system and maximized board
 
 ### Board Games (3 Games)
 10. **Reversi** — Flip opponent's discs to control the board
@@ -26,33 +26,26 @@ A comprehensive mobile + web app with **15 classic games** built with React Nati
 
 ### Card Games (3 Games)
 13. **Blackjack** — Hit, Stand, Double Down against the dealer (tokens-based)
-14. **Poker** — 5-Card Draw with 1-3 AI opponents and betting rounds
-15. **Hearts** — 4-player trick-taking game with card passing and shooting the moon
+14. **Poker** — 5-Card Hold'em with AI opponents and dynamic card sizing
+15. **Hearts** — 4-player trick-taking game with a full-width fanned card layout
 
 ---
 
 ## ✨ Key Features
 
-### 🎓 Tutorial System
-- Interactive step-by-step tutorials for every game
-- Accessible from difficulty picker screen
-- Swipeable tutorial steps with visual aids
+### 🎨 Visual Overhaul (Premium Feel)
+- **Maximized Board Sizes**: Every game board dynamically scales to fill the full width of the mobile screen.
+- **Depth-Based Design**: Tactile borders, wood textures for board games, and premium button effects.
+- **Polished Layouts**: Clean, centered UI for a professional mobile-native experience.
+- **4 Themes**: Dark (default), Light, Retro, Ocean with curated color palettes.
 
-### 🏆 High Scores & Statistics
-- Per-difficulty high scores for each game
-- Game statistics tracking (games played, wins, losses, time played)
-- High scores accessible from individual game screens
-
-### 🎮 Enhanced Gameplay
-- **Undo System**: 2048 allows undo of last 5 moves
-- **Hint System**: Sudoku provides smart hints for single-candidate cells
-- **Pause Functionality**: Snake and Tetris support pausing mid-game
-- **Resume Game**: Return to in-progress games or start fresh
-
-### 🎨 Customization
-- **4 Themes**: Dark (default), Light, Retro, Ocean
-- **Sound Effects**: Tap, win, lose, and game-specific sounds with mute toggle
-- **Responsive Layout**: 3-column grid layout that works at any zoom level
+### 🎮 Optimized Mobile Controls
+- **Gesture-Based Play**: 
+  - **Tetris**: Responsive drag-to-move, flick down for hard drop, flick up for soft drop, and tap to rotate.
+  - **Snake/Maze**: Smooth swipe detection for movement.
+  - **Hearts**: Full-width card fan with opaque stacking and corner rank indicators for easy reading.
+- **Undo Systems**: Available in Solitaire, 2048, and Sudoku to improve gameplay flow.
+- **Immediate Gameplay**: Games like Tetris start instantly without unnecessary splash screens.
 
 ### 🤖 Intelligent AI
 - Difficulty-based AI behaviors across all games
@@ -60,12 +53,15 @@ A comprehensive mobile + web app with **15 classic games** built with React Nati
 - Strategic AI for board games (Chess, Checkers, Reversi)
 - Poker and Blackjack AI with varying skill levels
 
+### 🏆 High Scores & Statistics
+- Per-difficulty high scores for each game
+- Game statistics tracking (games played, wins, losses, time played)
+
 ---
 
 ## 🎲 Platform
 - **Framework**: React Native with Expo (SDK 54), TypeScript
 - **Platforms**: Mobile (iOS/Android via Expo Go) + Web (browser via `react-native-web`)
-- **Web support** enables testing directly on laptops without emulators
 
 ## 🎚️ Difficulty System
 
@@ -81,77 +77,7 @@ Every game offers **Easy / Medium / Hard** difficulty selection before starting.
 | **Connect Four** | AI 30% optimal | AI 60% optimal | AI 90% optimal |
 | **Tetris** | 800ms, -30ms/lvl | 600ms, -40ms/lvl | 400ms, -50ms/lvl |
 
-### Puzzle & Strategy Games
-| Game | Easy | Medium | Hard |
-|------|------|--------|------|
-| **Maze** | 10×10 grid | 15×15 grid | 20×20 grid |
-| **Solitaire** | Draw 1 card | Draw 1 card | Draw 3 cards |
-| **Sudoku** | Many clues | Some clues | Few clues |
-
-### Board Games
-| Game | Easy | Medium | Hard |
-|------|------|--------|------|
-| **Reversi** | Basic AI | Intermediate AI | Advanced AI |
-| **Checkers** | Basic AI | Intermediate AI | Advanced AI |
-| **Chess** | Depth 2 search | Depth 3 search | Depth 4 search |
-
-### Card Games
-| Game | Easy | Medium | Hard |
-|------|------|--------|------|
-| **Blackjack** | 1 deck | 2 decks | 6 decks + S17 |
-| **Poker** | 1 AI opponent | 2 AI opponents | 3 AI opponents |
-| **Hearts** | Basic AI | Intermediate AI | Advanced AI |
-
-**Design Philosophy**: No difficulty is unbeatable — even Hard mode is challenging but winnable with skill.
-
-## 🎮 Controls
-
-### Mobile
-- **Touch/Tap**: Tic Tac Toe, Minesweeper, Connect Four, board games, card games
-- **D-pad Buttons**: Snake movement
-- **Swipe Gestures**: 2048, Maze
-- **On-screen Controls**: Tetris (rotate, move, drop), card selection and actions
-
-### Web
-- **Mouse Clicks**: All tap-based games
-- **Arrow Keys**: Snake, 2048, Tetris, Maze
-- **Keyboard Shortcuts**: 
-  - Connect Four: Number keys 1-7
-  - Tetris: Arrow keys + Space (drop)
-  - Card games: Click-based UI
-
 ---
-
-## 💾 Data Persistence
-
-- **High Scores**: Per-game, per-difficulty tracking via AsyncStorage
-- **Game Statistics**: Games played, wins, losses, win rate, total time
-- **Resume Games**: Auto-save current game state to continue later
-- **Tutorial Progress**: Track which tutorials have been viewed
-- **Settings**: Theme preference, sound on/off saved locally
-
----
-
-## 🎨 UI & Themes
-
-### Available Themes
-- **Dark** (default) — Sleek dark mode with vibrant accents
-- **Light** — Clean light mode for daytime play
-- **Retro** — Nostalgic 80s-inspired color scheme
-- **Ocean** — Calming blues and teals
-
-### Visual Features
-- Dynamic navigation header colors per theme
-- Smooth animations (card flips, tile merges, piece movements)
-- Color-coded difficulty indicators (🟢 Easy, 🟡 Medium, 🔴 Hard)
-- Responsive 3-column grid layout on home screen
-- Game-specific color schemes and visual feedback
-
-### Sound Effects
-- Game actions: Tap, move, place, capture
-- Outcomes: Win, lose, draw
-- Special events: Line clear (Tetris), food eat (Snake), tile merge (2048)
-- Mute toggle in Settings screen
 
 ## 📁 Project Structure
 
@@ -163,67 +89,13 @@ src/
     GameScreen.tsx               # Game router with resume/difficulty picker
     SettingsScreen.tsx           # Theme picker, sound toggle, data management
   games/
-    TicTacToe/                   # Tic Tac Toe with minimax AI
-    Snake/                       # Snake with pause functionality
-    Game2048/                    # 2048 with undo system
-    Minesweeper/                 # Minesweeper with flagging
-    ConnectFour/                 # Connect Four with AI
-    Tetris/                      # Tetris with pause and responsive sizing
-    Maze/                        # Maze generation and solving
-    Solitaire/                   # Klondike Solitaire with animations
-    Sudoku/                      # Sudoku with hint system
-    Reversi/                     # Reversi/Othello with AI
-    Checkers/                    # Checkers with forced jumps
-    Chess/                       # Full chess with special moves
-    Blackjack/                   # Blackjack with betting (tokens)
-    Poker/                       # 5-Card Draw Poker
-    Hearts/                      # Hearts trick-taking game
+    ... (All 15 games implementation)
   components/
-    AnimatedButton.tsx           # Reusable button with press animation
-    GameCard.tsx                 # Home screen game card (icon + name)
-    Header.tsx                   # In-game header with score
-    DifficultyPicker.tsx         # Difficulty + tutorial + high scores
-    ResumeGamePicker.tsx         # Continue or restart game option
-    TutorialScreen.tsx           # Swipeable tutorial modal
-    HighScoresScreen.tsx         # Per-difficulty high scores
-    HintButton.tsx               # Hint button with cooldown
-    PlayingCard.tsx              # Reusable playing card component
-  contexts/
-    ThemeContext.tsx             # Theme provider
-    SoundContext.tsx             # Sound manager
-  utils/
-    constants.ts                 # Game metadata (all 15 games)
-    storage.ts                   # AsyncStorage (high scores, resume)
-    themes.ts                    # Theme definitions (4 themes)
-    sounds.ts                    # Sound loading and playback
-    stats.ts                     # Game statistics tracking
-    tutorials.ts                 # Tutorial content for all games
-    cardUtils.ts                 # Card deck utilities (create, shuffle, deal)
-  types/
-    index.ts                     # Core types (GameId, Difficulty, etc.)
-    cards.ts                     # Card types (Suit, Rank, Card, Deck)
+    PremiumButton.tsx            # 3D tactile button with shadow depth
+    GameOverOverlay.tsx          # Polished victory/defeat screen
+    Header.tsx                   # Capsule-style header with score badges
+    ... (Shared UI components)
 ```
-
----
-
-## 📦 Dependencies
-
-### Core
-- `expo` (SDK 54) — React Native framework
-- `react-native` — Mobile UI framework
-- `typescript` — Type safety
-
-### Navigation
-- `@react-navigation/native` + `@react-navigation/native-stack` — Screen navigation
-- `react-native-screens` + `react-native-safe-area-context` — Navigation support
-
-### Features
-- `react-native-gesture-handler` — Swipe detection for 2048 and Maze
-- `@react-native-async-storage/async-storage` — Local storage for high scores, stats, settings
-- `expo-av` — Audio playback for sound effects
-
-### Web Platform
-- `react-native-web` + `react-dom` + `@expo/metro-runtime` — Web platform support
 
 ---
 
@@ -243,46 +115,8 @@ cd offline_game
 npm install
 
 # Start the development server
-npx expo start
+npm run web
 ```
-
-### Running the App
-- **Web**: Press `w` in the terminal or open http://localhost:8081 in your browser
-- **iOS**: Press `i` or scan QR code with Camera app (requires Expo Go)
-- **Android**: Press `a` or scan QR code with Expo Go app
-
----
-
-## 🏗️ Development Phases
-
-### ✅ Phase 1: Foundation (6 Games)
-Core infrastructure with Tic Tac Toe, Snake, 2048, Minesweeper, Connect Four, Tetris
-
-### ✅ Phase 2: Polish & Features
-Themes, sounds, statistics, animations, responsive design
-
-### ✅ Phase 3: Puzzle & Strategy (3 Games)
-Added Maze, Solitaire, Sudoku with advanced features
-
-### ✅ Phase 4: Board Games (3 Games)
-Implemented Reversi, Checkers, Chess with AI opponents
-
-### ✅ Phase 5: Quality of Life
-Tutorials, hints, undo, pause, resume game, per-difficulty high scores
-
-### ✅ Phase 6: Card Games (3 Games)
-Blackjack, Poker, Hearts with shared card system and AI players
-
----
-
-## 🎯 Future Enhancements (Potential)
-
-- Online multiplayer for selected games
-- Achievements and badges system
-- Daily challenges
-- Customizable game rules
-- More games (Phase 7)
-- Leaderboards with friends
 
 ---
 
@@ -295,5 +129,3 @@ This project is open source and available under the MIT License.
 ## 👨‍💻 Developer
 
 Built with ❤️ using React Native, Expo, and TypeScript
-
-Repository: [github.com/colindiffer/offline_game](https://github.com/colindiffer/offline_game)

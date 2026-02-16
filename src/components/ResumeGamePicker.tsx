@@ -4,6 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { Difficulty } from '../types';
 import AnimatedButton from './AnimatedButton';
 import { ThemeColors } from '../utils/themes';
+import { spacing, radius, shadows, typography } from '../utils/designTokens';
 
 interface Props {
   gameName: string;
@@ -26,13 +27,13 @@ const DIFFICULTY_ICONS: Record<Difficulty, string> = {
   hard: '🔴',
 };
 
-export default function ResumeGamePicker({ 
-  gameName, 
-  difficulty, 
-  onResume, 
+export default function ResumeGamePicker({
+  gameName,
+  difficulty,
+  onResume,
   onNewGame,
   onShowTutorial,
-  onShowHighScores 
+  onShowHighScores
 }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
@@ -45,42 +46,50 @@ export default function ResumeGamePicker({
       </Text>
 
       <AnimatedButton
-        style={styles.resumeOption}
         onPress={onResume}
+        style={styles.optionContainer}
       >
-        <Text style={styles.resumeEmoji}>▶️</Text>
-        <View style={styles.optionInfo}>
-          <Text style={styles.label}>Continue Game</Text>
-          <Text style={styles.desc}>Resume where you left off</Text>
+        <View style={styles.resumeOption}>
+          <Text style={styles.resumeEmoji}>▶️</Text>
+          <View style={styles.optionInfo}>
+            <Text style={styles.label}>Continue Game</Text>
+            <Text style={styles.desc}>Resume where you left off</Text>
+          </View>
         </View>
       </AnimatedButton>
 
       <AnimatedButton
-        style={styles.newGameOption}
         onPress={onNewGame}
+        style={styles.optionContainer}
       >
-        <Text style={styles.emoji}>🔄</Text>
-        <View style={styles.optionInfo}>
-          <Text style={styles.label}>New Game</Text>
-          <Text style={styles.desc}>Start fresh with new difficulty</Text>
+        <View style={styles.newGameOption}>
+          <Text style={styles.emoji}>🔄</Text>
+          <View style={styles.optionInfo}>
+            <Text style={styles.label}>New Game</Text>
+            <Text style={styles.desc}>Start fresh with new difficulty</Text>
+          </View>
         </View>
       </AnimatedButton>
 
       <View style={styles.bottomButtons}>
         <AnimatedButton
-          style={styles.tutorialOption}
           onPress={onShowTutorial}
+          style={styles.bottomButtonContainer}
         >
-          <Text style={styles.smallEmoji}>📖</Text>
-          <Text style={styles.smallLabel}>How to Play</Text>
+          <View style={styles.tutorialOption}>
+            <Text style={styles.smallEmoji}>📖</Text>
+            <Text style={styles.smallLabel}>How to Play</Text>
+          </View>
         </AnimatedButton>
 
         <AnimatedButton
-          style={styles.highScoresOption}
           onPress={onShowHighScores}
+          style={styles.bottomButtonContainer}
         >
-          <Text style={styles.smallEmoji}>🏆</Text>
-          <Text style={styles.smallLabel}>High Scores</Text>
+          <View style={styles.highScoresOption}>
+            <Text style={styles.smallEmoji}>🏆</Text>
+            <Text style={styles.smallLabel}>High Scores</Text>
+          </View>
         </AnimatedButton>
       </View>
     </View>
@@ -92,90 +101,103 @@ const getStyles = (colors: ThemeColors) =>
     container: {
       flex: 1,
       justifyContent: 'center',
-      padding: 32,
+      padding: spacing.xxl,
     },
     title: {
       color: colors.text,
+      ...typography.heading,
       fontSize: 28,
-      fontWeight: 'bold',
       textAlign: 'center',
-      marginBottom: 4,
+      marginBottom: spacing.xs,
     },
     subtitle: {
       color: colors.textSecondary,
-      fontSize: 16,
+      ...typography.body,
       textAlign: 'center',
-      marginBottom: 32,
+      marginBottom: spacing.xxl,
+    },
+    optionContainer: {
+      marginBottom: spacing.lg - 2,
+      width: '100%',
+      height: 90,
     },
     resumeOption: {
-      backgroundColor: colors.success + '30',
-      borderRadius: 14,
-      padding: 18,
-      marginBottom: 14,
+      backgroundColor: colors.success + '15',
+      borderRadius: radius.lg,
+      padding: spacing.lg,
       flexDirection: 'row',
       alignItems: 'center',
-      borderWidth: 2,
+      borderWidth: 1,
       borderColor: colors.success,
+      flex: 1,
     },
     newGameOption: {
       backgroundColor: colors.card,
-      borderRadius: 14,
-      padding: 18,
-      marginBottom: 14,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
       flexDirection: 'row',
       alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+      flex: 1,
     },
     resumeEmoji: {
       fontSize: 32,
-      marginRight: 16,
+      marginRight: spacing.lg,
     },
     emoji: {
       fontSize: 28,
-      marginRight: 16,
+      marginRight: spacing.lg,
     },
     optionInfo: {
       flex: 1,
     },
     label: {
       color: colors.text,
+      ...typography.bodyBold,
       fontSize: 18,
-      fontWeight: 'bold',
     },
     desc: {
       color: colors.textSecondary,
-      fontSize: 13,
-      marginTop: 2,
+      ...typography.caption,
+      marginTop: spacing.xxs,
     },
     bottomButtons: {
       flexDirection: 'row',
-      gap: 12,
-      marginTop: 20,
+      gap: spacing.md,
+      marginTop: spacing.xl,
+      height: 80,
+    },
+    bottomButtonContainer: {
+      flex: 1,
     },
     tutorialOption: {
-      backgroundColor: colors.primary + '20',
-      borderRadius: 14,
-      padding: 16,
-      flex: 1,
+      backgroundColor: colors.primary + '15',
+      borderRadius: radius.lg,
+      padding: spacing.sm,
       alignItems: 'center',
-      borderWidth: 2,
+      justifyContent: 'center',
+      borderWidth: 1,
       borderColor: colors.primary,
+      flex: 1,
     },
     highScoresOption: {
-      backgroundColor: colors.warning + '20',
-      borderRadius: 14,
-      padding: 16,
-      flex: 1,
+      backgroundColor: colors.warning + '15',
+      borderRadius: radius.lg,
+      padding: spacing.sm,
       alignItems: 'center',
-      borderWidth: 2,
+      justifyContent: 'center',
+      borderWidth: 1,
       borderColor: colors.warning,
+      flex: 1,
     },
     smallEmoji: {
       fontSize: 24,
-      marginBottom: 4,
+      marginBottom: spacing.xxs,
     },
     smallLabel: {
       color: colors.text,
-      fontSize: 12,
+      ...typography.caption,
       fontWeight: '600',
       textAlign: 'center',
     },

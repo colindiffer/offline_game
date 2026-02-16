@@ -1,10 +1,16 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View, Animated, ScrollView } from 'react-native';
+import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
+import GameOverOverlay from '../../components/GameOverOverlay';
+import GameBoardContainer from '../../components/GameBoardContainer';
+import PremiumButton from '../../components/PremiumButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { getHighScore, setHighScore } from '../../utils/storage';
 import { recordGameResult } from '../../utils/stats';
+import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
 import {
@@ -49,13 +55,14 @@ export default function Tetris({ difficulty }: Props) {
   const [highScore, setHighScoreState] = useState(0);
   const [level, setLevel] = useState(1);
   const [linesCleared, setLinesCleared] = useState(0);
-  const [gameStarted, setGameStarted] = useState(false);
+  const [gameStarted, setGameStarted] = useState(true);
 
-  const startTimeRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(Date.now());
   const fallIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const levelRef = useRef(level);
   const gameStateRef = useRef({ board, currentTetromino, tetrominoPos, gameOver, gameStarted });
   const pausedRef = useRef(false);
+  const lastXRef = useRef(0);
 
   useEffect(() => {
     getHighScore('tetris').then(setHighScoreState);
@@ -87,7 +94,7 @@ export default function Tetris({ difficulty }: Props) {
       const state = gameStateRef.current;
       const { row, col } = state.tetrominoPos;
       const newShape = state.currentTetromino.shape;
-      
+
       if (isValidMove(state.board, newShape, row + 1, col)) {
         setTetrominoPos({ row: row + 1, col });
       } else {
@@ -96,7 +103,7 @@ export default function Tetris({ difficulty }: Props) {
         const { newBoard: clearedBoard, clearedLines } = clearLines(newBoard);
         newBoard = clearedBoard;
         setBoard(newBoard);
-        
+
         if (clearedLines > 0) {
           playSound('clear');
           setScore(s => {
@@ -120,7 +127,7 @@ export default function Tetris({ difficulty }: Props) {
         setNextTetromino(getRandomTetromino());
         setTetrominoPos({ row: 0, col: Math.floor(BOARD_WIDTH / 2) - 2 });
 
-        // Check for game over  
+        // Check for game over
         setTimeout(() => {
           const latestState = gameStateRef.current;
           if (!isValidMove(latestState.board, latestState.currentTetromino.shape, 0, Math.floor(BOARD_WIDTH / 2) - 2)) {
@@ -132,7 +139,7 @@ export default function Tetris({ difficulty }: Props) {
     }, getSpeed(difficulty, level));
 
     fallIntervalRef.current = interval;
-    
+
     return () => {
       clearInterval(interval);
     };
@@ -187,14 +194,14 @@ export default function Tetris({ difficulty }: Props) {
         setScore(s => s + dropScore);
       }
       setTetrominoPos({ row, col });
-      
+
       // Manually trigger landing
       setTimeout(() => {
         let newBoard = mergeTetromino(board, newShape, row, col, currentTetromino.type);
         const { newBoard: clearedBoard, clearedLines } = clearLines(newBoard);
         newBoard = clearedBoard;
         setBoard(newBoard);
-        
+
         if (clearedLines > 0) {
           playSound('clear');
           setScore(s => {
@@ -269,38 +276,114 @@ export default function Tetris({ difficulty }: Props) {
   }, [moveTetromino, gameOver, gameStarted]);
 
 
-  const renderBoard = () => {
-    const displayBoard = board.map(row => [...row]);
+  const getGhostRow = useCallback(() => {
+    let ghostRow = tetrominoPos.row;
+    while (isValidMove(board, currentTetromino.shape, ghostRow + 1, tetrominoPos.col)) {
+      ghostRow++;
+    }
+    return ghostRow;
+  }, [board, currentTetromino, tetrominoPos]);
 
-    // Draw current tetromino on board
-    for (let r = 0; r < currentTetromino.shape.length; r++) {
-      for (let c = 0; c < currentTetromino.shape[0].length; c++) {
-        if (currentTetromino.shape[r][c] !== 0) {
-          const boardRow = tetrominoPos.row + r;
-          const boardCol = tetrominoPos.col + c;
-          if (boardRow >= 0 && boardRow < BOARD_HEIGHT && boardCol >= 0 && boardCol < BOARD_WIDTH) {
-            displayBoard[boardRow][boardCol] = currentTetromino.type;
+  // Gestures for touch support
+  const panGesture = Gesture.Pan()
+    .runOnJS(true)
+    .minDistance(10)
+    .onStart(() => {
+      lastXRef.current = 0;
+    })
+    .onUpdate((e) => {
+      if (!gameStarted || gameOver || paused) return;
+      const { translationX, translationY } = e;
+      
+      // Horizontal movement during drag
+      if (Math.abs(translationX) > Math.abs(translationY)) {
+        const threshold = 25; // Sensitivity: move every 25 pixels
+        const diff = translationX - lastXRef.current;
+        if (Math.abs(diff) >= threshold) {
+          const steps = Math.floor(Math.abs(diff) / threshold);
+          for (let i = 0; i < steps; i++) {
+            moveTetromino(diff > 0 ? 'right' : 'left');
           }
+          lastXRef.current += (diff > 0 ? threshold : -threshold) * steps;
         }
       }
-    }
+    })
+    .onEnd((e) => {
+      if (!gameStarted || gameOver || paused) return;
+      const { translationX, translationY } = e;
+      const absX = Math.abs(translationX);
+      const absY = Math.abs(translationY);
 
-    return displayBoard.map((row, r) => (
+      // Vertical swipes (flicks) at the end of the gesture
+      if (absY > absX && absY > 30) {
+        if (translationY > 0) {
+          moveTetromino('harddrop');
+        } else {
+          moveTetromino('softdrop');
+        }
+      }
+    });
+
+  const tapGesture = Gesture.Tap()
+    .onEnd(() => {
+      if (!gameStarted || gameOver || paused) return;
+      moveTetromino('rotate');
+    });
+
+  const combinedGesture = Gesture.Exclusive(panGesture, tapGesture);
+
+  const renderBoard = () => {
+    const ghostRow = getGhostRow();
+
+    return board.map((row, r) => (
       <View key={r} style={styles.tetrisRow}>
-        {row.map((cell, c) => (
-          <View
-            key={`${r}-${c}`}
-            style={[
-              styles.tetrisCell,
-              {
-                width: CELL_SIZE,
-                height: CELL_SIZE,
-                backgroundColor: cell === 0 ? colors.surface : TETROMINO_COLORS[cell as TetrominoType],
-                borderColor: colors.background,
-              },
-            ]}
-          />
-        ))}
+        {row.map((cell, c) => {
+          let cellType: TetrominoType | 0 | 'ghost' = cell as any;
+
+          // Check if current tetromino is here
+          const inTetromino =
+            r >= tetrominoPos.row && r < tetrominoPos.row + currentTetromino.shape.length &&
+            c >= tetrominoPos.col && c < tetrominoPos.col + currentTetromino.shape[0].length &&
+            currentTetromino.shape[r - tetrominoPos.row][c - tetrominoPos.col] !== 0;
+
+          if (inTetromino) {
+            cellType = currentTetromino.type;
+          } else {
+            // Check for ghost piece
+            const inGhost =
+              r >= ghostRow && r < ghostRow + currentTetromino.shape.length &&
+              c >= tetrominoPos.col && c < tetrominoPos.col + currentTetromino.shape[0].length &&
+              currentTetromino.shape[r - ghostRow][c - tetrominoPos.col] !== 0;
+
+            if (inGhost && !gameOver && gameStarted && !paused) {
+              cellType = 'ghost';
+            }
+          }
+
+          if (cellType === 0) {
+            return <View key={`${r}-${c}`} style={styles.emptyCell} />;
+          }
+
+          if (cellType === 'ghost') {
+            return (
+              <View key={`${r}-${c}`} style={[styles.tetrisCell, styles.ghostCell]}>
+                <View style={[styles.ghostInner, { borderColor: TETROMINO_COLORS[currentTetromino.type] }]} />
+              </View>
+            );
+          }
+
+          const color = TETROMINO_COLORS[cellType as TetrominoType];
+
+          return (
+            <View key={`${r}-${c}`} style={[styles.tetrisCell, { backgroundColor: color }]}>
+              <LinearGradient
+                colors={['rgba(255,255,255,0.3)', 'rgba(0,0,0,0.1)']}
+                style={styles.cellGradient}
+              />
+              <View style={styles.cellBevel} />
+            </View>
+          );
+        })}
       </View>
     ));
   };
@@ -320,229 +403,178 @@ export default function Tetris({ difficulty }: Props) {
   }, [stopGameLoop]);
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        <Header title="Tetris" score={score} highScore={highScore} />
+    <View style={styles.container}>
+      <Header
+        score={score}
+        highScore={highScore}
+        onPause={() => setPaused(!paused)}
+        isPaused={paused}
+      />
 
-      <View style={styles.gameArea}>
-        <View style={[styles.tetrisBoard, { width: GAME_AREA_WIDTH, height: GAME_AREA_HEIGHT }]}>
-          {renderBoard()}
+      <View style={styles.gameContainer}>
+        <View style={styles.mainColumn}>
+          <GestureDetector gesture={combinedGesture}>
+            <View>
+              <GameBoardContainer style={styles.boardWrapper}>
+                <View style={styles.tetrisBoard}>
+                  {renderBoard()}
+                </View>
+              </GameBoardContainer>
+            </View>
+          </GestureDetector>
         </View>
+
         <View style={styles.sidebar}>
-          <Text style={styles.sidebarTitle}>Next</Text>
-          <View style={styles.nextTetrominoPreview}>
-            {nextTetromino.shape.map((row, r) => (
-              <View key={r} style={styles.tetrisRow}>
-                {row.map((cell, c) => (
-                  <View
-                    key={`${r}-${c}`}
-                    style={[
-                      styles.tetrisCell,
-                      {
-                        width: CELL_SIZE / 1.5,
-                        height: CELL_SIZE / 1.5,
-                        backgroundColor: cell === 0 ? colors.surface : TETROMINO_COLORS[nextTetromino.type],
-                        borderColor: colors.background,
-                      },
-                    ]}
-                  />
-                ))}
-              </View>
-            ))}
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>NEXT</Text>
+            <View style={styles.previewContainer}>
+              {nextTetromino.shape.map((row, r) => (
+                <View key={`preview-row-${r}`} style={styles.previewRow}>
+                  {row.map((cell, c) => (
+                    <View
+                      key={`preview-cell-${r}-${c}`}
+                      style={[
+                        styles.previewCell,
+                        cell !== 0 && { backgroundColor: TETROMINO_COLORS[nextTetromino.type] }
+                      ]}
+                    >
+                      {cell !== 0 && (
+                        <LinearGradient
+                          colors={['rgba(255,255,255,0.2)', 'rgba(0,0,0,0.1)']}
+                          style={styles.cellGradient}
+                        />
+                      )}
+                    </View>
+                  ))}
+                </View>
+              ))}
+            </View>
           </View>
-          <Text style={styles.sidebarTitle}>Level: {level}</Text>
-          <Text style={styles.sidebarTitle}>Lines: {linesCleared}</Text>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>LEVEL</Text>
+            <Text style={styles.statValue}>{level}</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>LINES</Text>
+            <Text style={styles.statValue}>{linesCleared}</Text>
+          </View>
         </View>
       </View>
 
-      {!gameStarted && !gameOver && (
-        <TouchableOpacity style={styles.startButton} onPress={startGame} activeOpacity={0.7}>
-          <Text style={styles.startButtonText}>Start Game</Text>
-        </TouchableOpacity>
-      )}
-
-      {(gameOver) && (
-        <View style={styles.overlay}>
-          <Text style={styles.gameOverText}>Game Over!</Text>
-          <Text style={styles.finalScore}>Score: {score}</Text>
-          <TouchableOpacity style={styles.playAgain} onPress={resetGame} activeOpacity={0.7}>
-            <Text style={styles.playAgainText}>Play Again</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {paused && !gameOver && (
-        <View style={styles.overlay}>
-          <Text style={styles.pausedText}>Paused</Text>
-          <TouchableOpacity 
-            style={styles.resumeButton} 
-            onPress={() => setPaused(false)} 
-            activeOpacity={0.7}
-          >
-            <Text style={styles.playAgainText}>Resume</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {gameStarted && !gameOver && Platform.OS !== 'web' && (
-        <View style={styles.controls}>
-          <View style={styles.controlRow}>
-            <TouchableOpacity style={styles.pauseButton} onPress={() => setPaused(!paused)} activeOpacity={0.7}>
-              <Text style={styles.pauseIcon}>{paused ? '▶️' : '⏸️'}</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.controlRow}>
-            <TouchableOpacity style={styles.controlButton} onPress={() => moveTetromino('rotate')}>
-              <Text style={styles.controlButtonText}>Rotate</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.controlRow}>
-            <TouchableOpacity style={styles.controlButton} onPress={() => moveTetromino('left')}>
-              <Text style={styles.controlButtonText}>{'<'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.controlButton} onPress={() => moveTetromino('softdrop')}>
-              <Text style={styles.controlButtonText}>{'v'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.controlButton} onPress={() => moveTetromino('right')}>
-              <Text style={styles.controlButtonText}>{'>'}</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.controlRow}>
-            <TouchableOpacity style={styles.controlButton} onPress={() => moveTetromino('harddrop')}>
-              <Text style={styles.controlButtonText}>Drop</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      {gameOver && (
+        <GameOverOverlay
+          result="lose"
+          title="MISSION FAILED"
+          subtitle={`FINAL SCORE: ${score}`}
+          onPlayAgain={resetGame}
+        />
       )}
     </View>
-    </ScrollView>
   );
 }
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-  },
   container: {
     flex: 1,
-    padding: 20,
-    alignItems: 'center',
+    padding: spacing.md,
+    backgroundColor: colors.background,
   },
-  gameArea: {
+  gameContainer: {
     flexDirection: 'row',
-    marginTop: 10,
+    marginTop: spacing.lg,
+    gap: spacing.md,
+  },
+  mainColumn: {
+    flex: 3,
+  },
+  boardWrapper: {
+    padding: 0,
+    backgroundColor: '#1a1a2e',
+    borderRadius: radius.sm,
+    borderWidth: 4,
+    borderColor: '#2b2b45',
+    overflow: 'hidden',
   },
   tetrisBoard: {
-    backgroundColor: colors.surface,
-    borderWidth: 2,
-    borderColor: colors.textSecondary,
+    width: GAME_AREA_WIDTH,
+    height: GAME_AREA_HEIGHT,
   },
   tetrisRow: {
     flexDirection: 'row',
   },
   tetrisCell: {
+    width: CELL_SIZE,
+    height: CELL_SIZE,
     borderWidth: 1,
-    borderColor: colors.background,
+    borderColor: 'rgba(0,0,0,0.1)',
+    overflow: 'hidden',
+  },
+  emptyCell: {
+    width: CELL_SIZE,
+    height: CELL_SIZE,
+    backgroundColor: 'transparent',
+  },
+  cellGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  cellBevel: {
+    position: 'absolute',
+    top: 2,
+    left: 2,
+    right: 2,
+    bottom: 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 2,
+  },
+  ghostCell: {
+    backgroundColor: 'transparent',
+  },
+  ghostInner: {
+    flex: 1,
+    borderWidth: 2,
+    borderRadius: 2,
+    margin: 2,
+    opacity: 0.4,
   },
   sidebar: {
-    marginLeft: 10,
-    justifyContent: 'flex-start',
+    flex: 1,
+    gap: spacing.md,
+  },
+  statCard: {
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
     alignItems: 'center',
   },
-  sidebarTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '900',
+    color: colors.textSecondary,
+    letterSpacing: 1,
   },
-  nextTetrominoPreview: {
-    backgroundColor: colors.card,
-    padding: 5,
-    borderRadius: 5,
-    marginBottom: 20,
+  statValue: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: colors.text,
+  },
+  previewContainer: {
+    marginTop: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    height: 60,
   },
-  startButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-    marginTop: 30,
-  },
-  startButtonText: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  controls: {
-    marginTop: 20,
-    width: '100%',
-    alignItems: 'center',
-  },
-  controlRow: {
+  previewRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 10,
   },
-  controlButton: {
-    backgroundColor: colors.card,
-    padding: 15,
-    marginHorizontal: 5,
-    borderRadius: 8,
-  },
-  controlButtonText: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  pauseButton: {
-    backgroundColor: colors.primary,
-    padding: 15,
-    marginHorizontal: 5,
-    borderRadius: 8,
-  },
-  pauseIcon: {
-    fontSize: 20,
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  gameOverText: {
-    color: colors.primary,
-    fontSize: 36,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  finalScore: {
-    color: colors.text,
-    fontSize: 24,
-    marginBottom: 30,
-  },
-  playAgain: {
-    backgroundColor: colors.primary,
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 10,
-  },
-  playAgainText: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  pausedText: {
-    color: colors.warning,
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 24,
-  },
-  resumeButton: {
-    backgroundColor: colors.success,
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 32,
+  previewCell: {
+    width: 12,
+    height: 12,
+    margin: 1,
+    borderRadius: 2,
   },
 });

@@ -1,0 +1,1 @@
+maze, doesn't work well on touch screen. it should move one at a time, but when the icon is swiped it should move in that direction till it cant sny more )(hits a wall)
