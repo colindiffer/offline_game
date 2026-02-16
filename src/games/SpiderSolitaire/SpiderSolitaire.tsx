@@ -16,10 +16,11 @@ import { initializeSpider, canMoveCards, canPlaceOn, getRankValue, Pile } from '
 import { Card } from '../../types/cards';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const COLUMN_GAP = 1; // Reduced from 2
-const SCREEN_PADDING = 4;
+const COLUMN_GAP = 0.5; 
+const SCREEN_PADDING = 2;
 const CARD_WIDTH = Math.floor((SCREEN_WIDTH - (SCREEN_PADDING * 2) - (COLUMN_GAP * 9)) / 10);
-const CARD_HEIGHT = Math.floor(CARD_WIDTH * 1.4);
+const CARD_HEIGHT = Math.floor(CARD_WIDTH * 1.5);
+const VERTICAL_SPREAD = 0.28;
 
 export default function SpiderSolitaire({ difficulty }: Props) {
   const { colors } = useTheme();
@@ -218,7 +219,7 @@ export default function SpiderSolitaire({ difficulty }: Props) {
                 const isDraggingThis = dragging?.sourceCol === i && j >= dragging.cardIndex;
 
                 return (
-                  <View key={card.id} style={[styles.cardWrapper, { top: j * (CARD_HEIGHT * 0.22) }]} {...(pr?.panHandlers || {})}>
+                  <View key={card.id} style={[styles.cardWrapper, { top: j * (CARD_HEIGHT * VERTICAL_SPREAD) }]} {...(pr?.panHandlers || {})}>
                     <PlayingCard card={card} faceDown={!card.faceUp} width={CARD_WIDTH} height={CARD_HEIGHT} style={isDraggingThis && { opacity: 0 }} />
                   </View>
                 );
@@ -252,7 +253,7 @@ export default function SpiderSolitaire({ difficulty }: Props) {
       {dragging && (
         <View style={styles.dragOverlay} pointerEvents="none">
           {dragging.cards.map((card, i) => (
-            <Animated.View key={i} style={[styles.draggedCard, { left: dragPosition.x, top: Animated.add(dragPosition.y, i * (CARD_HEIGHT * 0.22)) }]}>
+            <Animated.View key={i} style={[styles.draggedCard, { left: dragPosition.x, top: Animated.add(dragPosition.y, i * (CARD_HEIGHT * VERTICAL_SPREAD)) }]}>
               <PlayingCard card={card} width={CARD_WIDTH} height={CARD_HEIGHT} />
             </Animated.View>
           ))}

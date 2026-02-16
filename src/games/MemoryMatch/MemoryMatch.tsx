@@ -128,13 +128,6 @@ export default function MemoryMatch({ difficulty }: Props) {
       <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
       <Header title="Memory" score={moves} scoreLabel="MOVES" highScore={level} highScoreLabel="LEVEL" />
       
-      <View style={styles.levelHeader}>
-        <View style={styles.difficultyBadge}>
-          <Text style={styles.difficultyText}>{difficulty.toUpperCase()}</Text>
-        </View>
-        <Text style={styles.levelText}>Level {level}</Text>
-      </View>
-
       <View style={styles.gameArea}>
         <View style={[styles.grid, { width: GRID_WIDTH }]}>
           {cards.map((card, index) => {
@@ -145,15 +138,15 @@ export default function MemoryMatch({ difficulty }: Props) {
                 key={card.id}
                 onPress={() => handleCardPress(index)}
                 activeOpacity={0.9}
-                style={{ width: cardSize, height: cardSize * 1.3, margin: 4 }}
+                style={{ width: cardSize - 8, height: (cardSize - 8) * 1.3, margin: 4 }}
               >
                 <Animated.View style={[
                   styles.card, 
                   isFlipped ? styles.cardFront : styles.cardBack,
-                  { transform: [{ scale: cardAnims[index].interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] }) }] }
+                  { transform: [{ scale: cardAnims[index].interpolate({ inputRange: [0, 1], outputRange: [1, 1.05] }) }] }
                 ]}>
                   {isFlipped ? (
-                    <Text style={[styles.cardIcon, { fontSize: cardSize * 0.6 }]}>{card.type}</Text>
+                    <Text style={[styles.cardIcon, { fontSize: cardSize * 0.5 }]}>{card.type}</Text>
                   ) : (
                     <View style={styles.cardBackContent}>
                       <LinearGradient colors={['#4834d4', '#686de0']} style={StyleSheet.absoluteFill} />
@@ -193,17 +186,13 @@ interface Props {
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  levelHeader: { alignItems: 'center', marginTop: spacing.md },
-  difficultyBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 2, borderRadius: radius.sm, marginBottom: 4 },
-  difficultyText: { color: '#fab1a0', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
-  levelText: { color: '#fff', fontSize: 24, fontWeight: '900' },
   gameArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
-  card: { flex: 1, borderRadius: 8, ...shadows.md, overflow: 'hidden' },
-  cardBack: { backgroundColor: '#4834d4', borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)' },
+  card: { flex: 1, borderRadius: 12, ...shadows.md, overflow: 'hidden' },
+  cardBack: { backgroundColor: '#4834d4', borderWidth: 3, borderColor: 'rgba(255,255,255,0.2)' },
   cardBackContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   cardBackLogo: { fontSize: 32, fontWeight: '900', color: 'rgba(255,255,255,0.3)' },
-  cardFront: { backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#dcdde1' },
+  cardFront: { backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#fff' },
   cardIcon: { color: '#000' },
   matchedOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.4)' },
   footer: { padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },

@@ -92,9 +92,9 @@ export default function PlayingCard({ card, faceDown = false, size = 'medium', s
       </View>
 
       <Text style={[styles.centerSuit, { 
-        fontSize: cardSize.fontSize * 1.2, 
+        fontSize: cardSize.fontSize * 1.0, // Reduced from 1.2
         color: textColor,
-        transform: [{ translateX: -cardSize.width * 0.2 }, { translateY: -cardSize.height * 0.2 }] 
+        transform: [{ translateX: -cardSize.width * 0.15 }, { translateY: -cardSize.height * 0.15 }] 
       }]}>
         {suitSymbol}
       </Text>

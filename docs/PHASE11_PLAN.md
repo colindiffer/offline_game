@@ -27,3 +27,9 @@ Phase 11 expands the collection to 24 games, introducing a popular solitaire var
 - All new games will feature **Dynamic Scaling** to fill the screen width.
 - All will include **Level-Based Progression** with persistent storage.
 - Full-screen **How to Play** tutorials will be implemented for each.
+
+## UI Refinements (Mobile Optimization)
+- **Spider Solitaire**: Maximized 10-column width and increased vertical spread.
+- **Memory Match**: Standardized card shapes and fixed flip visibility.
+- **Word Guess**: Resolved header overlap and improved keyboard positioning.
+

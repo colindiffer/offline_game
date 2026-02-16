@@ -121,10 +121,6 @@ export default function WordGuess({ difficulty }: Props) {
       <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
       <Header title="Word Guess" score={level} scoreLabel="LEVEL" highScore={0} highScoreLabel="BEST" />
       
-      <View style={styles.levelHeader}>
-        <Text style={styles.levelText}>Level {level}</Text>
-      </View>
-
       <View style={styles.gameArea}>
         <View style={styles.grid}>
           {gameState.guesses.map((row, r) => (
@@ -187,8 +183,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   levelHeader: { alignItems: 'center', marginTop: spacing.md },
   levelText: { color: colors.text, fontSize: 24, fontWeight: '900' },
-  gameArea: { flex: 1, padding: spacing.md, alignItems: 'center', justifyContent: 'center' },
-  grid: { gap: 8, marginBottom: 40 },
+  gameArea: { flex: 1, padding: spacing.md, alignItems: 'center', justifyContent: 'space-around' },
+  grid: { gap: 8 },
   row: { flexDirection: 'row', gap: 8 },
   cell: { width: CELL_SIZE, height: CELL_SIZE, borderWidth: 2, borderColor: colors.border, borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
   activeCell: { transform: [{ scale: 1.1 }], borderColor: colors.primary },
