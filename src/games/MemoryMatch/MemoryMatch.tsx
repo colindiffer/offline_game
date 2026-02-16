@@ -36,7 +36,7 @@ export default function MemoryMatch({ difficulty }: Props) {
 
   // Initialize animations
   if (cardAnims.length === 0) {
-    for (let i = 0; i < 36; i++) { // Max grid 6x6
+    for (let i = 0; i < 36; i++) {
       cardAnims.push(new Animated.Value(0));
     }
   }
@@ -78,8 +78,11 @@ export default function MemoryMatch({ difficulty }: Props) {
     setFlippedCards(newFlipped);
     playSound('tap');
 
-    // Flip animation
-    Animated.spring(cardAnims[index], { toValue: 1, friction: 8, tension: 100, useNativeDriver: true }).start();
+    // Simple scale-pop for selection
+    Animated.sequence([
+      Animated.timing(cardAnims[index], { toValue: 1.1, duration: 100, useNativeDriver: true }),
+      Animated.timing(cardAnims[index], { toValue: 1, duration: 100, useNativeDriver: true }),
+    ]).start();
 
     if (newFlipped.length === 2) {
       setMoves(m => m + 1);
@@ -87,13 +90,11 @@ export default function MemoryMatch({ difficulty }: Props) {
       
       const [first, second] = newFlipped;
       if (cards[first].type === cards[second].type) {
-        // Match
         setTimeout(() => {
           setCards(prev => {
             const next = [...prev];
             next[first].isMatched = true;
             next[second].isMatched = true;
-            
             if (next.every(c => c.isMatched)) {
               setGameWon(true);
               playSound('win');
@@ -109,12 +110,7 @@ export default function MemoryMatch({ difficulty }: Props) {
           playSound('drop');
         }, 500);
       } else {
-        // No match
         setTimeout(() => {
-          Animated.parallel([
-            Animated.spring(cardAnims[first], { toValue: 0, useNativeDriver: true }),
-            Animated.spring(cardAnims[second], { toValue: 0, useNativeDriver: true }),
-          ]).start();
           setFlippedCards([]);
           setIsProcessing(false);
         }, 1000);
@@ -122,22 +118,10 @@ export default function MemoryMatch({ difficulty }: Props) {
     }
   }, [cards, flippedCards, isProcessing, gameWon, playSound, cardAnims, level, difficulty]);
 
-  const nextLevel = useCallback(async () => {
-    await init();
-  }, [init]);
-
-  const resetLevel = useCallback(() => {
-    init();
-  }, [init]);
-
   if (!isReady) return <View style={styles.container} />;
 
   const cols = cards.length > 24 ? 6 : cards.length > 12 ? 4 : 3;
   const cardSize = Math.floor((GRID_WIDTH - (cols * 8)) / cols);
-
-  const isCellMatched = (index: number) => {
-    return cards[index].isMatched;
-  };
 
   return (
     <View style={styles.container}>
@@ -154,10 +138,6 @@ export default function MemoryMatch({ difficulty }: Props) {
       <View style={styles.gameArea}>
         <View style={[styles.grid, { width: GRID_WIDTH }]}>
           {cards.map((card, index) => {
-            const rotateY = cardAnims[index].interpolate({
-              inputRange: [0, 1],
-              outputRange: ['0deg', '180deg']
-            });
             const isFlipped = flippedCards.includes(index) || card.isMatched;
 
             return (
@@ -167,21 +147,21 @@ export default function MemoryMatch({ difficulty }: Props) {
                 activeOpacity={0.9}
                 style={{ width: cardSize, height: cardSize * 1.3, margin: 4 }}
               >
-                <View style={styles.cardContainer}>
-                  <Animated.View style={[styles.card, { transform: [{ rotateY }] }]}>
-                    {/* Back of card */}
-                    <View style={styles.cardBack}>
+                <Animated.View style={[
+                  styles.card, 
+                  isFlipped ? styles.cardFront : styles.cardBack,
+                  { transform: [{ scale: cardAnims[index].interpolate({ inputRange: [0, 1], outputRange: [1, 1.1] }) }] }
+                ]}>
+                  {isFlipped ? (
+                    <Text style={[styles.cardIcon, { fontSize: cardSize * 0.6 }]}>{card.type}</Text>
+                  ) : (
+                    <View style={styles.cardBackContent}>
                       <LinearGradient colors={['#4834d4', '#686de0']} style={StyleSheet.absoluteFill} />
                       <Text style={styles.cardBackLogo}>?</Text>
                     </View>
-                    
-                    {/* Front of card (shown when flipped) */}
-                    <Animated.View style={[styles.cardFront, { transform: [{ rotateY: '180deg' }] }]}>
-                      <Text style={[styles.cardIcon, { fontSize: cardSize * 0.6 }]}>{card.type}</Text>
-                      {card.isMatched && <View style={styles.matchedOverlay} />}
-                    </Animated.View>
-                  </Animated.View>
-                </View>
+                  )}
+                  {card.isMatched && <View style={styles.matchedOverlay} />}
+                </Animated.View>
               </TouchableOpacity>
             );
           })}
@@ -189,7 +169,7 @@ export default function MemoryMatch({ difficulty }: Props) {
       </View>
 
       <View style={styles.footer}>
-        <PremiumButton variant="secondary" height={50} onPress={resetLevel}>
+        <PremiumButton variant="secondary" height={50} onPress={() => init()}>
           <Text style={styles.footerText}>RESET LEVEL</Text>
         </PremiumButton>
       </View>
@@ -199,7 +179,7 @@ export default function MemoryMatch({ difficulty }: Props) {
           result="win" 
           title="MATCHED!" 
           subtitle={`Completed in ${moves} moves.`} 
-          onPlayAgain={nextLevel}
+          onPlayAgain={() => init()}
           onPlayAgainLabel="NEXT LEVEL"
         />
       )}
@@ -219,13 +199,13 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   levelText: { color: '#fff', fontSize: 24, fontWeight: '900' },
   gameArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
-  cardContainer: { flex: 1 },
-  card: { flex: 1, position: 'relative', ...shadows.md },
-  cardBack: { ...StyleSheet.absoluteFillObject, borderRadius: 8, borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', overflow: 'hidden', backfaceVisibility: 'hidden' },
+  card: { flex: 1, borderRadius: 8, ...shadows.md, overflow: 'hidden' },
+  cardBack: { backgroundColor: '#4834d4', borderWidth: 2, borderColor: 'rgba(255,255,255,0.2)' },
+  cardBackContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   cardBackLogo: { fontSize: 32, fontWeight: '900', color: 'rgba(255,255,255,0.3)' },
-  cardFront: { ...StyleSheet.absoluteFillObject, backgroundColor: '#fff', borderRadius: 8, justifyContent: 'center', alignItems: 'center', backfaceVisibility: 'hidden' },
+  cardFront: { backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#dcdde1' },
   cardIcon: { color: '#000' },
-  matchedOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.6)', borderRadius: 8 },
+  matchedOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.4)' },
   footer: { padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
   footerText: { color: colors.text, fontWeight: 'bold' },
 });

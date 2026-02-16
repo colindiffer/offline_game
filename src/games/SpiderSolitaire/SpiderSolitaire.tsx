@@ -16,7 +16,7 @@ import { initializeSpider, canMoveCards, canPlaceOn, getRankValue, Pile } from '
 import { Card } from '../../types/cards';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const COLUMN_GAP = 2;
+const COLUMN_GAP = 1; // Reduced from 2
 const SCREEN_PADDING = 4;
 const CARD_WIDTH = Math.floor((SCREEN_WIDTH - (SCREEN_PADDING * 2) - (COLUMN_GAP * 9)) / 10);
 const CARD_HEIGHT = Math.floor(CARD_WIDTH * 1.4);
