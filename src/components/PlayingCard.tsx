@@ -28,7 +28,7 @@ export default function PlayingCard({ card, faceDown = false, size = 'medium', s
   const cardSize = {
     width: width || CARD_SIZES[size].width,
     height: height || CARD_SIZES[size].height,
-    fontSize: (width ? width * 0.4 : CARD_SIZES[size].fontSize),
+    fontSize: (width ? width * 0.5 : CARD_SIZES[size].fontSize),
   };
 
   if (!card) {
@@ -67,13 +67,14 @@ export default function PlayingCard({ card, faceDown = false, size = 'medium', s
   const suitSymbol = getSuitSymbol(card.suit);
   const cardColor = getSuitColor(card.suit);
   const textColor = cardColor === 'red' ? '#e74c3c' : '#2d3436';
+  const isSmall = cardSize.width < 50;
 
   return (
     <View
       style={[
         styles.card,
         styles.cardFace,
-        { width: cardSize.width, height: cardSize.height },
+        { width: cardSize.width, height: cardSize.height, padding: isSmall ? 2 : 4 },
         style,
       ]}
     >
@@ -82,28 +83,28 @@ export default function PlayingCard({ card, faceDown = false, size = 'medium', s
         style={StyleSheet.absoluteFill}
       />
 
-      <View style={styles.cardContent}>
-        <Text style={[styles.rankText, { fontSize: cardSize.fontSize * 0.6, color: textColor }]}>
+      <View style={[styles.cardContent, { top: isSmall ? 1 : 2, left: isSmall ? 1 : 2 }]}>
+        <Text style={[styles.rankText, { fontSize: cardSize.fontSize * 0.95, color: textColor, lineHeight: cardSize.fontSize * 0.95 }]}>
           {card.rank}
         </Text>
-        <Text style={[styles.suitText, { fontSize: cardSize.fontSize * 0.4, color: textColor }]}>
+        <Text style={[styles.suitText, { fontSize: cardSize.fontSize * 0.65, color: textColor, marginTop: isSmall ? -2 : -4 }]}>
           {suitSymbol}
         </Text>
       </View>
 
       <Text style={[styles.centerSuit, { 
-        fontSize: cardSize.fontSize * 1.0, // Reduced from 1.2
+        fontSize: cardSize.fontSize * 1.2,
         color: textColor,
         transform: [{ translateX: -cardSize.width * 0.15 }, { translateY: -cardSize.height * 0.15 }] 
       }]}>
         {suitSymbol}
       </Text>
 
-      <View style={[styles.cardContent, styles.bottomContent]}>
-        <Text style={[styles.rankText, { fontSize: cardSize.fontSize * 0.6, color: textColor }]}>
+      <View style={[styles.cardContent, styles.bottomContent, { bottom: isSmall ? 1 : 2, right: isSmall ? 1 : 2 }]}>
+        <Text style={[styles.rankText, { fontSize: cardSize.fontSize * 0.95, color: textColor, lineHeight: cardSize.fontSize * 0.95 }]}>
           {card.rank}
         </Text>
-        <Text style={[styles.suitText, { fontSize: cardSize.fontSize * 0.4, color: textColor }]}>
+        <Text style={[styles.suitText, { fontSize: cardSize.fontSize * 0.65, color: textColor, marginTop: isSmall ? -2 : -4 }]}>
           {suitSymbol}
         </Text>
       </View>

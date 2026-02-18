@@ -11,8 +11,6 @@ import { spacing, radius, shadows, typography } from '../utils/designTokens';
 const THEME_NAMES: Record<ThemeId, string> = {
   dark: 'Midnight',
   light: 'Arctic',
-  retro: 'Vintage',
-  ocean: 'Abyss',
 };
 
 export default function SettingsScreen() {
@@ -25,7 +23,7 @@ export default function SettingsScreen() {
   const handleClearHighScores = () => {
     Alert.alert(
       'Clear All High Scores',
-      'This will erase your personal records across all 21 games. Continue?',
+      'This will erase your personal records across all 24 games. Continue?',
       [
         { text: 'Cancel', style: 'cancel' },
         {

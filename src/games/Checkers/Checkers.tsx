@@ -208,7 +208,7 @@ export default function Checkers({ difficulty }: Props) {
         <View style={styles.turnIndicator}>
           {!gameState.gameOver ? (
             <>
-              <View style={[styles.turnDot, { backgroundColor: gameState.currentPlayer === 'black' ? '#2d3436' : '#d63031' }]} />
+              <View style={[styles.turnDot, { backgroundColor: gameState.currentPlayer === 'black' ? colors.text : colors.error }]} />
               <Text style={styles.turnText}>
                 {isAIThinking ? 'AI IS THINKING...' : gameState.currentPlayer === 'black' ? 'YOUR TURN' : "AI'S TURN"}
               </Text>
@@ -351,14 +351,14 @@ const getStyles = (colors: ThemeColors) =>
     },
     boardContainer: {
       padding: 4,
-      backgroundColor: '#5d4037', // Dark wood frame
+      backgroundColor: colors.border, // Dark wood frame replacement
       borderRadius: radius.sm,
       borderWidth: 4,
-      borderColor: '#3e2723',
+      borderColor: colors.card,
     },
     board: {
       borderWidth: 1,
-      borderColor: '#3e2723',
+      borderColor: colors.card,
     },
     row: {
       flexDirection: 'row',
@@ -436,7 +436,8 @@ const getStyles = (colors: ThemeColors) =>
       top: '40%',
       right: '-15%',
       fontSize: 250,
-      opacity: 0.03,
+      opacity: 0.05,
       transform: [{ rotate: '15deg' }],
+      color: colors.primary,
     },
   });

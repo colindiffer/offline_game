@@ -335,8 +335,8 @@ export default function Snake({ difficulty }: Props) {
 
       {paused && !gameOver && (
         <GameOverOverlay
-          result="draw"
-          title="PAUSED"
+          result="paused"
+          title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
         />
@@ -368,11 +368,11 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   board: {
-    backgroundColor: '#0a0a1a',
+    backgroundColor: colors.card,
     borderRadius: radius.md,
     overflow: 'hidden',
     borderWidth: 4,
-    borderColor: '#1e1e3a',
+    borderColor: colors.border,
   },
   row: {
     flexDirection: 'row',
@@ -427,7 +427,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     bottom: '5%',
     right: '-10%',
     fontSize: 200,
-    opacity: 0.03,
+    opacity: 0.05,
     transform: [{ rotate: '-15deg' }],
+    color: colors.primary,
   },
 });

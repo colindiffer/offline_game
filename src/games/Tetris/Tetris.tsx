@@ -472,6 +472,15 @@ export default function Tetris({ difficulty }: Props) {
           onPlayAgain={resetGame}
         />
       )}
+
+      {paused && !gameOver && (
+        <GameOverOverlay
+          result="paused"
+          title="GAME PAUSED"
+          onPlayAgain={() => setPaused(false)}
+          onPlayAgainLabel="RESUME"
+        />
+      )}
     </View>
   );
 }
@@ -492,10 +501,10 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   boardWrapper: {
     padding: 0,
-    backgroundColor: '#1a1a2e',
+    backgroundColor: colors.card,
     borderRadius: radius.sm,
     borderWidth: 4,
-    borderColor: '#2b2b45',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   tetrisBoard: {
@@ -527,7 +536,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     right: 2,
     bottom: 2,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: 'rgba(255,255,255,0.15)',
     borderRadius: 2,
   },
   ghostCell: {

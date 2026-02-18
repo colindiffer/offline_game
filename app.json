@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "OfflineGames",
-    "slug": "OfflineGames",
+    "name": "Classic Offline Games Room",
+    "slug": "classic-offline-games-room",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,6 +16,8 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.offlinegamesroom.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -25,6 +27,13 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [],
+    "extra": {
+      "eas": {
+        "projectId": "b8907385-7781-49eb-9c92-69783a479a48"
+      }
+    },
+    "owner": "colindiffer"
   }
 }

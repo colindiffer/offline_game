@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, View, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
 import { spacing, radius, shadows, typography } from '../utils/designTokens';
-import AnimatedButton from './AnimatedButton';
+import PremiumButton from './PremiumButton';
+import { useNavigation } from '@react-navigation/native';
 
-export type GameResult = 'win' | 'lose' | 'draw';
+export type GameResult = 'win' | 'lose' | 'draw' | 'paused';
 
 interface Props {
   result: GameResult;
@@ -13,7 +15,6 @@ interface Props {
   subtitle?: string;
   onPlayAgain: () => void;
   onPlayAgainLabel?: string;
-  /** Extra action button (e.g. "Resume" for paused state) */
   secondaryAction?: {
     label: string;
     onPress: () => void;
@@ -25,95 +26,130 @@ export default function GameOverOverlay({
   title,
   subtitle,
   onPlayAgain,
-  onPlayAgainLabel = 'Play Again',
+  onPlayAgainLabel,
   secondaryAction,
 }: Props) {
   const { colors } = useTheme();
+  const navigation = useNavigation();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const backdropOpacity = useRef(new Animated.Value(0)).current;
-  const contentScale = useRef(new Animated.Value(0.8)).current;
+  const contentScale = useRef(new Animated.Value(0.9)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
-  const contentTranslateY = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(backdropOpacity, {
         toValue: 1,
-        duration: 250,
+        duration: 300,
         useNativeDriver: true,
       }),
       Animated.spring(contentScale, {
-        toValue: result === 'win' ? 1.05 : 1,
-        friction: result === 'win' ? 4 : 8,
-        tension: 80,
-        delay: 100,
+        toValue: 1,
+        friction: 7,
+        tension: 40,
+        delay: 150,
         useNativeDriver: true,
       }),
       Animated.timing(contentOpacity, {
         toValue: 1,
-        duration: 250,
-        delay: 100,
+        duration: 300,
+        delay: 150,
         useNativeDriver: true,
       }),
-      Animated.spring(contentTranslateY, {
-        toValue: 0,
-        friction: 8,
-        tension: 65,
-        delay: 100,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      // Settle win scale back to 1
-      if (result === 'win') {
-        Animated.spring(contentScale, {
-          toValue: 1,
-          friction: 6,
-          tension: 40,
-          useNativeDriver: true,
-        }).start();
-      }
-    });
+    ]).start();
   }, []);
 
-  const accentColor =
-    result === 'win' ? colors.success :
-    result === 'lose' ? colors.error :
-    colors.warning;
+  const config = useMemo(() => {
+    switch (result) {
+      case 'win':
+        return {
+          icon: '🏆',
+          color: colors.success,
+          gradient: ['#00b894', '#55efc4'],
+          btnLabel: onPlayAgainLabel || 'PLAY AGAIN',
+        };
+      case 'lose':
+        return {
+          icon: '💀',
+          color: colors.error,
+          gradient: ['#d63031', '#ff7675'],
+          btnLabel: onPlayAgainLabel || 'TRY AGAIN',
+        };
+      case 'paused':
+        return {
+          icon: '⏸️',
+          color: colors.primary,
+          gradient: [colors.primary, colors.accent],
+          btnLabel: onPlayAgainLabel || 'RESUME',
+        };
+      default:
+        return {
+          icon: '🤝',
+          color: colors.warning,
+          gradient: ['#f1c40f', '#ffeaa7'],
+          btnLabel: onPlayAgainLabel || 'PLAY AGAIN',
+        };
+    }
+  }, [result, colors, onPlayAgainLabel]);
+
+  const handleQuit = () => {
+    if (secondaryAction) {
+      secondaryAction.onPress();
+    } else {
+      navigation.goBack();
+    }
+  };
 
   return (
     <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
       <Animated.View
         style={[
-          styles.card,
+          styles.cardContainer,
           {
             opacity: contentOpacity,
-            transform: [
-              { scale: contentScale },
-              { translateY: contentTranslateY },
-            ],
+            transform: [{ scale: contentScale }],
           },
         ]}
       >
-        <View style={[styles.accentBar, { backgroundColor: accentColor }]} />
-        <Text style={[styles.title, { color: accentColor }]}>{title}</Text>
-        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
-        <AnimatedButton
-          variant="primary"
-          onPress={onPlayAgain}
-          style={styles.buttonWrapper}
-        >
-          <Text style={styles.buttonText}>{onPlayAgainLabel}</Text>
-        </AnimatedButton>
-        {secondaryAction && (
-          <AnimatedButton
-            variant="secondary"
-            onPress={secondaryAction.onPress}
-            style={styles.secondaryWrapper}
-          >
-            <Text style={styles.secondaryText}>{secondaryAction.label}</Text>
-          </AnimatedButton>
-        )}
+        <View style={styles.card}>
+          {/* Header Section */}
+          <View style={styles.heroHeader}>
+            <LinearGradient colors={config.gradient} style={StyleSheet.absoluteFill} />
+            <Text style={styles.heroIcon}>{config.icon}</Text>
+            <View style={styles.headerGlow} />
+          </View>
+
+          {/* Content Section */}
+          <View style={styles.content}>
+            <Text style={[styles.title, { color: config.color }]}>{title.toUpperCase()}</Text>
+            {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+
+            <View style={styles.buttonContainer}>
+              <PremiumButton
+                variant="primary"
+                height={56}
+                onPress={onPlayAgain}
+                style={styles.mainButton}
+              >
+                <Text style={styles.buttonText}>{config.btnLabel}</Text>
+              </PremiumButton>
+
+              <PremiumButton
+                variant="secondary"
+                height={50}
+                onPress={handleQuit}
+                style={styles.quitButton}
+              >
+                <Text style={styles.quitButtonText}>
+                  {secondaryAction?.label || 'EXIT TO MENU'}
+                </Text>
+              </PremiumButton>
+            </View>
+          </View>
+          
+          <View style={styles.innerBorder} />
+        </View>
       </Animated.View>
     </Animated.View>
   );
@@ -123,61 +159,95 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     backdrop: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: colors.overlayBackground,
+      backgroundColor: 'rgba(0,0,0,0.85)',
       justifyContent: 'center',
       alignItems: 'center',
-      zIndex: 900,
+      zIndex: 2000,
+    },
+    cardContainer: {
+      width: '85%',
+      maxWidth: 340,
+      ...shadows.xl,
     },
     card: {
       backgroundColor: colors.surface,
-      borderRadius: radius.xl,
-      padding: spacing.lg,
-      alignItems: 'center',
-      minWidth: 260,
-      maxWidth: 320,
+      borderRadius: 32,
+      overflow: 'hidden',
       borderWidth: 1,
-      borderColor: colors.border,
-      ...shadows.xl,
+      borderColor: 'rgba(255,255,255,0.1)',
+    },
+    heroHeader: {
+      height: 120,
+      justifyContent: 'center',
+      alignItems: 'center',
       overflow: 'hidden',
     },
-    accentBar: {
+    heroIcon: {
+      fontSize: 64,
+      zIndex: 2,
+      textShadowColor: 'rgba(0,0,0,0.3)',
+      textShadowOffset: { width: 0, height: 4 },
+      textShadowRadius: 8,
+    },
+    headerGlow: {
       position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 4,
-      borderTopLeftRadius: radius.xl,
-      borderTopRightRadius: radius.xl,
+      width: 150,
+      height: 150,
+      borderRadius: 75,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      filter: Platform.OS === 'web' ? 'blur(40px)' : undefined,
+    },
+    content: {
+      padding: spacing.xl,
+      alignItems: 'center',
     },
     title: {
-      ...typography.heading,
-      marginTop: spacing.sm,
+      fontSize: 24,
+      fontWeight: '900',
+      textAlign: 'center',
+      letterSpacing: 2,
       marginBottom: spacing.sm,
     },
     subtitle: {
-      ...typography.body,
+      fontSize: 14,
       color: colors.textSecondary,
       textAlign: 'center',
-      marginBottom: spacing.lg,
+      marginBottom: spacing.xl,
+      lineHeight: 20,
+      fontWeight: '500',
     },
-    buttonWrapper: {
-      marginTop: spacing.lg,
+    buttonContainer: {
       width: '100%',
-      minWidth: 200,
-      height: 50,
+      gap: spacing.md,
+    },
+    mainButton: {
+      width: '100%',
     },
     buttonText: {
-      color: colors.textOnPrimary,
-      ...typography.bodyBold,
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '900',
+      letterSpacing: 1,
     },
-    secondaryWrapper: {
-      marginTop: spacing.md,
+    quitButton: {
       width: '100%',
-      minWidth: 200,
-      height: 50,
     },
-    secondaryText: {
+    quitButtonText: {
       color: colors.text,
-      ...typography.bodyBold,
+      fontSize: 14,
+      fontWeight: 'bold',
+      opacity: 0.7,
+    },
+    innerBorder: {
+      position: 'absolute',
+      top: 4,
+      left: 4,
+      right: 4,
+      bottom: 4,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.05)',
+      borderRadius: 28,
+      pointerEvents: 'none',
     },
   });
+

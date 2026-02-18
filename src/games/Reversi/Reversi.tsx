@@ -260,7 +260,7 @@ export default function Reversi({ difficulty }: Props) {
         <View style={styles.turnIndicator}>
           {!gameState.gameOver ? (
             <>
-              <View style={[styles.turnDot, { backgroundColor: gameState.currentPlayer === 'black' ? '#000' : '#fff' }]} />
+              <View style={[styles.turnDot, { backgroundColor: gameState.currentPlayer === 'black' ? '#000' : colors.text }]} />
               <Text style={styles.turnText}>
                 {isAIThinking ? 'AI IS THINKING...' : gameState.currentPlayer === 'black' ? 'YOUR TURN' : "AI'S TURN"}
               </Text>
@@ -302,13 +302,13 @@ const getStyles = (colors: ThemeColors) =>
     },
     boardContainer: {
       padding: 4,
-      backgroundColor: '#3d3d5c',
+      backgroundColor: colors.border,
       borderRadius: radius.sm,
       borderWidth: 4,
-      borderColor: '#2b2b45',
+      borderColor: colors.card,
     },
     board: {
-      backgroundColor: '#2e7d32',
+      backgroundColor: '#2e7d32', // Keep green board for classic feel
       borderRadius: 2,
       overflow: 'hidden',
     },
@@ -411,7 +411,8 @@ const getStyles = (colors: ThemeColors) =>
       bottom: '10%',
       right: '-10%',
       fontSize: 250,
-      opacity: 0.03,
+      opacity: 0.05,
       transform: [{ rotate: '15deg' }],
+      color: colors.primary,
     },
   });

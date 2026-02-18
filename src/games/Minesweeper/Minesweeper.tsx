@@ -40,6 +40,7 @@ export default function Minesweeper({ difficulty }: Props) {
   const [startTime, setStartTime] = useState<number | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [highScore, setHighScoreState] = useState<number | null>(null);
+  const [paused, setPaused] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -64,7 +65,7 @@ export default function Minesweeper({ difficulty }: Props) {
   }, [difficulty]);
 
   useEffect(() => {
-    if (startTime && !gameOver && !gameWon) {
+    if (startTime && !gameOver && !gameWon && !paused) {
       timerRef.current = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
       }, 1000);
@@ -73,11 +74,11 @@ export default function Minesweeper({ difficulty }: Props) {
       timerRef.current = null;
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [startTime, gameOver, gameWon]);
+  }, [startTime, gameOver, gameWon, paused]);
 
   const handleCellPress = useCallback(
     (row: number, col: number, isLongPress: boolean = false) => {
-      if (gameOver || gameWon || !isReady) return;
+      if (gameOver || gameWon || paused || !isReady) return;
 
       if (!board) {
         const initialBoard = createBoard(difficulty, row, col, level);
@@ -136,7 +137,7 @@ export default function Minesweeper({ difficulty }: Props) {
       }
       setBoard(newBoard);
     },
-    [board, gameOver, gameWon, difficulty, gameConfig.mines, level, isReady, startTime, playSound]
+    [board, gameOver, gameWon, paused, difficulty, gameConfig.mines, level, isReady, startTime, playSound]
   );
 
   const nextLevel = useCallback(async () => {
@@ -149,6 +150,7 @@ export default function Minesweeper({ difficulty }: Props) {
     setMinesRemaining(config.mines);
     setStartTime(null);
     setElapsedTime(0);
+    setPaused(false);
   }, [difficulty]);
 
   const resetLevel = useCallback(() => {
@@ -158,6 +160,7 @@ export default function Minesweeper({ difficulty }: Props) {
     setMinesRemaining(gameConfig.mines);
     setStartTime(null);
     setElapsedTime(0);
+    setPaused(false);
   }, [gameConfig.mines]);
 
   if (!isReady) return <View style={styles.container} />;
@@ -203,14 +206,14 @@ export default function Minesweeper({ difficulty }: Props) {
             width: CELL_SIZE,
             height: CELL_SIZE,
             backgroundColor: isRevealed
-              ? (isAlt ? '#2d2d4d' : '#252545')
-              : (isAlt ? '#3d3d5c' : '#353555'),
+              ? (isAlt ? colors.background : colors.surface)
+              : (isAlt ? colors.card : colors.border),
           },
-          isBlownMine && { backgroundColor: '#ff7675' },
+          isBlownMine && { backgroundColor: colors.error },
         ]}
         onPress={() => handleCellPress(cell.row, cell.col)}
         onLongPress={() => handleCellPress(cell.row, cell.col, true)}
-        disabled={gameOver || gameWon || isRevealed}
+        disabled={gameOver || gameWon || paused || isRevealed}
       >
         <Text style={[styles.cellText, { color: textColor, fontSize: CELL_SIZE * 0.6 }]}>
           {content}
@@ -222,7 +225,15 @@ export default function Minesweeper({ difficulty }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.bgIcon}>💣</Text>
-      <Header title="Minesweeper" score={minesRemaining} scoreLabel="MINES" highScore={highScore || 0} highScoreLabel="BEST" />
+      <Header
+        title="Minesweeper"
+        score={minesRemaining}
+        scoreLabel="MINES"
+        highScore={highScore || 0}
+        highScoreLabel="BEST"
+        onPause={() => setPaused(!paused)}
+        isPaused={paused}
+      />
       
       <View style={styles.levelHeader}>
         <View style={styles.difficultyBadge}>
@@ -246,11 +257,12 @@ export default function Minesweeper({ difficulty }: Props) {
                 {
                   width: CELL_SIZE * gameConfig.cols,
                   height: CELL_SIZE * gameConfig.rows,
-                  backgroundColor: '#3d3d5c',
+                  backgroundColor: colors.card,
                 },
               ]}
               activeOpacity={0.8}
               onPress={() => handleCellPress(Math.floor(gameConfig.rows / 2), Math.floor(gameConfig.cols / 2))}
+              disabled={paused}
             >
               <Text style={styles.placeholderText}>TAP TO START</Text>
             </TouchableOpacity>
@@ -259,7 +271,7 @@ export default function Minesweeper({ difficulty }: Props) {
       </GameBoardContainer>
 
       <View style={styles.footer}>
-        <PremiumButton variant="secondary" height={50} onPress={resetLevel} style={styles.resetBtn}>
+        <PremiumButton variant="secondary" height={50} onPress={resetLevel} disabled={paused} style={styles.resetBtn}>
           <Text style={styles.resetText}>RESET LEVEL</Text>
         </PremiumButton>
       </View>
@@ -271,6 +283,15 @@ export default function Minesweeper({ difficulty }: Props) {
           subtitle={gameWon ? `Level ${level} complete!` : 'Try again!'}
           onPlayAgain={gameWon ? nextLevel : resetLevel}
           onPlayAgainLabel={gameWon ? "NEXT LEVEL" : "TRY AGAIN"}
+        />
+      )}
+
+      {paused && !gameOver && !gameWon && (
+        <GameOverOverlay
+          result="paused"
+          title="GAME PAUSED"
+          onPlayAgain={() => setPaused(false)}
+          onPlayAgainLabel="RESUME"
         />
       )}
 
@@ -291,13 +312,13 @@ export default function Minesweeper({ difficulty }: Props) {
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, padding: spacing.md, backgroundColor: colors.background },
   levelHeader: { alignItems: 'center', marginTop: spacing.md },
-  difficultyBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 2, borderRadius: radius.sm, marginBottom: 4 },
-  difficultyText: { color: '#fab1a0', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
-  levelText: { color: '#fff', fontSize: 24, fontWeight: '900' },
+  difficultyBadge: { backgroundColor: colors.card, paddingHorizontal: 12, paddingVertical: 2, borderRadius: radius.sm, marginBottom: 4, borderWidth: 1, borderColor: colors.border },
+  difficultyText: { color: colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+  levelText: { color: colors.text, fontSize: 24, fontWeight: '900' },
   boardContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  boardFrame: { borderWidth: 4, borderColor: '#2b2b45', borderRadius: radius.md, overflow: 'hidden', backgroundColor: '#1e1e3a' },
+  boardFrame: { borderWidth: 4, borderColor: colors.border, borderRadius: radius.md, overflow: 'hidden', backgroundColor: colors.card },
   boardPlaceholder: { justifyContent: 'center', alignItems: 'center' },
-  placeholderText: { color: '#fff', fontSize: 18, fontWeight: '900', opacity: 0.5 },
+  placeholderText: { color: colors.textSecondary, fontSize: 18, fontWeight: '900', opacity: 0.5 },
   row: { flexDirection: 'row' },
   cell: { justifyContent: 'center', alignItems: 'center' },
   cellText: { fontWeight: '900' },

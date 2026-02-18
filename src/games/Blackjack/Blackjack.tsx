@@ -150,6 +150,8 @@ export default function Blackjack({ difficulty }: Props) {
     switch (gameState.result) {
       case 'blackjack':
         return 'BLACKJACK! 🎉';
+      case '5-card-trick':
+        return '5 CARD TRICK! 🎩';
       case 'win':
         return 'YOU WIN! 🎉';
       case 'loss':
@@ -166,6 +168,7 @@ export default function Blackjack({ difficulty }: Props) {
 
     switch (gameState.result) {
       case 'blackjack':
+      case '5-card-trick':
       case 'win':
         return '#55efc4';
       case 'loss':
@@ -182,13 +185,14 @@ export default function Blackjack({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.bgIcon}>🃏</Text>
+      <Text style={[styles.bgIcon, { color: '#fff' }]}>🃏</Text>
       <Header
         title="Blackjack"
         score={gameState.tokens}
         scoreLabel="CHIPS"
         highScore={highScore}
         highScoreLabel="BEST"
+        light
       />
 
       <View style={styles.table}>
@@ -428,6 +432,7 @@ const getStyles = (colors: ThemeColors) =>
       borderRadius: radius.full,
       borderWidth: 2,
       borderColor: 'rgba(255,255,255,0.1)',
+      ...shadows.lg,
     },
     resultText: {
       fontSize: 22,

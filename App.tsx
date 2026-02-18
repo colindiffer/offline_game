@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { logScreenView } from './src/lib/analytics';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import HomeScreen from './src/screens/HomeScreen';
 import GameScreen from './src/screens/GameScreen';
@@ -14,9 +15,24 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function AppContent() {
   const { colors, themeId } = useTheme();
+  const navRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
+  const routeNameRef = useRef<string | undefined>();
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      ref={navRef}
+      onReady={() => {
+        routeNameRef.current = navRef.current?.getCurrentRoute()?.name;
+      }}
+      onStateChange={async () => {
+        const currentRoute = navRef.current?.getCurrentRoute();
+        const currentRouteName = currentRoute?.name;
+        if (currentRouteName && currentRouteName !== routeNameRef.current) {
+          await logScreenView(currentRouteName);
+          routeNameRef.current = currentRouteName;
+        }
+      }}
+    >
       <StatusBar style={themeId === 'dark' ? 'light' : 'dark'} />
       <Stack.Navigator
         screenOptions={{

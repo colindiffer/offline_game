@@ -236,9 +236,14 @@ export const GAME_TUTORIALS: Record<GameId, TutorialStep[]> = {
       tips: ['Face cards are worth 10', 'Aces can be 1 or 11', 'Dealer must hit on 16 or less'],
     },
     {
+      title: 'Special Rules',
+      description: 'Blackjack (21 with 2 cards) pays 3:2! Also, if you manage to have 5 cards without busting, you win automatically (5 Card Trick)!',
+      tips: ['5 Card Trick pays 2:1', 'Blackjack is the strongest hand'],
+    },
+    {
       title: 'Actions',
       description: 'Hit: Take another card. Stand: Keep your hand. Double: Double your bet and take exactly one more card.',
-      tips: ['Can only double on first 2 cards', 'Blackjack (21 with 2 cards) pays 3:2!'],
+      tips: ['Can only double on first 2 cards', 'Think before you double!'],
     },
     {
       title: 'Strategy',
@@ -434,6 +439,99 @@ export const GAME_TUTORIALS: Record<GameId, TutorialStep[]> = {
       title: 'Winning',
       description: 'Complete a full suit (King to Ace) to remove it from the board. Remove all 8 suits to win!',
       tips: ['Plan several moves ahead', 'Don\'t deal new cards until you have no other moves left'],
+    },
+  ],
+
+  battleship: [
+    {
+      title: 'Welcome to Battleship!',
+      description: 'Sink the enemy fleet before they sink yours! Strategy and deduction are key.',
+      icon: '🚢',
+    },
+    {
+      title: 'Placement Phase',
+      description: 'Drag and drop your ships onto your grid. You can rotate them to fit your strategy.',
+      tips: ['Spread your ships out', 'Avoid predictable patterns', 'Try overlapping or grouping for deception'],
+    },
+    {
+      title: 'Combat Phase',
+      description: 'Tap on the enemy grid to fire a strike. HIT will show in red, MISS in white.',
+      tips: ['If you hit, target adjacent squares to find the rest of the ship', 'Follow a checkerboard search pattern', 'Keep track of which ships you have sunk'],
+    },
+  ],
+
+  spades: [
+    {
+      title: 'Welcome to Spades!',
+      description: 'A classic partner-based trick-taking game. Spades are always trump!',
+      icon: '♠️',
+    },
+    {
+      title: 'Bidding',
+      description: 'At the start of each round, bid the number of tricks you and your partner think you can win.',
+      tips: ['A bid of "0" is called Nil and carries a high reward/penalty', 'Be realistic with your bids', 'Total team bid is what matters'],
+    },
+    {
+      title: 'Gameplay',
+      description: 'Follow suit if you can. If not, you can play a Spade (trump) or any other card.',
+      tips: ['You cannot lead Spades until they have been "broken"', 'High cards win tricks, but Spades trump everything', 'Winning too many extra tricks leads to "bags"'],
+    },
+  ],
+
+  'code-breaker': [
+    {
+      title: 'Welcome to Code Breaker!',
+      description: 'Deduce the hidden sequence of 4 colors in 10 tries or less.',
+      icon: '🕵️',
+    },
+    {
+      title: 'How to Play',
+      description: 'Select colors to fill the current row, then tap "CHECK" to get feedback.',
+      tips: ['BLACK PEG: Correct color in the correct spot', 'WHITE PEG: Correct color but in the wrong spot', 'Position of feedback pegs does not correspond to code positions'],
+    },
+    {
+      title: 'Strategy',
+      description: 'Use the process of elimination to narrow down the possible combinations.',
+      tips: ['Start with diverse colors to rule things out', 'Look at your history to spot patterns', 'Think logically about each peg'],
+    },
+  ],
+
+  freecell: [
+    {
+      title: 'Welcome to FreeCell!',
+      description: 'Unlike other solitaire games, almost every deal is solvable!',
+      icon: '🃏',
+    },
+    {
+      title: 'How to Play',
+      description: 'Use the 4 "free cells" at the top left as temporary storage. Move all cards to the 4 foundation piles (top right).',
+      tips: ['Move Aces to foundations immediately', 'Keep as many free cells empty as possible', 'You can move stacks of cards if you have enough empty cells'],
+    },
+  ],
+
+  dominoes: [
+    {
+      title: 'Welcome to Dominoes!',
+      description: 'Match the numbers on the ends of the chain to play your tiles.',
+      icon: '🂓',
+    },
+    {
+      title: 'How to Play',
+      description: 'Drag a tile from your hand to a matching end of the board. If you cannot move, you must draw from the stock.',
+      tips: ['Try to play your highest-value tiles first', 'Pay attention to what your opponent is playing', 'Block your opponent by controlling the ends'],
+    },
+  ],
+
+  backgammon: [
+    {
+      title: 'Welcome to Backgammon!',
+      description: 'A classic race game of strategy and luck.',
+      icon: '🎲',
+    },
+    {
+      title: 'Goal',
+      description: 'Move all your checkers to your home board and then "bear them off" the board.',
+      tips: ['Roll dice to move', 'Hitting an opponent\'s lone checker (blot) sends it to the bar', 'Don\'t leave single checkers exposed'],
     },
   ],
 };

@@ -143,7 +143,7 @@ export default function Mahjong({ difficulty }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.bgIcon}>🀄</Text>
-      <LinearGradient colors={['#2c3e50', '#000000']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
       <Header title="Mahjong" score={tiles.filter(t => !t.visible).length / 2} scoreLabel="PAIRS" highScore={level} highScoreLabel="LEVEL" />
       
       <View style={styles.levelHeader}>
@@ -216,7 +216,7 @@ interface Props {
 const getStyles = (colors: ThemeColors, tileWidth: number, tileHeight: number) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   levelHeader: { alignItems: 'center', marginTop: spacing.md },
-  levelText: { color: '#fff', fontSize: 24, fontWeight: '900' },
+  levelText: { color: colors.text, fontSize: 24, fontWeight: '900' },
   gameArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   board: {
     position: 'relative',

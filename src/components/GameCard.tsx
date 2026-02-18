@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { GameMetadata } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import PremiumButton from './PremiumButton';
+import DominoTile from './DominoTile';
 import { ThemeColors } from '../utils/themes';
 import { spacing, radius, shadows, typography } from '../utils/designTokens';
 
@@ -38,76 +39,147 @@ export default function GameCard({ game, onPress, index = 0 }: Props) {
     ]).start();
   }, []);
 
+  const renderIcon = () => {
+    if (game.id === 'dominoes') {
+      return (
+        <View style={styles.customIconContainer}>
+          <DominoTile 
+            sideA={6} 
+            sideB={6} 
+            style={styles.gameCardDomino} 
+            pointerEvents="none" 
+          />
+        </View>
+      );
+    }
+    
+    if (game.id === '2048') {
+      return (
+        <View style={styles.tile2048}>
+          <Text style={styles.tileText2048}>2048</Text>
+        </View>
+      );
+    }
+    
+    return <Text style={styles.icon}>{game.icon}</Text>;
+  };
+
   return (
     <Animated.View style={[styles.animWrapper, { opacity, transform: [{ translateY }] }]}>
-      <PremiumButton
-        variant="secondary"
-        height={130}
-        depth={6}
-        onPress={onPress}
-        style={styles.cardWrapper}
-      >
-        <View style={styles.cardContent}>
+      <View style={styles.shadowContainer}>
+        <PremiumButton
+          variant="secondary"
+          height={140}
+          depth={6}
+          onPress={onPress}
+          style={styles.cardWrapper}
+          contentStyle={[styles.cardContent, { backgroundColor: game.color }]}
+        >
           <LinearGradient
-            colors={['rgba(255,255,255,0.05)', 'transparent']}
+            colors={['rgba(255,255,255,0.2)', 'transparent', 'rgba(0,0,0,0.2)']}
             style={StyleSheet.absoluteFill}
           />
-          <View style={[styles.iconBox, { backgroundColor: game.color + '15' }]}>
-            <Text style={styles.icon}>{game.icon}</Text>
+          <View style={styles.innerGlow} />
+          
+          <View style={styles.iconContainer}>
+            {renderIcon()}
           </View>
-          <Text style={styles.name} numberOfLines={1}>{game.name.toUpperCase()}</Text>
-          <View style={[styles.indicator, { backgroundColor: game.color }]} />
-        </View>
-      </PremiumButton>
+          
+          <View style={styles.labelContainer}>
+            <Text style={styles.name} numberOfLines={1}>{game.name.toUpperCase()}</Text>
+          </View>
+        </PremiumButton>
+      </View>
     </Animated.View>
   );
 }
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   animWrapper: {
-    width: '48%', // Changed from 31% to fit 2 per row
-    marginBottom: spacing.xl,
+    width: '48%',
+    marginBottom: spacing.lg,
+  },
+  shadowContainer: {
+    ...shadows.lg,
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   cardWrapper: {
     width: '100%',
-  },
-  cardContent: {
-    flex: 1,
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: 24,
     overflow: 'hidden',
   },
-  iconBox: {
-    width: 90, // Increased from 70
-    height: 90,
-    borderRadius: 20,
+  cardContent: {
+    paddingHorizontal: 0,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: spacing.xl,
+  },
+  innerGlow: {
+    position: 'absolute',
+    top: 2,
+    left: 2,
+    right: 2,
+    bottom: 2,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 22,
+  },
+  iconContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
+    zIndex: 2,
+  },
+  icon: { 
+    fontSize: 72,
+    textShadowColor: 'rgba(0,0,0,0.25)',
+    textShadowOffset: { width: 0, height: 8 },
+    textShadowRadius: 10,
+  },
+  customIconContainer: {
+    transform: [{ rotate: '-15deg' }],
+    ...shadows.lg,
+  },
+  gameCardDomino: {
+    transform: [{ scale: 0.8 }],
+  },
+  tile2048: {
+    width: 70,
+    height: 70,
+    backgroundColor: '#edc22e', // Classic 2048 gold
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
     ...shadows.md,
   },
-  icon: { fontSize: 54 }, // Increased from 42
-  name: {
-    color: colors.text,
-    fontSize: 14, // Increased from 12
+  tileText2048: {
+    color: '#fff',
+    fontSize: 20,
     fontWeight: '900',
-    textAlign: 'center',
-    letterSpacing: 0.5,
+    textShadowColor: 'rgba(0,0,0,0.2)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
-  indicator: {
-    position: 'absolute',
-    bottom: 0,
-    left: '35%',
-    right: '35%',
-    height: 3,
-    borderTopLeftRadius: 3,
-    borderTopRightRadius: 3,
-    opacity: 0.6,
+  labelContainer: {
+    width: '100%',
+    backgroundColor: 'rgba(0,0,0,0.25)',
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  name: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 1.2,
+    textShadowColor: 'rgba(0,0,0,0.4)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
 });

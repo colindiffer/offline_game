@@ -56,11 +56,14 @@ export default function Game2048({ difficulty }: Props) {
   const [won, setWon] = useState(false);
   const [lost, setLost] = useState(false);
   const [keepPlaying, setKeepPlaying] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [history, setHistory] = useState<Array<{ board: Board2048; score: number }>>([]);
   const [showTutorial, setShowTutorial] = useState(false);
 
   const processingRef = useRef(false);
   const startTimeRef = useRef<number | null>(null);
+  const pausedRef = useRef(false);
+  pausedRef.current = paused;
 
   const tileAnimations = useRef<Animated.Value[][]>(
     Array(4).fill(0).map(() => Array(4).fill(0).map(() => new Animated.Value(1)))
@@ -77,21 +80,8 @@ export default function Game2048({ difficulty }: Props) {
     startTimeRef.current = Date.now();
   }, []);
 
-  useEffect(() => {
-    if (won || lost) {
-      const gameDuration = Math.floor((Date.now() - startTimeRef.current!) / 1000);
-      let result: 'win' | 'loss';
-      if (won) {
-        result = 'win';
-      } else {
-        result = 'loss';
-      }
-      recordGameResult('2048', result, gameDuration);
-    }
-  }, [won, lost]);
-
   const handleSwipe = useCallback((direction: 'left' | 'right' | 'up' | 'down') => {
-    if (processingRef.current || lost) return;
+    if (processingRef.current || lost || paused) return;
     if (won && !keepPlaying) return;
 
     processingRef.current = true;
@@ -141,21 +131,22 @@ export default function Game2048({ difficulty }: Props) {
       processingRef.current = false;
       return newBoard;
     });
-  }, [lost, won, keepPlaying, score, highScore, difficulty, playSound, tileAnimations]);
+  }, [lost, won, keepPlaying, score, highScore, difficulty, playSound, tileAnimations, paused]);
 
   const handleUndo = useCallback(() => {
-    if (history.length === 0 || lost || (won && !keepPlaying)) return;
+    if (history.length === 0 || lost || (won && !keepPlaying) || paused) return;
 
     const lastState = history[history.length - 1];
     setBoard(lastState.board);
     setScore(lastState.score);
     setHistory((h) => h.slice(0, -1));
     playSound('tap');
-  }, [history, lost, won, keepPlaying, playSound]);
+  }, [history, lost, won, keepPlaying, playSound, paused]);
 
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const handler = (e: KeyboardEvent) => {
+      if (gameOver || paused) return;
       const map: Record<string, 'left' | 'right' | 'up' | 'down'> = {
         ArrowLeft: 'left',
         ArrowRight: 'right',
@@ -170,11 +161,12 @@ export default function Game2048({ difficulty }: Props) {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [handleSwipe]);
+  }, [handleSwipe, paused]);
 
   const panGesture = Gesture.Pan()
     .minDistance(20)
     .onEnd((e) => {
+      if (paused) return;
       const { translationX, translationY } = e;
       const absX = Math.abs(translationX);
       const absY = Math.abs(translationY);
@@ -195,13 +187,20 @@ export default function Game2048({ difficulty }: Props) {
     setLost(false);
     setKeepPlaying(false);
     setHistory([]);
+    setPaused(false);
     startTimeRef.current = Date.now();
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.bgIcon}>2048</Text>
-      <Header title="2048" score={score} highScore={highScore} />
+      <Header
+        title="2048"
+        score={score}
+        highScore={highScore}
+        onPause={() => setPaused(!paused)}
+        isPaused={paused}
+      />
 
       <GestureDetector gesture={panGesture}>
         <View style={styles.boardContainer}>
@@ -247,7 +246,7 @@ export default function Game2048({ difficulty }: Props) {
           variant="secondary"
           height={54}
           onPress={handleUndo}
-          disabled={history.length === 0}
+          disabled={history.length === 0 || paused}
           style={styles.undoBtn}
         >
           <Text style={styles.actionText}>UNDO ({history.length})</Text>
@@ -257,9 +256,10 @@ export default function Game2048({ difficulty }: Props) {
           variant="primary"
           height={54}
           onPress={resetGame}
+          disabled={paused}
           style={styles.newGameBtn}
         >
-          <Text style={[styles.actionText, { color: '#fff' }]}>NEW GAME</Text>
+          <Text style={[styles.actionText, { color: colors.textOnPrimary }]}>NEW GAME</Text>
         </PremiumButton>
       </View>
 
@@ -280,6 +280,15 @@ export default function Game2048({ difficulty }: Props) {
           subtitle={`Final Score: ${score}`}
           onPlayAgain={resetGame}
           onPlayAgainLabel="TRY AGAIN"
+        />
+      )}
+
+      {paused && (
+        <GameOverOverlay
+          result="paused"
+          title="GAME PAUSED"
+          onPlayAgain={() => setPaused(false)}
+          onPlayAgainLabel="RESUME"
         />
       )}
 
@@ -310,12 +319,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   board: {
     width: BOARD_SIZE,
     height: BOARD_SIZE,
-    backgroundColor: '#1e1e3a',
+    backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: BOARD_PADDING,
     justifyContent: 'center',
     borderWidth: 4,
-    borderColor: '#2b2b45',
+    borderColor: colors.border,
   },
   row: {
     flexDirection: 'row',
@@ -362,8 +371,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     left: '-10%',
     fontSize: 120,
     fontWeight: '900',
-    color: '#fff',
-    opacity: 0.02,
+    color: colors.primary,
+    opacity: 0.05,
     transform: [{ rotate: '-15deg' }],
   },
 });

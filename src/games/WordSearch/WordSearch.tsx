@@ -231,7 +231,7 @@ export default function WordSearch({ difficulty }: Props) {
                         <Text style={[
                           styles.letter, 
                           { fontSize: cellSize * 0.6 },
-                          (isCellSelected(r, c) || isCellFound(r, c)) && { color: '#fff' }
+                          (isCellSelected(r, c) || isCellFound(r, c)) && { color: colors.textOnPrimary }
                         ]}>
                           {letter}
                         </Text>
@@ -277,16 +277,16 @@ interface Props {
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   levelHeader: { alignItems: 'center', marginTop: spacing.md },
-  difficultyBadge: { backgroundColor: 'rgba(255,255,255,0.1)', paddingHorizontal: 12, paddingVertical: 2, borderRadius: radius.sm, marginBottom: 4 },
-  difficultyText: { color: '#fab1a0', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
-  levelText: { color: '#fff', fontSize: 24, fontWeight: '900' },
+  difficultyBadge: { backgroundColor: colors.card, paddingHorizontal: 12, paddingVertical: 2, borderRadius: radius.sm, marginBottom: 4, borderWidth: 1, borderColor: colors.border },
+  difficultyText: { color: colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
+  levelText: { color: colors.text, fontSize: 24, fontWeight: '900' },
   gameArea: { flex: 1, padding: spacing.md, alignItems: 'center' },
-  boardWrapper: { padding: 4, backgroundColor: '#1e1e3a', borderRadius: radius.md },
-  grid: { backgroundColor: '#1e1e3a', position: 'relative' },
+  boardWrapper: { padding: 4, backgroundColor: colors.border, borderRadius: radius.md },
+  grid: { backgroundColor: colors.card, position: 'relative' },
   selectionLine: {
     position: 'absolute',
     height: 20,
-    backgroundColor: 'rgba(233, 69, 96, 0.4)',
+    backgroundColor: colors.primary + '40',
     borderRadius: 10,
     zIndex: 5,
   },
@@ -294,10 +294,10 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   cell: { justifyContent: 'center', alignItems: 'center' },
   selectedCell: { backgroundColor: colors.primary, borderRadius: radius.xs },
   foundCell: { backgroundColor: colors.success + '80', borderRadius: radius.xs },
-  letter: { color: 'rgba(255,255,255,0.8)', fontWeight: 'bold' },
+  letter: { color: colors.text, fontWeight: 'bold' },
   wordListContainer: { flex: 1, width: '100%', marginTop: spacing.lg },
   wordList: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm, paddingBottom: 20 },
-  wordItem: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  wordItem: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },
   foundWordItem: { backgroundColor: colors.success + '20', borderColor: colors.success },
   wordText: { color: colors.textSecondary, fontSize: 12, fontWeight: '900' },
   foundWordText: { color: colors.success, textDecorationLine: 'line-through' },

@@ -10,6 +10,7 @@ interface Props extends TouchableOpacityProps {
     variant?: PremiumButtonVariant;
     depth?: number;
     height?: number;
+    contentStyle?: ViewStyle;
 }
 
 export default function PremiumButton({
@@ -18,9 +19,10 @@ export default function PremiumButton({
     depth = 4,
     height = 50,
     style,
+    contentStyle,
     ...props
 }: Props) {
-    const { colors } = useTheme();
+    const { colors, themeId } = useTheme();
     const pushAnim = useRef(new Animated.Value(0)).current;
 
     const onPressIn = () => {
@@ -46,7 +48,7 @@ export default function PremiumButton({
             case 'primary': return { bg: colors.primary, shadow: colors.shadow || colors.primaryGradientEnd };
             case 'danger': return { bg: colors.error, shadow: '#d63031' };
             case 'warning': return { bg: colors.warning, shadow: '#e17055' };
-            case 'secondary': return { bg: colors.card, shadow: colors.border };
+            case 'secondary': return { bg: colors.card, shadow: themeId === 'light' ? 'rgba(0,0,0,0.12)' : colors.border };
             case 'ghost': return { bg: 'transparent', shadow: 'transparent' };
             default: return { bg: colors.primary, shadow: colors.shadow };
         }
@@ -80,6 +82,7 @@ export default function PremiumButton({
                         borderRadius: radius.md,
                         transform: [{ translateY: pushAnim }],
                     },
+                    contentStyle,
                 ]}
             >
                 {children}

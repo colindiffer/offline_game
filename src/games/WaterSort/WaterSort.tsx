@@ -213,7 +213,7 @@ export default function WaterSort({ difficulty }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.bgIcon}>🧪</Text>
-      <LinearGradient colors={['#1a1a2e', '#16213e']} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
       <Header title="Water Sort" score={elapsedTime} scoreLabel="TIME" highScore={level} highScoreLabel="LEVEL" />
       
       <View style={styles.levelHeader}>
@@ -266,20 +266,22 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     marginTop: spacing.md,
   },
   difficultyBadge: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: colors.card,
     paddingHorizontal: 12,
     paddingVertical: 2,
     borderRadius: radius.sm,
     marginBottom: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   difficultyText: {
-    color: '#fab1a0',
+    color: colors.primary,
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1,
   },
   levelText: {
-    color: '#fff',
+    color: colors.text,
     fontSize: 24,
     fontWeight: '900',
   },
@@ -302,30 +304,32 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   tubeRim: {
     width: TUBE_WIDTH * 0.8,
     height: 6,
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: colors.textSecondary,
+    opacity: 0.3,
     borderRadius: 3,
     marginBottom: -2,
     zIndex: 2,
   },
   selectedRim: {
-    backgroundColor: '#fab1a0',
+    backgroundColor: colors.accent,
+    opacity: 1,
   },
   tube: {
     width: TUBE_WIDTH * 0.7,
     height: 130,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)',
+    borderColor: colors.border,
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
     borderTopLeftRadius: 2,
     borderTopRightRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: colors.card,
     overflow: 'hidden',
     position: 'relative',
     ...shadows.lg,
   },
   selectedTube: {
-    borderColor: '#fab1a0',
+    borderColor: colors.accent,
     borderWidth: 3,
     ...shadows.xl,
   },
@@ -335,7 +339,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     top: '5%',
     width: '20%',
     height: '80%',
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: '#fff',
+    opacity: 0.1,
     borderRadius: 10,
   },
   liquidContainer: {
@@ -353,7 +358,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     left: 0,
     right: 0,
     height: 4,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: '#fff',
+    opacity: 0.2,
   },
   bottomControls: {
     padding: spacing.xl,
@@ -368,16 +374,17 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    backgroundColor: colors.card,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: colors.border,
+    ...shadows.sm,
   },
-  controlIcon: { fontSize: 24, color: '#fff' },
-  controlText: { fontSize: 10, color: '#fff', fontWeight: 'bold', marginTop: 2 },
+  controlIcon: { fontSize: 24, color: colors.text },
+  controlText: { fontSize: 10, color: colors.textSecondary, fontWeight: 'bold', marginTop: 2 },
   newGameBtn: { minWidth: 140 },
-  newGameText: { color: '#fff', fontWeight: '900', fontSize: 14, letterSpacing: 1 },
+  newGameText: { color: colors.textOnPrimary, fontWeight: '900', fontSize: 14, letterSpacing: 1 },
   bgIcon: {
     position: 'absolute',
     top: '40%',

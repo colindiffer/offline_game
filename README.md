@@ -1,6 +1,6 @@
 # Offline Games App 🎮
 
-A comprehensive mobile + web app with **15 classic games** built with React Native (Expo) and TypeScript. Features include intelligent AI opponents, multiple difficulty levels, high scores, tutorials, themes, and more!
+A comprehensive mobile + web app with **30 classic games** built with React Native (Expo) and TypeScript. Features include intelligent AI opponents, multiple difficulty levels, high scores, tutorials, themes, and more!
 
 ---
 
@@ -14,33 +14,48 @@ A comprehensive mobile + web app with **15 classic games** built with React Nati
 5. **Connect Four** — Player vs AI, get four in a row with smooth falling animations
 6. **Tetris** — Classic falling block puzzle with responsive swipe and tap gestures
 
-### Puzzle & Strategy (3 Games)
+### Puzzle & Strategy (6 Games)
 7. **Maze** — Navigate to the exit using smooth sliding movement
 8. **Solitaire** — Classic Klondike card game with large cards and undo system
 9. **Sudoku** — Number puzzle with smart hint system and maximized board
+10. **Battleship** — Strategic naval combat against a hidden AI fleet
+11. **Code Breaker** — Logic-based code deduction challenge
+12. **FreeCell** — Open-information solitaire variant with strategic temporary storage
 
-### Board Games (3 Games)
-10. **Reversi** — Flip opponent's discs to control the board
-11. **Checkers** — Classic checkers with mandatory jumps and king pieces
-12. **Chess** — Full chess implementation with castling, en passant, and checkmate detection
+### Board Games (6 Games)
+13. **Reversi** — Flip opponent's discs to control the board
+14. **Checkers** — Classic checkers with mandatory jumps and king pieces
+15. **Chess** — Full chess implementation with castling, en passant, and checkmate detection
+16. **Mancala** — Ancient strategy game of counting and sowing
+17. **Backgammon** — Race checkers home while hitting opponent blots
+18. **Dominoes** — Tile matching strategy game against AI
 
-### Card Games (3 Games)
-13. **Blackjack** — Hit, Stand, Double Down against the dealer (tokens-based)
-14. **Poker** — 5-Card Hold'em with AI opponents and dynamic card sizing
-15. **Hearts** — 4-player trick-taking game with a full-width fanned card layout
-16. **Water Sort** — Color sorting puzzle with smooth animations and undo
-17. **Word Search** — Find hidden words in dynamic grids with swipe selection
-18. **Brick Breaker** — Classic arcade action with responsive touch paddle and physics
-19. **Mahjong** — Match identical tiles in 3D layered layouts
-20. **Hangman** — Guess the word with premium character drawing
-21. **Simon Says** — Test your memory with high-speed color sequences
-22. **Memory Match** — Classic card matching with level-based grid growth
-23. **Word Guess** — Daily-style word logic puzzle with premium feedback
-24. **Spider Solitaire** — Advanced solitaire challenge with dynamic layouts
+### Card Games (4 Games)
+19. **Blackjack** — Hit, Stand, Double Down against the dealer (tokens-based)
+20. **Poker** — 5-Card Hold'em with AI opponents and dynamic card sizing
+21. **Hearts** — 4-player trick-taking game with a full-width fanned card layout
+22. **Spades** — Classic partner-based trick-taking card game with bidding
+
+### Others (8 Games)
+23. **Water Sort** — Color sorting puzzle with smooth animations and undo
+24. **Word Search** — Find hidden words in dynamic grids with swipe selection
+25. **Brick Breaker** — Classic arcade action with responsive touch paddle and physics
+26. **Mahjong** — Match identical tiles in 3D layered layouts
+27. **Hangman** — Guess the word with premium character drawing
+28. **Simon Says** — Test your memory with high-speed color sequences
+29. **Memory Match** — Classic card matching with level-based grid growth
+30. **Word Guess** — Daily-style word logic puzzle with premium feedback
+31. **Spider Solitaire** — Advanced solitaire challenge with dynamic layouts
 
 ---
 
 ## ✨ Key Features
+
+### 📅 Phase 13: The Grand Classics (3 Games)
+Added FreeCell, Dominoes, and Backgammon to reach 30 games.
+
+### ✅ Phase 12: Strategy, Logic & Card Classics (3 Games)
+Added Battleship, Spades, and Code Breaker to reach 27 games.
 
 ### ✅ Phase 11: Memory & Strategy (3 Games)
 Added Memory Match, Word Guess, and Spider Solitaire to reach 24 games.

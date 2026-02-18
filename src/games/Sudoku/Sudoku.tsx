@@ -39,6 +39,7 @@ export default function Sudoku({ difficulty }: Props) {
   const [hintCell, setHintCell] = useState<{ row: number; col: number } | null>(null);
   const [remainingHints, setRemainingHints] = useState(3);
   const [hintCooldown, setHintCooldown] = useState(0);
+  const [paused, setPaused] = useState(false);
   const [isReady, setIsReady] = useState(false);
 
   const startTimeRef = useRef<number | null>(null);
@@ -61,7 +62,7 @@ export default function Sudoku({ difficulty }: Props) {
   }, [difficulty]);
 
   useEffect(() => {
-    if (!gameWon && isReady && startTimeRef.current) {
+    if (!gameWon && !paused && isReady && startTimeRef.current) {
       timerRef.current = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - startTimeRef.current!) / 1000));
       }, 1000);
@@ -70,20 +71,20 @@ export default function Sudoku({ difficulty }: Props) {
       timerRef.current = null;
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [gameWon, isReady]);
+  }, [gameWon, paused, isReady]);
 
   const handleCellPress = useCallback(
     (row: number, col: number) => {
-      if (gameWon || board[row][col].isFixed || !isReady) return;
+      if (gameWon || paused || board[row][col].isFixed || !isReady) return;
       if (!startTimeRef.current) startTimeRef.current = Date.now();
       setSelectedCell({ row, col });
     },
-    [board, gameWon, isReady]
+    [board, gameWon, paused, isReady]
   );
 
   const handleNumberPress = useCallback(
     (num: number) => {
-      if (!selectedCell || gameWon || !isReady) return;
+      if (!selectedCell || gameWon || paused || !isReady) return;
 
       const newBoard = board.map((r) => r.map((c) => ({ ...c })));
       newBoard[selectedCell.row][selectedCell.col].value = num;
@@ -105,16 +106,16 @@ export default function Sudoku({ difficulty }: Props) {
         setLevel('sudoku', difficulty, nextLvl);
       }
     },
-    [selectedCell, board, gameWon, highScore, difficulty, playSound, level, isReady]
+    [selectedCell, board, gameWon, paused, highScore, difficulty, playSound, level, isReady]
   );
 
   const handleClear = useCallback(() => {
-    if (!selectedCell || gameWon) return;
+    if (!selectedCell || gameWon || paused) return;
     handleNumberPress(0);
-  }, [selectedCell, gameWon, handleNumberPress]);
+  }, [selectedCell, gameWon, paused, handleNumberPress]);
 
   const handleHint = useCallback(() => {
-    if (remainingHints <= 0 || hintCooldown > 0 || gameWon) return;
+    if (remainingHints <= 0 || hintCooldown > 0 || gameWon || paused) return;
 
     for (let row = 0; row < 9; row++) {
       for (let col = 0; col < 9; col++) {
@@ -276,6 +277,8 @@ export default function Sudoku({ difficulty }: Props) {
           scoreLabel="TIME"
           highScore={level}
           highScoreLabel="LEVEL"
+          onPause={() => setPaused(!paused)}
+          isPaused={paused}
         />
 
         <View style={styles.statsRow}>
@@ -301,7 +304,7 @@ export default function Sudoku({ difficulty }: Props) {
                 variant="secondary"
                 height={52}
                 onPress={() => handleNumberPress(num)}
-                disabled={!selectedCell || gameWon}
+                disabled={!selectedCell || gameWon || paused}
                 style={styles.numberButton}
               >
                 <Text style={styles.numberText}>{num}</Text>
@@ -311,10 +314,10 @@ export default function Sudoku({ difficulty }: Props) {
               variant="danger"
               height={52}
               onPress={handleClear}
-              disabled={!selectedCell || gameWon}
+              disabled={!selectedCell || gameWon || paused}
               style={styles.numberButton}
             >
-              <Text style={[styles.numberText, { color: '#fff' }]}>✕</Text>
+              <Text style={[styles.numberText, { color: colors.textOnPrimary }]}>✕</Text>
             </PremiumButton>
           </View>
 
@@ -323,6 +326,7 @@ export default function Sudoku({ difficulty }: Props) {
               variant="secondary"
               height={56}
               onPress={resetLevel}
+              disabled={paused}
               style={styles.actionBtn}
             >
               <Text style={styles.actionText}>RESET LEVEL</Text>
@@ -332,7 +336,7 @@ export default function Sudoku({ difficulty }: Props) {
               variant="secondary"
               height={56}
               onPress={handleHint}
-              disabled={remainingHints <= 0 || hintCooldown > 0 || gameWon}
+              disabled={remainingHints <= 0 || hintCooldown > 0 || gameWon || paused}
               style={styles.actionBtn}
             >
               <Text style={styles.actionText}>{hintCooldown > 0 ? `WAIT ${hintCooldown}s` : 'HINT'}</Text>
@@ -347,6 +351,15 @@ export default function Sudoku({ difficulty }: Props) {
             subtitle={`Finished in ${elapsedTime} seconds.`}
             onPlayAgain={nextLevel}
             onPlayAgainLabel="NEXT LEVEL"
+          />
+        )}
+
+        {paused && !gameWon && (
+          <GameOverOverlay
+            result="paused"
+            title="GAME PAUSED"
+            onPlayAgain={() => setPaused(false)}
+            onPlayAgainLabel="RESUME"
           />
         )}
 
@@ -409,7 +422,7 @@ const getStyles = (colors: ThemeColors) =>
       marginTop: spacing.lg,
     },
     board: {
-      backgroundColor: '#1e1e3a',
+      backgroundColor: colors.border,
       padding: 2,
       borderRadius: radius.xs,
     },
@@ -419,18 +432,18 @@ const getStyles = (colors: ThemeColors) =>
     cell: {
       justifyContent: 'center',
       alignItems: 'center',
-      borderColor: '#2b2b45',
+      borderColor: colors.border,
     },
     cellText: {
       fontSize: 22,
       fontWeight: 'bold',
-      color: '#fff',
+      color: colors.text,
     },
     fixedText: {
-      color: '#a29bfe', // Soft purple for fixed
+      color: colors.primary, // Using primary for fixed numbers
     },
     conflictText: {
-      color: '#ff7675', // Red for conflict
+      color: colors.error, // Red for conflict
     },
     numberPad: {
       flexDirection: 'row',

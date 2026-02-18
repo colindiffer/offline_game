@@ -251,11 +251,11 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     width: BOARD_SIZE,
     height: BOARD_SIZE,
     position: 'relative',
-    backgroundColor: '#1e1e3a',
+    backgroundColor: colors.card,
     borderRadius: radius.lg,
     padding: 0,
     borderWidth: 4,
-    borderColor: '#2b2b45',
+    borderColor: colors.border,
     overflow: 'hidden',
   },
   gridLineV1: {
@@ -264,7 +264,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 4,
-    backgroundColor: '#2b2b45',
+    backgroundColor: colors.border,
   },
   gridLineV2: {
     position: 'absolute',
@@ -272,7 +272,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 4,
-    backgroundColor: '#2b2b45',
+    backgroundColor: colors.border,
   },
   gridLineH1: {
     position: 'absolute',
@@ -280,7 +280,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     left: 0,
     right: 0,
     height: 4,
-    backgroundColor: '#2b2b45',
+    backgroundColor: colors.border,
   },
   gridLineH2: {
     position: 'absolute',
@@ -288,7 +288,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     left: 0,
     right: 0,
     height: 4,
-    backgroundColor: '#2b2b45',
+    backgroundColor: colors.border,
   },
   row: {
     flexDirection: 'row',
@@ -343,7 +343,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     width: '100%',
   },
   newGameText: {
-    color: '#fff',
+    color: colors.textOnPrimary,
     fontWeight: '900',
     fontSize: 16,
   },
@@ -353,8 +353,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     left: '-10%',
     fontSize: 200,
     fontWeight: '900',
-    color: '#ff7675',
-    opacity: 0.03,
+    color: colors.primary,
+    opacity: 0.05,
     transform: [{ rotate: '-15deg' }],
   },
   bgIconO: {
@@ -363,8 +363,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     right: '-10%',
     fontSize: 250,
     fontWeight: '900',
-    color: '#55efc4',
-    opacity: 0.03,
+    color: colors.success,
+    opacity: 0.05,
     transform: [{ rotate: '15deg' }],
   },
 });

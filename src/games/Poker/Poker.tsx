@@ -168,8 +168,8 @@ export default function Poker({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.bgIcon}>🎰</Text>
-      <Header title="Poker" score={player?.tokens || 0} scoreLabel="CHIPS" highScore={highScore} highScoreLabel="BEST" />
+      <Text style={[styles.bgIcon, { color: '#fff' }]}>🎰</Text>
+      <Header title="Poker" score={player?.tokens || 0} scoreLabel="CHIPS" highScore={highScore} highScoreLabel="BEST" light />
 
       <View style={styles.table}>
         <LinearGradient colors={['#1b4332', '#081c15']} style={StyleSheet.absoluteFill} />
@@ -288,9 +288,9 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   betText: { color: '#000', fontSize: 9, fontWeight: '900' },
   centerStage: { alignItems: 'center', flex: 1, justifyContent: 'center' },
   communityCardsRow: { flexDirection: 'row', gap: 6, marginBottom: spacing.lg },
-  communityCardSpot: { width: CARD_WIDTH, height: CARD_HEIGHT },
+  communityCardSpot: { width: CARD_WIDTH, height: CELL_SIZE * 1.4 },
   cardPlaceholder: { flex: 1, borderRadius: radius.xs, backgroundColor: 'rgba(0,0,0,0.2)', borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(255,255,255,0.1)' },
-  potContainer: { backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 30, paddingVertical: 10, borderRadius: radius.md, alignItems: 'center', marginBottom: spacing.sm },
+  potContainer: { backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 30, paddingVertical: 10, borderRadius: radius.md, alignItems: 'center', marginBottom: spacing.sm, ...shadows.sm },
   potLabel: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
   potValue: { color: '#fab1a0', fontSize: 24, fontWeight: '900' },
   phaseText: { color: '#fff', fontSize: 14, fontWeight: '900', letterSpacing: 1, opacity: 0.8 },

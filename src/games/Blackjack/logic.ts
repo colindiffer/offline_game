@@ -31,10 +31,11 @@ export function calculateHandValue(cards: Card[]): { value: number; isSoft: bool
 /**
  * Evaluate a hand and return BlackjackHand object
  */
-export function evaluateHand(cards: Card[]): BlackjackHand {
+export function evaluateHand(cards: Card[]): BlackjackHand & { is5CardTrick: boolean } {
   const { value, isSoft } = calculateHandValue(cards);
   const isBust = value > 21;
   const isBlackjack = cards.length === 2 && value === 21;
+  const is5CardTrick = cards.length >= 5 && !isBust;
 
   return {
     cards,
@@ -42,6 +43,7 @@ export function evaluateHand(cards: Card[]): BlackjackHand {
     isBust,
     isBlackjack,
     isSoft,
+    is5CardTrick,
   };
 }
 
@@ -153,6 +155,11 @@ export function playerHit(state: BlackjackGameState): BlackjackGameState {
     // Player busts, loses
     gamePhase = 'finished';
     result = 'loss';
+  } else if (playerHand.is5CardTrick) {
+    // 5 card trick wins immediately
+    gamePhase = 'finished';
+    result = '5-card-trick';
+    tokens += state.bet * 2;
   }
 
   return {
@@ -203,6 +210,11 @@ export function playerDouble(state: BlackjackGameState): BlackjackGameState {
     // Player busts, loses
     gamePhase = 'finished';
     result = 'loss';
+  } else if (playerHand.is5CardTrick) {
+    // 5 card trick wins
+    gamePhase = 'finished';
+    result = '5-card-trick';
+    tokens += newBet * 2;
   }
 
   return {

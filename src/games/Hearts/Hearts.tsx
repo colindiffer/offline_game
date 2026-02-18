@@ -5,6 +5,7 @@ import Header from '../../components/Header';
 import PlayingCard from '../../components/PlayingCard';
 import TutorialScreen from '../../components/TutorialScreen';
 import PremiumButton from '../../components/PremiumButton';
+import GameOverOverlay from '../../components/GameOverOverlay';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { getHighScore, setHighScore as saveHighScore } from '../../utils/storage';
@@ -52,10 +53,14 @@ export default function Hearts({ difficulty }: Props) {
   const [highScore, setHighScore] = useState(0);
   const [showTutorial, setShowTutorial] = useState(false);
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
+  const [selectedPlayCardId, setSelectedPlayCardId] = useState<string | null>(null);
+  const [paused, setPaused] = useState(false);
 
   const startTimeRef = useRef<number>(Date.now());
   const roundStartTimeRef = useRef<number>(Date.now());
   const aiProcessingRef = useRef<boolean>(false);
+  const pausedRef = useRef(false);
+  pausedRef.current = paused;
 
   useEffect(() => {
     getHighScore('hearts', difficulty).then(score => {
@@ -79,7 +84,7 @@ export default function Hearts({ difficulty }: Props) {
 
   // AI Passing
   useEffect(() => {
-    if (gameState.gamePhase !== 'passing' || aiProcessingRef.current) return;
+    if (gameState.gamePhase !== 'passing' || aiProcessingRef.current || paused) return;
 
     const needsPassing = gameState.players.some(
       p => !p.isHuman && !gameState.passedCards.some(pc => pc.fromId === p.id)
@@ -105,11 +110,11 @@ export default function Hearts({ difficulty }: Props) {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [gameState.gamePhase, gameState.passedCards.length, difficulty]);
+  }, [gameState.gamePhase, gameState.passedCards.length, difficulty, paused]);
 
   // AI Playing
   useEffect(() => {
-    if (gameState.gamePhase !== 'playing' || aiProcessingRef.current || gameState.currentTrick.cards.length === 4) return;
+    if (gameState.gamePhase !== 'playing' || aiProcessingRef.current || gameState.currentTrick.cards.length === 4 || paused) return;
 
     const currentPlayer = gameState.players[gameState.currentPlayerIndex];
     if (currentPlayer && !currentPlayer.isHuman) {
@@ -125,17 +130,17 @@ export default function Hearts({ difficulty }: Props) {
       }, 600);
       return () => clearTimeout(timer);
     }
-  }, [gameState.currentPlayerIndex, gameState.gamePhase, gameState.currentTrick.cards.length, difficulty, playSound]);
+  }, [gameState.currentPlayerIndex, gameState.gamePhase, gameState.currentTrick.cards.length, difficulty, playSound, paused]);
 
   // Trick Completion Delay
   useEffect(() => {
-    if (gameState.gamePhase === 'playing' && gameState.currentTrick.cards.length === 4) {
+    if (gameState.gamePhase === 'playing' && gameState.currentTrick.cards.length === 4 && !paused) {
       const timer = setTimeout(() => {
         setGameState(prev => collectTrick(prev));
       }, 1500); // 1.5s delay to see the cards
       return () => clearTimeout(timer);
     }
-  }, [gameState.currentTrick.cards.length, gameState.gamePhase]);
+  }, [gameState.currentTrick.cards.length, gameState.gamePhase, paused]);
 
   // Round End / Game Over
   useEffect(() => {
@@ -160,6 +165,7 @@ export default function Hearts({ difficulty }: Props) {
   }, []);
 
   const handleCardSelect = useCallback((card: Card) => {
+    if (paused) return;
     if (gameState.gamePhase === 'passing') {
       const isSelected = selectedCards.some(c => c.id === card.id);
       if (isSelected) {
@@ -171,26 +177,39 @@ export default function Hearts({ difficulty }: Props) {
     } else if (gameState.gamePhase === 'playing' && gameState.currentPlayerIndex === 0) {
       const player = gameState.players[0];
       if (canPlayCard(gameState, player, card)) {
-        const newState = playCard(gameState, 0, card);
-        setGameState(newState);
+        setSelectedPlayCardId(prev => prev === card.id ? null : card.id);
         playSound('tap');
       }
     }
-  }, [gameState, selectedCards, playSound]);
+  }, [gameState, selectedCards, playSound, paused]);
+
+  const handleTrickZoneTap = useCallback(() => {
+    if (!selectedPlayCardId || paused) return;
+    const player = gameState.players[0];
+    const card = player.cards.find(c => c.id === selectedPlayCardId);
+    if (card && canPlayCard(gameState, player, card)) {
+      const newState = playCard(gameState, 0, card);
+      setGameState(newState);
+      setSelectedPlayCardId(null);
+      playSound('tap');
+    }
+  }, [gameState, selectedPlayCardId, playSound, paused]);
 
   const handlePassCards = useCallback(() => {
-    if (selectedCards.length === 3) {
+    if (selectedCards.length === 3 && !paused) {
       const newState = passCards(gameState, 0, selectedCards);
       setGameState(newState);
       setSelectedCards([]);
       playSound('tap');
     }
-  }, [gameState, selectedCards, playSound]);
+  }, [gameState, selectedCards, playSound, paused]);
 
   const handleNewRound = useCallback(() => {
     const newState = startNewRound(gameState);
     setGameState(newState);
     setSelectedCards([]);
+    setSelectedPlayCardId(null);
+    setPaused(false);
     roundStartTimeRef.current = Date.now();
     playSound('tap');
   }, [gameState, playSound]);
@@ -199,6 +218,8 @@ export default function Hearts({ difficulty }: Props) {
     const newState = initializeHeartsGame(difficulty);
     setGameState(newState);
     setSelectedCards([]);
+    setSelectedPlayCardId(null);
+    setPaused(false);
     startTimeRef.current = Date.now();
     roundStartTimeRef.current = Date.now();
     playSound('tap');
@@ -269,7 +290,7 @@ export default function Hearts({ difficulty }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.bgIcon}>♥️</Text>
+      <Text style={[styles.bgIcon, { color: '#fff' }]}>♥️</Text>
       <LinearGradient colors={['#1b4332', '#081c15']} style={StyleSheet.absoluteFill} />
 
       <Header
@@ -278,6 +299,9 @@ export default function Hearts({ difficulty }: Props) {
         scoreLabel="TOTAL"
         highScore={highScore}
         highScoreLabel={`BEST: ${1000 - highScore} PTS`}
+        light
+        onPause={() => setPaused(!paused)}
+        isPaused={paused}
       />
 
       <View style={styles.tableArea}>
@@ -287,7 +311,11 @@ export default function Hearts({ difficulty }: Props) {
           {renderPlayerBadge(3, 'right')}
         </View>
 
-        <View style={styles.centerFelt}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleTrickZoneTap}
+          style={[styles.centerFelt, selectedPlayCardId && styles.centerFeltHighlight]}
+        >
           <View style={styles.feltInner}>
             {renderTrick()}
             {gameState.gamePhase === 'playing' && (
@@ -297,8 +325,13 @@ export default function Hearts({ difficulty }: Props) {
                 {gameState.leadSuit && <Text style={styles.suitLabel}>LEAD: {gameState.leadSuit.toUpperCase()}</Text>}
               </View>
             )}
+            {selectedPlayCardId && (
+              <View style={styles.playHint} pointerEvents="none">
+                <Text style={styles.playHintText}>TAP TO PLAY</Text>
+              </View>
+            )}
           </View>
-        </View>
+        </TouchableOpacity>
 
         <View style={styles.humanSection}>
           <View style={styles.humanDashboard}>
@@ -313,7 +346,7 @@ export default function Hearts({ difficulty }: Props) {
                   variant="primary"
                   height={40}
                   style={styles.passButton}
-                  disabled={selectedCards.length !== 3}
+                  disabled={selectedCards.length !== 3 || paused}
                   onPress={handlePassCards}
                 >
                   <Text style={styles.passButtonLabel}>PASS {selectedCards.length}/3</Text>
@@ -329,7 +362,7 @@ export default function Hearts({ difficulty }: Props) {
             showsHorizontalScrollIndicator={false}
           >
             {gameState.players[0].cards.map((card, index) => {
-              const isSelected = selectedCards.some(c => c.id === card.id);
+              const isSelected = selectedCards.some(c => c.id === card.id) || selectedPlayCardId === card.id;
               const isLegal = gameState.gamePhase === 'playing' &&
                 gameState.currentPlayerIndex === 0 &&
                 canPlayCard(gameState, gameState.players[0], card);
@@ -338,9 +371,9 @@ export default function Hearts({ difficulty }: Props) {
                 <TouchableOpacity
                   key={card.id}
                   onPress={() => handleCardSelect(card)}
-                  disabled={(gameState.gamePhase === 'playing' && (gameState.currentPlayerIndex !== 0 || !isLegal))}
+                  disabled={(gameState.gamePhase === 'playing' && (gameState.currentPlayerIndex !== 0 || !isLegal)) || paused}
                   style={[
-                    styles.myCardWrapper, 
+                    styles.myCardWrapper,
                     isSelected && styles.selectedHandCard,
                     { zIndex: index } // Ensure consistent stacking
                   ]}
@@ -359,39 +392,36 @@ export default function Hearts({ difficulty }: Props) {
         </View>
       </View>
 
-      {(gameState.gamePhase === 'roundEnd' || gameState.gamePhase === 'gameOver') && (
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContentBox}>
-            <Text style={styles.modalHeadingText}>
-              {gameState.gamePhase === 'roundEnd' ? `ROUND ${gameState.roundNumber} COMPLETE` : 'GAME OVER'}
-            </Text>
-            <View style={styles.scoreRowList}>
-              {gameState.players
-                .sort((a, b) => gameState.gamePhase === 'gameOver' ? a.totalScore - b.totalScore : 0)
-                .map((p, idx) => (
-                  <View key={p.id} style={styles.scoreItem}>
-                    <Text style={styles.scoreName}>{idx === 0 && gameState.gamePhase === 'gameOver' ? '🏆 ' : ''}{p.name}</Text>
-                    <Text style={styles.scoreValue}>
-                      {p.totalScore} PTS {p.score > 0 ? `(+${p.score})` : ''}
-                    </Text>
-                  </View>
-                ))}
-            </View>
-            {gameState.players.some(p => p.score === 0 && gameState.completedTricks.length > 0) && (
-              <Text style={styles.moonShotText}>🌑 SHOT THE MOON!</Text>
-            )}
-            <PremiumButton
-              variant="secondary"
-              height={50}
-              style={styles.modalAction}
-              onPress={gameState.gamePhase === 'roundEnd' ? handleNewRound : handleNewGame}
-            >
-              <Text style={styles.modalActionText}>
-                {gameState.gamePhase === 'roundEnd' ? 'CONTINUE' : 'PLAY AGAIN'}
-              </Text>
-            </PremiumButton>
-          </View>
-        </View>
+      {gameState.gamePhase === 'roundEnd' && (
+        <GameOverOverlay
+          result="draw"
+          title="ROUND COMPLETE"
+          subtitle={gameState.players.map(p => `${p.name}: ${p.totalScore} (+${p.score})`).join('\n')}
+          onPlayAgain={handleNewRound}
+          onPlayAgainLabel="CONTINUE"
+        />
+      )}
+
+      {gameState.gamePhase === 'gameOver' && (
+        <GameOverOverlay
+          result={gameState.players[0].totalScore === Math.min(...gameState.players.map(p => p.totalScore)) ? 'win' : 'lose'}
+          title={gameState.gamePhase === 'gameOver' ? 'GAME OVER' : ''}
+          subtitle={gameState.players
+            .sort((a, b) => a.totalScore - b.totalScore)
+            .map((p, idx) => `${idx === 0 ? '🏆 ' : ''}${p.name}: ${p.totalScore} PTS`)
+            .join('\n')}
+          onPlayAgain={handleNewGame}
+          onPlayAgainLabel="NEW GAME"
+        />
+      )}
+
+      {paused && gameState.gamePhase !== 'gameOver' && gameState.gamePhase !== 'roundEnd' && (
+        <GameOverOverlay
+          result="paused"
+          title="GAME PAUSED"
+          onPlayAgain={() => setPaused(false)}
+          onPlayAgainLabel="RESUME"
+        />
       )}
     </View>
   );
@@ -401,14 +431,15 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   tableArea: { flex: 1, padding: spacing.sm, justifyContent: 'space-between' },
   playerBadge: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: colors.card,
     padding: spacing.xs,
     borderRadius: radius.md,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: colors.border,
     width: 130,
+    ...shadows.sm,
   },
   topPlayer: { alignSelf: 'center', marginBottom: spacing.md },
   sidePlayers: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md },
@@ -425,8 +456,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   activeAvatar: {
     borderWidth: 2,
-    borderColor: '#fab1a0',
-    shadowColor: '#fab1a0',
+    borderColor: colors.accent,
+    shadowColor: colors.accent,
     shadowOpacity: 0.8,
     shadowRadius: 5,
   },
@@ -435,7 +466,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   playerNameText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
   playerScoreText: { color: 'rgba(255,255,255,0.6)', fontSize: 9 },
   roundPoints: { color: '#fab1a0', fontSize: 9, fontWeight: 'bold', position: 'absolute', right: 0, top: -12 },
-  cardIndicator: { backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 6 },
+  cardIndicator: { backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   cardIndicatorText: { color: '#fff', fontSize: 8, fontWeight: 'bold' },
   centerFelt: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   feltInner: {
@@ -447,14 +478,18 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
+  centerFeltHighlight: { backgroundColor: 'rgba(85, 239, 196, 0.05)', borderRadius: 120 },
+  playHint: { position: 'absolute', backgroundColor: 'rgba(85, 239, 196, 0.2)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#55efc4' },
+  playHintText: { color: '#55efc4', fontWeight: '900', fontSize: 12, letterSpacing: 2 },
   trickTable: { width: CARD_WIDTH * 2.5, height: CARD_HEIGHT * 2, position: 'relative' },
   trickCardStack: { position: 'absolute', ...shadows.md },
   trickCardBottom: { bottom: 0, left: '25%' },
   trickCardTop: { top: 0, left: '25%' },
   trickCardLeft: { left: 0, top: '25%' },
   trickCardRight: { right: 0, top: '25%' },
-  tableInfo: { position: 'absolute', bottom: -50, alignItems: 'center' },
+  tableInfo: { position: 'absolute', bottom: 10, alignItems: 'center' },
   roundLabel: { color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 'bold', letterSpacing: 2 },
   brokenLabel: { color: '#fab1a0', fontSize: 10, fontWeight: '900', marginTop: 2 },
   suitLabel: { color: '#fff', fontSize: 9, fontWeight: 'bold', marginTop: 2 },
@@ -468,27 +503,17 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   passButton: { minWidth: 110 },
   passButtonLabel: { color: '#fff', fontSize: 12, fontWeight: '900' },
   handScroller: { flexGrow: 0 },
-  handList: { 
+  handList: {
     width: AVAILABLE_WIDTH,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  myCardWrapper: { 
+  myCardWrapper: {
     marginRight: -OVERLAP,
-    ...shadows.sm 
+    ...shadows.sm
   },
   selectedHandCard: { transform: [{ translateY: -20 }] },
-  dimmedCard: { backgroundColor: '#dcdde1' },
-  modalOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
-  modalContentBox: { backgroundColor: '#1b4332', padding: spacing.xl, borderRadius: radius.lg, width: '85%', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', ...shadows.xl },
-  modalHeadingText: { color: '#fff', fontSize: 20, fontWeight: '900', marginBottom: spacing.xl, letterSpacing: 2 },
-  scoreRowList: { width: '100%', gap: spacing.md, marginBottom: spacing.xl },
-  scoreItem: { flexDirection: 'row', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)', paddingBottom: 8 },
-  scoreName: { color: '#fff', fontWeight: 'bold' },
-  scoreValue: { color: 'rgba(255,255,255,0.6)', fontWeight: 'bold' },
-  moonShotText: { color: '#fab1a0', fontWeight: '900', fontSize: 14, marginBottom: spacing.xl },
-  modalAction: { width: '100%' },
-  modalActionText: { color: '#fff', fontWeight: '900', fontSize: 16, letterSpacing: 1 },
+  dimmedCard: { opacity: 0.5 },
   bgIcon: {
     position: 'absolute',
     top: '40%',

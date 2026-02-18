@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions, Platf
 import { LinearGradient } from 'expo-linear-gradient';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import GameCard from '../components/GameCard';
+import AdBanner from '../components/AdBanner';
 import { GAMES } from '../utils/constants';
 import { GameId, RootStackParamList } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
@@ -32,29 +33,29 @@ export default function HomeScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
-      
+
       {/* Premium Decorative Blobs */}
       <View style={[styles.blob, styles.blob1, { backgroundColor: colors.primary + '10' }]} />
       <View style={[styles.blob, styles.blob2, { backgroundColor: colors.accent + '08' }]} />
 
-      <Animated.ScrollView 
-        style={[styles.scrollView, { opacity: fadeAnim }]} 
+      <Animated.ScrollView
+        style={[styles.scrollView, { opacity: fadeAnim }]}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
           <View>
-            <Text style={styles.appTitle}>Arcade</Text>
-            <Text style={styles.appSubtitle}>COLLECTION</Text>
+            <Text style={styles.appTitle}>Classic Offline</Text>
+            <Text style={styles.appSubtitle}>GAMES ROOM</Text>
             <View style={styles.pillContainer}>
               <View style={styles.countPill}>
-                <Text style={styles.countText}>21 CLASSICS READY</Text>
+                <Text style={styles.countText}>30 CLASSICS READY</Text>
               </View>
             </View>
           </View>
-          
-          <TouchableOpacity 
-            style={styles.settingsBtn} 
+
+          <TouchableOpacity
+            style={styles.settingsBtn}
             onPress={() => navigation.navigate('Settings')}
             activeOpacity={0.7}
           >
@@ -69,9 +70,10 @@ export default function HomeScreen({ navigation }: Props) {
             <GameCard key={game.id} game={game} onPress={() => openGame(game.id)} index={index} />
           ))}
         </View>
-        
+
         <View style={styles.footerSpacer} />
       </Animated.ScrollView>
+      <AdBanner />
     </View>
   );
 }
@@ -80,21 +82,22 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   scrollView: { flex: 1 },
   content: { padding: spacing.lg, paddingTop: Platform.OS === 'ios' ? 60 : 40 },
-  blob: { position: 'absolute', borderRadius: 300, filter: Platform.OS === 'web' ? 'blur(100px)' : undefined },
+  blob: { position: 'absolute', borderRadius: 300 },
+  vehicular: { position: 'absolute', borderRadius: 300, filter: Platform.OS === 'web' ? 'blur(100px)' : undefined },
   blob1: { width: width * 1.5, height: width * 1.5, top: -width, left: -width * 0.5 },
   blob2: { width: width, height: width, bottom: -width * 0.3, right: -width * 0.4 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.xl },
   appTitle: { fontSize: 48, fontWeight: '900', color: colors.text, lineHeight: 48, letterSpacing: -1.5 },
   appSubtitle: { fontSize: 14, fontWeight: '800', color: colors.primary, letterSpacing: 4, marginTop: -2 },
   pillContainer: { marginTop: 12 },
-  countPill: { backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 12, paddingVertical: 4, borderRadius: radius.sm, alignSelf: 'flex-start', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  countPill: { backgroundColor: colors.card, paddingHorizontal: 12, paddingVertical: 4, borderRadius: radius.sm, alignSelf: 'flex-start', borderWidth: 1, borderColor: colors.border },
   countText: { color: colors.textSecondary, fontSize: 10, fontWeight: '900', letterSpacing: 1 },
-  settingsBtn: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(255,255,255,0.05)', padding: 2 },
-  settingsBtnInner: { flex: 1, borderRadius: 23, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+  settingsBtn: { width: 50, height: 50, borderRadius: 25, backgroundColor: colors.border, padding: 2 },
+  settingsBtnInner: { flex: 1, borderRadius: 23, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   settingsEmoji: { fontSize: 22 },
-  grid: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingHorizontal: 4,
   },

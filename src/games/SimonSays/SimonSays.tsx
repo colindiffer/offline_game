@@ -197,8 +197,8 @@ interface Props {
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   levelHeader: { alignItems: 'center', marginTop: spacing.md },
-  levelText: { color: '#fff', fontSize: 24, fontWeight: '900' },
-  statusText: { color: '#fab1a0', fontSize: 14, fontWeight: '900', letterSpacing: 2, marginTop: 4 },
+  levelText: { color: colors.text, fontSize: 24, fontWeight: '900' },
+  statusText: { color: colors.primary, fontSize: 14, fontWeight: '900', letterSpacing: 2, marginTop: 4 },
   gameArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   padsContainer: {
     width: PAD_SIZE * 2 + 20,

@@ -196,7 +196,7 @@ export default function Chess({ difficulty }: Props) {
         <View style={styles.turnIndicator}>
           {!gameState.isCheckmate && !gameState.isStalemate ? (
             <>
-              <View style={[styles.turnDot, { backgroundColor: gameState.currentPlayer === 'white' ? '#fff' : '#000' }]} />
+              <View style={[styles.turnDot, { backgroundColor: gameState.currentPlayer === 'white' ? colors.text : '#000' }]} />
               <Text style={styles.turnText}>
                 {isAIThinking ? 'AI IS THINKING...' : gameState.currentPlayer === 'white' ? 'YOUR TURN' : "AI'S TURN"}
               </Text>
@@ -347,9 +347,11 @@ const getStyles = (colors: ThemeColors) =>
       paddingHorizontal: spacing.lg,
       marginBottom: spacing.md,
       height: 40,
-      backgroundColor: 'rgba(0,0,0,0.1)',
+      backgroundColor: colors.card,
       borderRadius: radius.md,
       alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
     },
     capturedSet: {
       flexDirection: 'row',
@@ -369,14 +371,14 @@ const getStyles = (colors: ThemeColors) =>
     },
     boardContainer: {
       padding: 4,
-      backgroundColor: '#5d4037', // Dark wood frame
+      backgroundColor: colors.border, 
       borderRadius: radius.sm,
       borderWidth: 4,
-      borderColor: '#3e2723',
+      borderColor: colors.card,
     },
     board: {
       borderWidth: 1,
-      borderColor: '#3e2723',
+      borderColor: colors.card,
     },
     row: {
       flexDirection: 'row',
@@ -388,16 +390,16 @@ const getStyles = (colors: ThemeColors) =>
       alignItems: 'center',
     },
     lightCell: {
-      backgroundColor: '#d7ccc8', // Light wood
+      backgroundColor: '#d7ccc8', // Light wood - keep for aesthetic
     },
     darkCell: {
-      backgroundColor: '#8d6e63', // Dark wood
+      backgroundColor: '#8d6e63', // Dark wood - keep for aesthetic
     },
     selectedCell: {
-      backgroundColor: 'rgba(255, 255, 255, 0.4)',
+      backgroundColor: colors.primary + '60',
     },
     lastMoveCell: {
-      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+      backgroundColor: colors.primary + '20',
     },
     pieceText: {
       fontSize: CELL_SIZE * 0.7,
@@ -448,7 +450,8 @@ const getStyles = (colors: ThemeColors) =>
       bottom: '10%',
       left: '-10%',
       fontSize: 250,
-      opacity: 0.03,
+      opacity: 0.05,
       transform: [{ rotate: '-15deg' }],
+      color: colors.primary,
     },
   });

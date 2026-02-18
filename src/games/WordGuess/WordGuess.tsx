@@ -111,7 +111,7 @@ export default function WordGuess({ difficulty }: Props) {
     switch (status) {
       case 'correct': return colors.success;
       case 'present': return colors.warning;
-      case 'absent': return '#3a3a3c';
+      case 'absent': return colors.textSecondary;
       default: return 'transparent';
     }
   };
@@ -134,7 +134,11 @@ export default function WordGuess({ difficulty }: Props) {
                     r === gameState.currentRow && c === gameState.currentCol - 1 && letter.char !== '' && styles.activeCell
                   ]}
                 >
-                  <Text style={styles.cellText}>{letter.char}</Text>
+                  <Text style={[
+                    styles.cellText,
+                    letter.status !== 'empty' && letter.status !== 'absent' && { color: colors.textOnPrimary },
+                    letter.status === 'absent' && { color: colors.background }
+                  ]}>{letter.char}</Text>
                 </View>
               ))}
             </View>
@@ -154,7 +158,12 @@ export default function WordGuess({ difficulty }: Props) {
                     gameState.keyboardStatus[key] && { backgroundColor: getStatusColor(gameState.keyboardStatus[key]) }
                   ]}
                 >
-                  <Text style={[styles.keyText, key.length > 1 && styles.smallKeyText]}>{key}</Text>
+                  <Text style={[
+                    styles.keyText, 
+                    key.length > 1 && styles.smallKeyText,
+                    gameState.keyboardStatus[key] && gameState.keyboardStatus[key] !== 'absent' && { color: colors.textOnPrimary },
+                    gameState.keyboardStatus[key] === 'absent' && { color: colors.background }
+                  ]}>{key}</Text>
                 </TouchableOpacity>
               ))}
             </View>

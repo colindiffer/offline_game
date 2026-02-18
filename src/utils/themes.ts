@@ -1,4 +1,4 @@
-export type ThemeId = 'dark' | 'light' | 'retro' | 'ocean';
+export type ThemeId = 'dark' | 'light';
 
 export interface ThemeColors {
   background: string;
@@ -60,43 +60,5 @@ export const THEMES: Record<ThemeId, ThemeColors> = {
     overlayBackground: 'rgba(0, 0, 0, 0.88)',
     textOnPrimary: '#ffffff',
     shadow: '#c93a52',
-  },
-  retro: {
-    background: '#2b1e1e',
-    surface: '#3b2c2c',
-    card: '#4a3434',
-    text: '#f9e4b7',
-    textSecondary: '#d7b980',
-    primary: '#f0a500',
-    accent: '#f0a500',
-    success: '#6cc070',
-    warning: '#ffb703',
-    error: '#e04f5f',
-    primaryGradientEnd: '#ffc233',
-    surfaceGradientEnd: '#463535',
-    border: 'rgba(249, 228, 183, 0.08)',
-    borderLight: 'rgba(249, 228, 183, 0.04)',
-    overlayBackground: 'rgba(20, 14, 14, 0.92)',
-    textOnPrimary: '#1c1008',
-    shadow: '#c68400',
-  },
-  ocean: {
-    background: '#0b1d2a',
-    surface: '#102c3f',
-    card: '#173a52',
-    text: '#e8f4ff',
-    textSecondary: '#b4c6d4',
-    primary: '#2ec4b6',
-    accent: '#2ec4b6',
-    success: '#4ecca3',
-    warning: '#ffd166',
-    error: '#ef476f',
-    primaryGradientEnd: '#5ee6d8',
-    surfaceGradientEnd: '#163a50',
-    border: 'rgba(232, 244, 255, 0.08)',
-    borderLight: 'rgba(232, 244, 255, 0.04)',
-    overlayBackground: 'rgba(5, 12, 18, 0.92)',
-    textOnPrimary: '#ffffff',
-    shadow: '#24a397',
   },
 };

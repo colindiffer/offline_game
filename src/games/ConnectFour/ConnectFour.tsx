@@ -290,10 +290,10 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: radius.md,
     overflow: 'hidden',
     borderWidth: 4,
-    borderColor: '#2b2b45',
+    borderColor: colors.border,
   },
   board: {
-    backgroundColor: '#3d3d5c',
+    backgroundColor: colors.card,
     padding: BOARD_PADDING,
     position: 'relative',
   },
@@ -304,7 +304,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     width: CELL_SIZE,
     height: CELL_SIZE,
     borderRadius: CELL_SIZE / 2,
-    backgroundColor: '#1e1e3a',
+    backgroundColor: colors.surface,
     margin: CELL_GAP / 2,
   },
   cell: {
@@ -381,7 +381,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     width: '100%',
   },
   playAgainText: {
-    color: '#fff',
+    color: colors.textOnPrimary,
     fontWeight: '900',
     fontSize: 16,
   },

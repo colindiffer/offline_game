@@ -34,8 +34,16 @@ import SimonSays from '../games/SimonSays/SimonSays';
 import MemoryMatch from '../games/MemoryMatch/MemoryMatch';
 import WordGuess from '../games/WordGuess/WordGuess';
 import SpiderSolitaire from '../games/SpiderSolitaire/SpiderSolitaire';
+import Battleship from '../games/Battleship/Battleship';
+import Spades from '../games/Spades/Spades';
+import CodeBreaker from '../games/CodeBreaker/CodeBreaker';
+import FreeCell from '../games/FreeCell/FreeCell';
+import Dominoes from '../games/Dominoes/Dominoes';
+import Backgammon from '../games/Backgammon/Backgammon';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
+import { logGameStarted } from '../lib/analytics';
+import { useInterstitialAd } from '../lib/useInterstitialAd';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 const { width } = Dimensions.get('window');
@@ -51,6 +59,7 @@ export default function GameScreen({ route }: Props) {
 
   const gameMeta = GAMES.find((g) => g.id === gameId);
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { showAd } = useInterstitialAd();
 
   useEffect(() => {
     getActiveGame(gameId).then((savedDifficulty) => {
@@ -62,6 +71,7 @@ export default function GameScreen({ route }: Props) {
   const handleSelectDifficulty = async (diff: Difficulty) => {
     setDifficulty(diff);
     await setActiveGame(gameId, diff);
+    await logGameStarted(gameId, diff);
   };
 
   const handleResume = () => {
@@ -71,6 +81,7 @@ export default function GameScreen({ route }: Props) {
   };
 
   const handleNewGame = () => {
+    showAd();
     clearActiveGame(gameId);
     setActiveGameDifficulty(null);
     setDifficulty(null);
@@ -158,15 +169,27 @@ export default function GameScreen({ route }: Props) {
       case 'brick-breaker': return <BrickBreaker difficulty={difficulty} />;
       case 'mahjong': return <Mahjong difficulty={difficulty} />;
       case 'hangman': return <Hangman difficulty={difficulty} />;
-            case 'simon-says':
-              return <SimonSays difficulty={difficulty} />;
-            case 'memory-match':
-              return <MemoryMatch difficulty={difficulty} />;
-            case 'word-guess':
-              return <WordGuess difficulty={difficulty} />;
-            case 'spider-solitaire':
-              return <SpiderSolitaire difficulty={difficulty} />;
-            default: return <Text style={styles.error}>Unknown game</Text>;
+      case 'simon-says':
+        return <SimonSays difficulty={difficulty} />;
+      case 'memory-match':
+        return <MemoryMatch difficulty={difficulty} />;
+      case 'word-guess':
+        return <WordGuess difficulty={difficulty} />;
+      case 'spider-solitaire':
+        return <SpiderSolitaire difficulty={difficulty} />;
+      case 'battleship':
+        return <Battleship difficulty={difficulty} />;
+      case 'spades':
+        return <Spades difficulty={difficulty} />;
+      case 'code-breaker':
+        return <CodeBreaker difficulty={difficulty} />;
+      case 'freecell':
+        return <FreeCell difficulty={difficulty} />;
+      case 'dominoes':
+        return <Dominoes difficulty={difficulty} />;
+      case 'backgammon':
+        return <Backgammon difficulty={difficulty} />;
+      default: return <Text style={styles.error}>Unknown game</Text>;
     }
   };
 
@@ -185,7 +208,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  blob: { position: 'absolute', borderRadius: 300, filter: Platform.OS === 'web' ? 'blur(100px)' : undefined },
+  blob: { position: 'absolute', borderRadius: 300 },
   blob1: { width: width * 1.5, height: width * 1.5, top: -width * 0.5, left: -width * 0.2 },
   error: {
     color: colors.primary,

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Animated, Dimensions, Platform } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Animated, useWindowDimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
 import GameOverOverlay from '../../components/GameOverOverlay';
@@ -13,12 +13,11 @@ import { ThemeColors } from '../../utils/themes';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { initializeMemoryMatch, MemoryCard } from './logic';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const GRID_WIDTH = SCREEN_WIDTH - 32;
-
 export default function MemoryMatch({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const GRID_WIDTH = SCREEN_WIDTH - 24;
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [level, setLevelState] = useState(1);
@@ -121,7 +120,7 @@ export default function MemoryMatch({ difficulty }: Props) {
   if (!isReady) return <View style={styles.container} />;
 
   const cols = cards.length > 24 ? 6 : cards.length > 12 ? 4 : 3;
-  const cardSize = Math.floor((GRID_WIDTH - (cols * 8)) / cols);
+  const cardSize = Math.floor((GRID_WIDTH - (cols * 4)) / cols);
 
   return (
     <View style={styles.container}>
@@ -138,7 +137,7 @@ export default function MemoryMatch({ difficulty }: Props) {
                 key={card.id}
                 onPress={() => handleCardPress(index)}
                 activeOpacity={0.9}
-                style={{ width: cardSize - 8, height: (cardSize - 8) * 1.3, margin: 4 }}
+                style={{ width: cardSize - 4, height: (cardSize - 4) * 1.3, margin: 2 }}
               >
                 <Animated.View style={[
                   styles.card, 
@@ -186,7 +185,7 @@ interface Props {
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  gameArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  gameArea: { flex: 1, justifyContent: 'flex-start', alignItems: 'center', paddingTop: spacing.lg },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
   card: { flex: 1, borderRadius: 12, ...shadows.md, overflow: 'hidden' },
   cardBack: { backgroundColor: '#4834d4', borderWidth: 3, borderColor: 'rgba(255,255,255,0.2)' },
