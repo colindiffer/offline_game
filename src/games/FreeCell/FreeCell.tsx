@@ -10,7 +10,7 @@ import { recordGameResult } from '../../utils/stats';
 import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
 import { spacing, radius, shadows } from '../../utils/designTokens';
-import { initializeFreeCell, canMoveToFoundation, canMoveToTableau, isGameWon } from './logic';
+import { initializeFreeCell, canMoveToFoundation, canMoveToTableau, isGameWon, tryMoveCard, findCardInState, getEmptyFreeCellsCount } from './logic';
 import { FreeCellGameState } from './types';
 import { Card } from '../../types/cards';
 
@@ -41,7 +41,7 @@ export default function FreeCell({ difficulty }: Props) {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [paused, setPaused] = useState(false);
   const [isReady, setIsReady] = useState(false);
-  const [selected, setSelected] = useState<{ source: string; cardIndex: number } | null>(null);
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
   const gameStateRef = useRef(gameState);
   gameStateRef.current = gameState;
@@ -71,178 +71,209 @@ export default function FreeCell({ difficulty }: Props) {
   const autoMoveToFoundation = useCallback((state: FreeCellGameState) => {
     if (pausedRef.current) return null;
     let changed = false;
-    const newState = JSON.parse(JSON.stringify(state));
+    let newState = JSON.parse(JSON.stringify(state)) as FreeCellGameState;
 
     let search = true;
     while (search) {
       search = false;
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 4; i++) { // Check free cells
         const card = newState.freeCells[i];
         if (card) {
-          for (let j = 0; j < 4; j++) {
+          for (let j = 0; j < 4; j++) { // Try all foundations
             if (canMoveToFoundation(card, newState.foundations[j])) {
-              newState.foundations[j].push(card);
-              newState.freeCells[i] = null;
-              changed = true;
-              search = true;
-              break;
+              const moveResult = tryMoveCard(
+                newState,
+                { type: 'freeCell', index: i },
+                { type: 'foundation', pileIndex: j }
+              );
+              if (moveResult) {
+                newState = moveResult;
+                changed = true;
+                search = true; // Keep searching for more auto moves
+                playSound('drop');
+                break;
+              }
             }
           }
         }
       }
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 8; i++) { // Check tableau piles
         const pile = newState.tableau[i];
         if (pile.length > 0) {
-          const card = pile[pile.length - 1];
-          for (let j = 0; j < 4; j++) {
+          const card = pile[pile.length - 1]; // Top card only
+          for (let j = 0; j < 4; j++) { // Try all foundations
             if (canMoveToFoundation(card, newState.foundations[j])) {
-              newState.foundations[j].push(card);
-              newState.tableau[i].pop();
-              changed = true;
-              search = true;
-              break;
+              const moveResult = tryMoveCard(
+                newState,
+                { type: 'tableau', pileIndex: i, cardIndex: pile.length - 1 },
+                { type: 'foundation', pileIndex: j }
+              );
+              if (moveResult) {
+                newState = moveResult;
+                changed = true;
+                search = true; // Keep searching for more auto moves
+                playSound('drop');
+                break;
+              }
             }
           }
         }
       }
     }
-
     return changed ? newState : null;
-  }, []);
+  }, [playSound]);
 
-  const performMove = useCallback((src: string, cardIdx: number, target: string) => {
-    if (pausedRef.current) return;
-    const state = gameStateRef.current;
-    let movingCards: Card[] = [];
+  const handleCardPress = useCallback((card: Card, source: { type: 'tableau'; pileIndex: number; cardIndex: number } | { type: 'freeCell'; index: number }) => {
+    if (gameWon || pausedRef.current) return;
 
-    if (src.startsWith('tableau')) {
-      const colIdx = parseInt(src.split('-')[1]);
-      movingCards = state.tableau[colIdx].slice(cardIdx);
-    } else if (src.startsWith('free')) {
-      const cellIdx = parseInt(src.split('-')[1]);
-      const card = state.freeCells[cellIdx];
-      if (card) movingCards = [card];
-    }
+    if (selectedCard) {
+      // A card is already selected, try to move it to the new source's location
+      const fromLocation = findCardInState(gameStateRef.current, selectedCard);
+      if (!fromLocation) {
+        setSelectedCard(null);
+        return;
+      }
 
-    if (movingCards.length === 0) return;
+      let toLocation: { type: 'tableau'; pileIndex: number } | { type: 'freeCell'; index: number } | { type: 'foundation'; suit: string } | null = null;
+      
+      if (source.type === 'tableau') {
+        toLocation = { type: 'tableau', pileIndex: source.pileIndex };
+      } else if (source.type === 'freeCell') {
+        toLocation = { type: 'freeCell', index: source.index };
+      }
 
-    let valid = false;
-    let newState = JSON.parse(JSON.stringify(state));
+      // Try moving to foundation directly from the card press if it's the right suit
+      if (!toLocation && selectedCard && canMoveToFoundation(selectedCard, gameStateRef.current.foundations.find(f => f.length > 0 ? f[0].suit === selectedCard.suit : true) || [])) {
+         // Find the index of the foundation pile for the selected card's suit
+         const foundationIndex = gameStateRef.current.foundations.findIndex(
+            f => (f.length > 0 && f[0].suit === selectedCard.suit) || f.length === 0
+         );
+         if (foundationIndex !== -1) {
+            toLocation = { type: 'foundation', pileIndex: foundationIndex };
+         }
+      }
 
-    if (target.startsWith('foundation')) {
-      if (movingCards.length === 1) {
-        const fIdx = parseInt(target.split('-')[1]);
-        if (canMoveToFoundation(movingCards[0], state.foundations[fIdx])) {
-          newState.foundations[fIdx].push(movingCards[0]);
-          valid = true;
+      if (toLocation) {
+        const newState = tryMoveCard(gameStateRef.current, fromLocation, toLocation);
+        if (newState) {
+          const autoState = autoMoveToFoundation(newState);
+          setGameState(autoState || newState);
+          playSound('drop');
+          setSelectedCard(null);
+          if (isGameWon((autoState || newState).foundations)) {
+            setGameWon(true);
+            playSound('win');
+            recordGameResult('freecell', 'win', elapsedTime);
+          }
+        } else {
+          // Invalid move, deselect current card and select the new one
+          playSound('error');
+          setSelectedCard(card);
         }
+      } else {
+        // Source was not a valid target for the selected card
+        playSound('error');
+        setSelectedCard(card);
       }
-    } else if (target.startsWith('free')) {
-      if (movingCards.length === 1) {
-        const cellIdx = parseInt(target.split('-')[1]);
-        if (newState.freeCells[cellIdx] === null) {
-          newState.freeCells[cellIdx] = movingCards[0];
-          valid = true;
+    } else {
+      // No card selected, select this one
+      setSelectedCard(card);
+      playSound('tap');
+    }
+  }, [gameWon, elapsedTime, playSound, selectedCard, autoMoveToFoundation]);
+  
+  const handleFoundationTap = useCallback((foundationIndex: number) => {
+    if (gameWon || pausedRef.current) return;
+
+    if (selectedCard) {
+      const fromLocation = findCardInState(gameStateRef.current, selectedCard);
+      if (!fromLocation) { setSelectedCard(null); return; }
+
+      // Try tapped pile first, then all others — this lets the user tap any foundation
+      // and the card lands on the correct suit pile automatically
+      const order = [foundationIndex, ...([0,1,2,3].filter(i => i !== foundationIndex))];
+      let newState: FreeCellGameState | null = null;
+      for (const idx of order) {
+        newState = tryMoveCard(gameStateRef.current, fromLocation, { type: 'foundation', pileIndex: idx });
+        if (newState) break;
+      }
+
+      if (newState) {
+        const autoState = autoMoveToFoundation(newState);
+        setGameState(autoState || newState);
+        playSound('drop');
+        setSelectedCard(null);
+        if (isGameWon((autoState || newState).foundations)) {
+          setGameWon(true);
+          playSound('win');
+          recordGameResult('freecell', 'win', elapsedTime);
         }
-      }
-    } else if (target.startsWith('tableau')) {
-      const colIdx = parseInt(target.split('-')[1]);
-      if (canMoveToTableau(movingCards[0], state.tableau[colIdx])) {
-        newState.tableau[colIdx].push(...movingCards);
-        valid = true;
+      } else {
+        playSound('error');
+        setSelectedCard(null);
       }
     }
+  }, [gameWon, elapsedTime, playSound, selectedCard, autoMoveToFoundation]);
 
-    if (valid) {
-      if (src.startsWith('tableau')) {
-        const colIdx = parseInt(src.split('-')[1]);
-        newState.tableau[colIdx] = newState.tableau[colIdx].slice(0, cardIdx);
-      } else if (src.startsWith('free')) {
-        const cellIdx = parseInt(src.split('-')[1]);
-        newState.freeCells[cellIdx] = null;
-      }
-
+  const handleEmptyFreeCellTap = useCallback((index: number) => {
+    if (gameWon || pausedRef.current || !selectedCard) return;
+    const fromLocation = findCardInState(gameStateRef.current, selectedCard);
+    if (!fromLocation) { setSelectedCard(null); return; }
+    const newState = tryMoveCard(gameStateRef.current, fromLocation, { type: 'freeCell', index });
+    if (newState) {
       const autoState = autoMoveToFoundation(newState);
-      const finalState = autoState || newState;
-
-      setGameState(finalState);
+      setGameState(autoState || newState);
       playSound('drop');
-
-      if (isGameWon(finalState.foundations)) {
+      setSelectedCard(null);
+      if (isGameWon((autoState || newState).foundations)) {
         setGameWon(true);
         playSound('win');
         recordGameResult('freecell', 'win', elapsedTime);
       }
+    } else {
+      playSound('error');
+      setSelectedCard(null);
     }
-  }, [elapsedTime, playSound, autoMoveToFoundation]);
+  }, [gameWon, elapsedTime, playSound, selectedCard, autoMoveToFoundation]);
 
-  const handleTap = useCallback((source: string) => {
+  const handleEmptyTableauTap = useCallback((pileIndex: number) => {
     if (gameWon || pausedRef.current) return;
-    setSelected(prev => {
-      const state = gameStateRef.current;
-      if (prev) {
-        if (prev.source === source) return null; // deselect
-        performMove(prev.source, prev.cardIndex, source);
-        return null;
-      }
-      // Nothing selected — determine what to select
-      if (source.startsWith('tableau')) {
-        const pile = state.tableau[parseInt(source.split('-')[1])];
-        if (pile.length === 0) return null;
-        playSound('tap');
-        return { source, cardIndex: pile.length - 1 };
-      }
-      if (source.startsWith('free')) {
-        const cell = state.freeCells[parseInt(source.split('-')[1])];
-        if (!cell) return null;
-        playSound('tap');
-        return { source, cardIndex: 0 };
-      }
-      return null; // foundations not selectable as source
-    });
-  }, [gameWon, performMove, playSound]);
 
-  // Compute valid drop targets whenever selection changes
-  const validTargets = useMemo(() => {
-    const targets = new Set<string>();
-    if (!selected) return targets;
-
-    let movingCards: Card[] = [];
-    if (selected.source.startsWith('tableau')) {
-      const colIdx = parseInt(selected.source.split('-')[1]);
-      movingCards = gameState.tableau[colIdx].slice(selected.cardIndex);
-    } else if (selected.source.startsWith('free')) {
-      const cellIdx = parseInt(selected.source.split('-')[1]);
-      const card = gameState.freeCells[cellIdx];
-      if (card) movingCards = [card];
-    }
-
-    if (movingCards.length === 0) return targets;
-    const card = movingCards[0];
-
-    if (movingCards.length === 1) {
-      for (let i = 0; i < 4; i++) {
-        if (canMoveToFoundation(card, gameState.foundations[i])) targets.add(`foundation-${i}`);
+    if (selectedCard) {
+      const fromLocation = findCardInState(gameStateRef.current, selectedCard);
+      if (!fromLocation) {
+        setSelectedCard(null);
+        return;
       }
-      for (let i = 0; i < 4; i++) {
-        if (gameState.freeCells[i] === null) targets.add(`free-${i}`);
+
+      const newState = tryMoveCard(
+        gameStateRef.current,
+        fromLocation,
+        { type: 'tableau', pileIndex: pileIndex }
+      );
+
+      if (newState) {
+        const autoState = autoMoveToFoundation(newState);
+        setGameState(autoState || newState);
+        playSound('drop');
+        setSelectedCard(null);
+        if (isGameWon((autoState || newState).foundations)) {
+          setGameWon(true);
+          playSound('win');
+          recordGameResult('freecell', 'win', elapsedTime);
+        }
+      } else {
+        playSound('error');
       }
     }
+  }, [gameWon, elapsedTime, playSound, selectedCard, autoMoveToFoundation]);
 
-    for (let i = 0; i < 8; i++) {
-      if (`tableau-${i}` !== selected.source && canMoveToTableau(card, gameState.tableau[i])) {
-        targets.add(`tableau-${i}`);
-      }
-    }
-
-    return targets;
-  }, [selected, gameState]);
 
   const resetGame = () => {
     setGameState(initializeFreeCell());
     setPaused(false);
     setElapsedTime(0);
-    setSelected(null);
+    setSelectedCard(null);
     startTimeRef.current = Date.now();
   };
 
@@ -258,7 +289,7 @@ export default function FreeCell({ difficulty }: Props) {
         highScore={0}
         highScoreLabel="BEST"
         light
-        onPause={() => { setSelected(null); setPaused(!paused); }}
+        onPause={() => { setSelectedCard(null); setPaused(!paused); }}
         isPaused={paused}
       />
 
@@ -267,23 +298,24 @@ export default function FreeCell({ difficulty }: Props) {
         <View style={styles.topRow}>
           <View style={styles.freeCells}>
             {gameState.freeCells.map((card, i) => {
-              const src = `free-${i}`;
-              const isValidTarget = validTargets.has(src);
-              const isSelected = selected?.source === src;
+              const source = { type: 'freeCell', index: i } as const;
+              const isSelected = selectedCard && selectedCard.suit === card?.suit && selectedCard.rank === card?.rank;
               return (
                 <TouchableOpacity
-                  key={src}
+                  key={`free-${i}`}
                   style={[
                     styles.cellSlot,
-                    isValidTarget && styles.validTargetGlow,
                     isSelected && styles.selectedGlow,
                   ]}
-                  onPress={() => handleTap(src)}
-                  disabled={paused || gameWon}
+                  onPress={() => card ? handleCardPress(card, source) : handleEmptyFreeCellTap(i)}
+                  disabled={paused || gameWon || (!card && !selectedCard)}
                   activeOpacity={0.8}
                 >
                   {card && (
                     <PlayingCard card={card} width={CARD_WIDTH} height={CARD_HEIGHT} pointerEvents="none" />
+                  )}
+                  {!card && selectedCard && (
+                     <View style={[styles.emptySlot, styles.validTargetGlow, {width: CARD_WIDTH, height: CARD_HEIGHT}]} />
                   )}
                 </TouchableOpacity>
               );
@@ -292,18 +324,18 @@ export default function FreeCell({ difficulty }: Props) {
 
           <View style={styles.foundations}>
             {gameState.foundations.map((pile, i) => {
-              const src = `foundation-${i}`;
-              const isValidTarget = validTargets.has(src);
+              const topCard = pile.length > 0 ? pile[pile.length - 1] : null;
+              const isValidTarget = selectedCard && canMoveToFoundation(selectedCard, pile);
               return (
                 <TouchableOpacity
-                  key={src}
+                  key={`foundation-${i}`}
                   style={[styles.cellSlot, isValidTarget && styles.validTargetGlow]}
-                  onPress={() => handleTap(src)}
-                  disabled={paused || gameWon}
+                  onPress={() => handleFoundationTap(i)}
+                  disabled={paused || gameWon || (!selectedCard)}
                   activeOpacity={0.8}
                 >
-                  {pile.length > 0 ? (
-                    <PlayingCard card={pile[pile.length - 1]} width={CARD_WIDTH} height={CARD_HEIGHT} pointerEvents="none" />
+                  {topCard ? (
+                    <PlayingCard card={topCard} width={CARD_WIDTH} height={CARD_HEIGHT} pointerEvents="none" />
                   ) : (
                     <View style={styles.emptyFoundation}>
                       <Text style={styles.suitHint}>{['♣', '♦', '♥', '♠'][i]}</Text>
@@ -319,22 +351,34 @@ export default function FreeCell({ difficulty }: Props) {
         <View style={styles.tableau}>
           {gameState.tableau.map((pile, i) => {
             const colKey = `tableau-${i}`;
-            const isValidTarget = validTargets.has(colKey);
+            const topCard = pile.length > 0 ? pile[pile.length - 1] : null;
+            const isEmptyTarget = pile.length === 0 && selectedCard && getEmptyFreeCellsCount(gameState.freeCells) > 0;
+            const isValidTarget = selectedCard && topCard && canMoveToTableau(selectedCard, pile);
+
             return (
               <View
                 key={colKey}
-                style={[styles.column, isValidTarget && styles.validColumnGlow]}
+                style={[styles.column, (isValidTarget || isEmptyTarget) && styles.validColumnGlow]}
               >
                 {pile.length === 0 && (
                   <TouchableOpacity
                     style={[styles.emptySlot, { width: CARD_WIDTH, height: CARD_HEIGHT }]}
-                    onPress={() => handleTap(colKey)}
-                    disabled={paused || gameWon}
+                    onPress={() => handleEmptyTableauTap(i)}
+                    disabled={paused || gameWon || (selectedCard && !isEmptyTarget)}
                   />
                 )}
                 {pile.map((card, j) => {
-                  const isTop = j === pile.length - 1;
-                  const isCardSelected = selected?.source === colKey && selected?.cardIndex === j;
+                  const source = { type: 'tableau', pileIndex: i, cardIndex: j } as const;
+                  const isCardSelected = selectedCard && selectedCard.suit === card.suit && selectedCard.rank === card.rank;
+                  const isBottomCard = j === pile.length - 1;
+
+                  // Check if this card is the start of a movable stack
+                  const numCardsInStack = pile.length - j;
+                  const emptyFreeCells = getEmptyFreeCellsCount(gameState.freeCells);
+                  const emptyTableauPiles = gameState.tableau.filter(p => p.length === 0).length;
+                  const maxMovable = (1 + emptyFreeCells) * Math.pow(2, emptyTableauPiles);
+                  const isMovableStack = numCardsInStack <= maxMovable;
+
                   return (
                     <TouchableOpacity
                       key={card.id}
@@ -343,8 +387,8 @@ export default function FreeCell({ difficulty }: Props) {
                         { top: j * (CARD_HEIGHT * 0.25) },
                         isCardSelected && styles.selectedGlow,
                       ]}
-                      onPress={() => handleTap(colKey)}
-                      disabled={paused || gameWon || (!selected && !isTop)}
+                      onPress={() => isMovableStack && handleCardPress(card, source)}
+                      disabled={paused || gameWon || !isMovableStack}
                       activeOpacity={0.8}
                     >
                       <PlayingCard card={card} width={CARD_WIDTH} height={CARD_HEIGHT} pointerEvents="none" />
@@ -394,6 +438,7 @@ const getStyles = (colors: ThemeColors, CARD_WIDTH: number, CARD_HEIGHT: number,
     column: { width: CARD_WIDTH, height: '100%', position: 'relative' },
     cardWrapper: { position: 'absolute', width: '100%' },
     emptySlot: {
+      // This is now used as a potential drop target visual, not just a placeholder
       position: 'absolute',
       top: 0,
       left: 0,

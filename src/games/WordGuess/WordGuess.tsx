@@ -1,21 +1,16 @@
-import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Dimensions, Platform, ScrollView } from 'react-native';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, Platform, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
 import GameOverOverlay from '../../components/GameOverOverlay';
-import PremiumButton from '../../components/PremiumButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
-import { getHighScore, setHighScore, getLevel, setLevel } from '../../utils/storage';
+import { getLevel, setLevel } from '../../utils/storage';
 import { recordGameResult } from '../../utils/stats';
 import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
-import { spacing, radius, shadows, typography } from '../../utils/designTokens';
+import { spacing, radius, shadows } from '../../utils/designTokens';
 import { initializeWordGuess, checkGuess, WordGuessState, LetterStatus } from './logic';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const GRID_WIDTH = Math.min(SCREEN_WIDTH - 64, 350);
-const CELL_SIZE = (GRID_WIDTH - 20) / 5;
 
 const KEYBOARD_ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
@@ -23,10 +18,41 @@ const KEYBOARD_ROWS = [
   ['ENTER', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫']
 ];
 
+// Fixed keyboard metrics
+const KEY_H = 44;
+const KEY_GAP = 6;
+const ROW_GAP = 8;
+// Keyboard total height (3 rows + 2 row-gaps + bottom padding)
+const KB_PADDING_BOTTOM = 56;
+const KB_H = 3 * KEY_H + 2 * ROW_GAP + KB_PADDING_BOTTOM;
+// Grid: 6 rows + 5 row-gaps
+const GRID_ROW_GAP = 8;
+const GRID_ROWS = 6;
+const GRID_COLS = 5;
+// Approximate fixed overhead: nav header + game header + gameArea top padding
+const OVERHEAD = 210;
+
+interface Props {
+  difficulty: Difficulty;
+}
+
 export default function WordGuess({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  const { width: SW, height: SH } = useWindowDimensions();
+
+  // Calculate cell size so grid + keyboard always fits the screen
+  const availableForGrid = SH - OVERHEAD - KB_H - spacing.md * 2; // gameArea vertical padding
+  const cellFromHeight = Math.floor((availableForGrid - (GRID_ROWS - 1) * GRID_ROW_GAP) / GRID_ROWS);
+  const maxGridWidth = Math.min(SW - 64, 340);
+  const cellFromWidth = Math.floor((maxGridWidth - (GRID_COLS - 1) * GRID_ROW_GAP) / GRID_COLS);
+  const CELL_SIZE = Math.min(cellFromHeight, cellFromWidth, 62);
+  const GRID_WIDTH = CELL_SIZE * GRID_COLS + (GRID_COLS - 1) * GRID_ROW_GAP;
+
+  const styles = useMemo(
+    () => getStyles(colors, CELL_SIZE, KEY_H, SW),
+    [colors, CELL_SIZE, SW]
+  );
 
   const [level, setLevelState] = useState(1);
   const [gameState, setGameState] = useState<WordGuessState | null>(null);
@@ -61,12 +87,9 @@ export default function WordGuess({ difficulty }: Props) {
         if (currentCol === 5) {
           const currentGuess = guesses[currentRow].map(l => l.char).join('');
           const results = checkGuess(targetWord, currentGuess);
-          
-          // Update row statuses
+
           results.forEach((status, i) => {
             guesses[currentRow][i].status = status;
-            
-            // Update keyboard status
             const char = guesses[currentRow][i].char;
             const currentStatus = newState.keyboardStatus[char];
             if (status === 'correct' || (status === 'present' && currentStatus !== 'correct') || (!currentStatus && status === 'absent')) {
@@ -120,16 +143,16 @@ export default function WordGuess({ difficulty }: Props) {
     <View style={styles.container}>
       <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
       <Header title="Word Guess" score={level} scoreLabel="LEVEL" highScore={0} highScoreLabel="BEST" />
-      
+
       <View style={styles.gameArea}>
-        <View style={styles.grid}>
+        <View style={[styles.grid, { width: GRID_WIDTH }]}>
           {gameState.guesses.map((row, r) => (
             <View key={r} style={styles.row}>
               {row.map((letter, c) => (
-                <View 
-                  key={c} 
+                <View
+                  key={c}
                   style={[
-                    styles.cell, 
+                    styles.cell,
                     letter.status !== 'empty' && { backgroundColor: getStatusColor(letter.status), borderColor: getStatusColor(letter.status) },
                     r === gameState.currentRow && c === gameState.currentCol - 1 && letter.char !== '' && styles.activeCell
                   ]}
@@ -159,7 +182,7 @@ export default function WordGuess({ difficulty }: Props) {
                   ]}
                 >
                   <Text style={[
-                    styles.keyText, 
+                    styles.keyText,
                     key.length > 1 && styles.smallKeyText,
                     gameState.keyboardStatus[key] && gameState.keyboardStatus[key] !== 'absent' && { color: colors.textOnPrimary },
                     gameState.keyboardStatus[key] === 'absent' && { color: colors.background }
@@ -172,36 +195,60 @@ export default function WordGuess({ difficulty }: Props) {
       </View>
 
       {(gameState.gameOver || gameState.gameWon) && (
-        <GameOverOverlay 
-          result={gameState.gameWon ? 'win' : 'lose'} 
-          title={gameState.gameWon ? 'BRILLIANT!' : 'OUT OF TRIES'} 
-          subtitle={gameState.gameWon ? 'You found the word!' : `The word was: ${gameState.targetWord}`} 
+        <GameOverOverlay
+          result={gameState.gameWon ? 'win' : 'lose'}
+          title={gameState.gameWon ? 'BRILLIANT!' : 'OUT OF TRIES'}
+          subtitle={gameState.gameWon ? 'You found the word!' : `The word was: ${gameState.targetWord}`}
           onPlayAgain={gameState.gameWon ? init : resetLevel}
-          onPlayAgainLabel={gameState.gameWon ? "NEXT LEVEL" : "TRY AGAIN"}
+          onPlayAgainLabel={gameState.gameWon ? 'NEXT LEVEL' : 'TRY AGAIN'}
         />
       )}
     </View>
   );
 }
 
-interface Props {
-  difficulty: Difficulty;
-}
-
-const getStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  levelHeader: { alignItems: 'center', marginTop: spacing.md },
-  levelText: { color: colors.text, fontSize: 24, fontWeight: '900' },
-  gameArea: { flex: 1, padding: spacing.md, alignItems: 'center', justifyContent: 'space-around' },
-  grid: { gap: 8 },
-  row: { flexDirection: 'row', gap: 8 },
-  cell: { width: CELL_SIZE, height: CELL_SIZE, borderWidth: 2, borderColor: colors.border, borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
-  activeCell: { transform: [{ scale: 1.1 }], borderColor: colors.primary },
-  cellText: { fontSize: 32, fontWeight: '900', color: colors.text },
-  keyboard: { width: '100%', gap: 8, paddingBottom: Platform.OS === 'ios' ? 40 : 10 },
-  keyboardRow: { flexDirection: 'row', justifyContent: 'center', gap: 6 },
-  key: { minWidth: (SCREEN_WIDTH - 80) / 10, height: 50, backgroundColor: colors.surface, borderRadius: 4, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 4, borderWidth: 1, borderColor: colors.border, ...shadows.sm },
-  wideKey: { minWidth: 50 },
-  keyText: { color: colors.text, fontSize: 16, fontWeight: 'bold' },
-  smallKeyText: { fontSize: 12 },
-});
+const getStyles = (colors: ThemeColors, CELL_SIZE: number, KEY_H: number, SCREEN_WIDTH: number) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    gameArea: {
+      flex: 1,
+      paddingHorizontal: spacing.md,
+      paddingTop: spacing.md,
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    grid: { gap: GRID_ROW_GAP },
+    row: { flexDirection: 'row', gap: GRID_ROW_GAP },
+    cell: {
+      width: CELL_SIZE,
+      height: CELL_SIZE,
+      borderWidth: 2,
+      borderColor: colors.border,
+      borderRadius: 4,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    activeCell: { transform: [{ scale: 1.05 }], borderColor: colors.primary },
+    cellText: { fontSize: CELL_SIZE * 0.52, fontWeight: '900', color: colors.text },
+    keyboard: {
+      width: '100%',
+      gap: ROW_GAP,
+      paddingBottom: KB_PADDING_BOTTOM,
+    },
+    keyboardRow: { flexDirection: 'row', justifyContent: 'center', gap: KEY_GAP },
+    key: {
+      minWidth: (SCREEN_WIDTH - 80) / 10,
+      height: KEY_H,
+      backgroundColor: colors.surface,
+      borderRadius: 4,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 4,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...shadows.sm,
+    },
+    wideKey: { minWidth: 52 },
+    keyText: { color: colors.text, fontSize: 15, fontWeight: 'bold' },
+    smallKeyText: { fontSize: 11 },
+  });

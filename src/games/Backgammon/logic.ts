@@ -72,7 +72,7 @@ export function isValidMove(state: BackgammonGameState, from: number | 'bar', to
         }
         if (!allInHome) return false;
 
-        const distance = from === 'bar' ? 999 : (color === 'white' ? (24 - from) : (from + 1));
+        const distance = color === 'white' ? (24 - (from as number)) : ((from as number) + 1);
         if (state.movesRemaining.includes(distance)) return true;
         // Also valid if die is greater than distance and no checkers further back
         if (state.movesRemaining.some(d => d > distance)) {

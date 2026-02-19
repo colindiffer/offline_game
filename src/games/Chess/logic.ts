@@ -53,8 +53,9 @@ export function getOpponent(player: PieceColor): PieceColor {
 }
 
 export function getPieceSymbol(piece: Piece): string {
+  // Use filled (solid) symbols for both colours; Chess.tsx tints them via whitePiece/blackPiece styles
   const symbols = {
-    white: { king: '♔', queen: '♕', rook: '♖', bishop: '♗', knight: '♘', pawn: '♙' },
+    white: { king: '♚', queen: '♛', rook: '♜', bishop: '♝', knight: '♞', pawn: '♟' },
     black: { king: '♚', queen: '♛', rook: '♜', bishop: '♝', knight: '♞', pawn: '♟' },
   };
   return symbols[piece.color][piece.type];

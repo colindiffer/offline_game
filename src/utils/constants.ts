@@ -7,6 +7,7 @@ export const GAMES: GameMetadata[] = [
     icon: '❌',
     description: 'Classic X vs O',
     color: '#ff5e57',
+    category: 'Arcade',
   },
   {
     id: 'snake',
@@ -14,6 +15,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🐍',
     description: 'Eat and grow',
     color: '#1dd1a1',
+    category: 'Arcade',
   },
   {
     id: '2048',
@@ -21,6 +23,7 @@ export const GAMES: GameMetadata[] = [
     icon: '2048',
     description: 'Merge numbers',
     color: '#ff9f43',
+    category: 'Puzzle',
   },
   {
     id: 'minesweeper',
@@ -28,20 +31,23 @@ export const GAMES: GameMetadata[] = [
     icon: '💣',
     description: 'Avoid mines',
     color: '#5f27cd',
+    category: 'Puzzle',
   },
   {
     id: 'connect-four',
     name: '4 in a Row',
     icon: '🔴',
-    description: 'Connect 4 chips',
+    description: 'Get 4 in a row',
     color: '#feca57',
+    category: 'Board',
   },
   {
     id: 'tetris',
-    name: 'Falling Blocks',
+    name: 'Block Drop',
     icon: '🧱',
-    description: 'Stack blocks',
+    description: 'Stack the falling blocks',
     color: '#48dbfb',
+    category: 'Arcade',
   },
   {
     id: 'maze',
@@ -49,6 +55,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🌀',
     description: 'Find the exit',
     color: '#ff9ff3',
+    category: 'Puzzle',
   },
   {
     id: 'solitaire',
@@ -56,6 +63,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🃏',
     description: 'Klondike',
     color: '#ee5253',
+    category: 'Card',
   },
   {
     id: 'sudoku',
@@ -63,6 +71,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🔢',
     description: 'Number logic',
     color: '#00d2d3',
+    category: 'Logic',
   },
   {
     id: 'reversi',
@@ -70,6 +79,7 @@ export const GAMES: GameMetadata[] = [
     icon: '⚪',
     description: 'Flip discs',
     color: '#8395a7',
+    category: 'Board',
   },
   {
     id: 'checkers',
@@ -77,6 +87,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🏁',
     description: 'Jump & King',
     color: '#222f3e',
+    category: 'Board',
   },
   {
     id: 'chess',
@@ -84,6 +95,7 @@ export const GAMES: GameMetadata[] = [
     icon: '♟️',
     description: 'Checkmate',
     color: '#576574',
+    category: 'Board',
   },
   {
     id: 'blackjack',
@@ -91,6 +103,7 @@ export const GAMES: GameMetadata[] = [
     icon: '💰',
     description: 'Beat dealer',
     color: '#341f97',
+    category: 'Card',
   },
   {
     id: 'poker',
@@ -98,6 +111,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🎰',
     description: 'Texas Holdem',
     color: '#54a0ff',
+    category: 'Card',
   },
   {
     id: 'hearts',
@@ -105,6 +119,7 @@ export const GAMES: GameMetadata[] = [
     icon: '💔',
     description: 'Avoid hearts',
     color: '#ff9ff3',
+    category: 'Card',
   },
   {
     id: 'water-sort',
@@ -112,6 +127,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🧪',
     description: 'Color puzzle',
     color: '#0abde3',
+    category: 'Puzzle',
   },
   {
     id: 'word-search',
@@ -119,6 +135,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🔍',
     description: 'Find words',
     color: '#10ac84',
+    category: 'Logic',
   },
   {
     id: 'brick-breaker',
@@ -126,6 +143,7 @@ export const GAMES: GameMetadata[] = [
     icon: '☄️',
     description: 'Smash bricks',
     color: '#ff9f43',
+    category: 'Arcade',
   },
   {
     id: 'mahjong',
@@ -133,6 +151,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🀄',
     description: 'Tile matching',
     color: '#ffbe76',
+    category: 'Puzzle',
   },
   {
     id: 'hangman',
@@ -140,6 +159,7 @@ export const GAMES: GameMetadata[] = [
     icon: '😵',
     description: 'Guess word',
     color: '#ee5253',
+    category: 'Logic',
   },
   {
     id: 'simon-says',
@@ -147,6 +167,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🚨',
     description: 'Memory',
     color: '#54a0ff',
+    category: 'Memory',
   },
   {
     id: 'memory-match',
@@ -154,6 +175,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🧠',
     description: 'Match pairs',
     color: '#ff9ff3',
+    category: 'Memory',
   },
   {
     id: 'word-guess',
@@ -161,6 +183,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🔡',
     description: '5 letters',
     color: '#1dd1a1',
+    category: 'Logic',
   },
   {
     id: 'spider-solitaire',
@@ -168,6 +191,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🕷️',
     description: '8 decks',
     color: '#222f3e',
+    category: 'Card',
   },
   {
     id: 'battleship',
@@ -175,6 +199,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🚢',
     description: 'Naval war',
     color: '#48dbfb',
+    category: 'Logic',
   },
   {
     id: 'spades',
@@ -182,6 +207,7 @@ export const GAMES: GameMetadata[] = [
     icon: '⚔️',
     description: 'Bidding war',
     color: '#576574',
+    category: 'Card',
   },
   {
     id: 'code-breaker',
@@ -189,6 +215,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🕵️',
     description: 'Crack code',
     color: '#feca57',
+    category: 'Logic',
   },
   {
     id: 'freecell',
@@ -196,6 +223,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🏰',
     description: 'Solitaire',
     color: '#1dd1a1',
+    category: 'Card',
   },
   {
     id: 'dominoes',
@@ -203,6 +231,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🁫',
     description: 'Tile match',
     color: '#8395a7',
+    category: 'Board',
   },
   {
     id: 'backgammon',
@@ -210,6 +239,7 @@ export const GAMES: GameMetadata[] = [
     icon: '🎲',
     description: 'Dice race',
     color: '#ff9f43',
+    category: 'Board',
   },
 ];
 

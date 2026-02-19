@@ -1,5 +1,6 @@
 export type GameId = 'tic-tac-toe' | 'snake' | '2048' | 'minesweeper' | 'connect-four' | 'tetris' | 'maze' | 'solitaire' | 'sudoku' | 'reversi' | 'checkers' | 'chess' | 'blackjack' | 'poker' | 'hearts' | 'water-sort' | 'word-search' | 'brick-breaker' | 'mahjong' | 'hangman' | 'simon-says' | 'memory-match' | 'word-guess' | 'spider-solitaire' | 'battleship' | 'spades' | 'code-breaker' | 'freecell' | 'dominoes' | 'backgammon';
 export type Difficulty = 'easy' | 'medium' | 'hard';
+export type GameCategory = 'Arcade' | 'Puzzle' | 'Board' | 'Card' | 'Logic' | 'Memory';
 
 export interface GameMetadata {
   id: GameId;
@@ -7,6 +8,7 @@ export interface GameMetadata {
   icon: string;
   description: string;
   color: string;
+  category: GameCategory;
 }
 
 export interface GameStats {

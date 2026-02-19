@@ -31,7 +31,7 @@ import { Card } from '../../types/cards';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_PADDING = 16;
 const AVAILABLE_WIDTH = SCREEN_WIDTH - (SCREEN_PADDING * 2);
-const CARD_WIDTH = Math.floor(AVAILABLE_WIDTH / 4.5); // Slightly larger cards
+const CARD_WIDTH = Math.floor(AVAILABLE_WIDTH / 5.5); // Reduced card size
 const CARD_HEIGHT = Math.floor(CARD_WIDTH * 1.4);
 
 // To fill the width with 13 cards: 12 * (CARD_WIDTH - Overlap) + CARD_WIDTH = AVAILABLE_WIDTH
@@ -53,7 +53,6 @@ export default function Hearts({ difficulty }: Props) {
   const [highScore, setHighScore] = useState(0);
   const [showTutorial, setShowTutorial] = useState(false);
   const [selectedCards, setSelectedCards] = useState<Card[]>([]);
-  const [selectedPlayCardId, setSelectedPlayCardId] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
 
   const startTimeRef = useRef<number>(Date.now());
@@ -177,24 +176,16 @@ export default function Hearts({ difficulty }: Props) {
     } else if (gameState.gamePhase === 'playing' && gameState.currentPlayerIndex === 0) {
       const player = gameState.players[0];
       if (canPlayCard(gameState, player, card)) {
-        setSelectedPlayCardId(prev => prev === card.id ? null : card.id);
+        const newState = playCard(gameState, 0, card);
+        setGameState(newState);
         playSound('tap');
+      } else {
+        playSound('error'); // Indicate illegal move
       }
     }
   }, [gameState, selectedCards, playSound, paused]);
 
-  const handleTrickZoneTap = useCallback(() => {
-    if (!selectedPlayCardId || paused) return;
-    const player = gameState.players[0];
-    const card = player.cards.find(c => c.id === selectedPlayCardId);
-    if (card && canPlayCard(gameState, player, card)) {
-      const newState = playCard(gameState, 0, card);
-      setGameState(newState);
-      setSelectedPlayCardId(null);
-      playSound('tap');
-    }
-  }, [gameState, selectedPlayCardId, playSound, paused]);
-
+  // Remove handleTrickZoneTap as cards are played directly
   const handlePassCards = useCallback(() => {
     if (selectedCards.length === 3 && !paused) {
       const newState = passCards(gameState, 0, selectedCards);
@@ -208,7 +199,6 @@ export default function Hearts({ difficulty }: Props) {
     const newState = startNewRound(gameState);
     setGameState(newState);
     setSelectedCards([]);
-    setSelectedPlayCardId(null);
     setPaused(false);
     roundStartTimeRef.current = Date.now();
     playSound('tap');
@@ -218,7 +208,6 @@ export default function Hearts({ difficulty }: Props) {
     const newState = initializeHeartsGame(difficulty);
     setGameState(newState);
     setSelectedCards([]);
-    setSelectedPlayCardId(null);
     setPaused(false);
     startTimeRef.current = Date.now();
     roundStartTimeRef.current = Date.now();
@@ -313,8 +302,9 @@ export default function Hearts({ difficulty }: Props) {
 
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={handleTrickZoneTap}
-          style={[styles.centerFelt, selectedPlayCardId && styles.centerFeltHighlight]}
+          // onPress={handleTrickZoneTap} // No longer needed as cards are played directly
+          style={[styles.centerFelt]}
+          disabled={gameState.gamePhase !== 'playing' || gameState.currentPlayerIndex !== 0}
         >
           <View style={styles.feltInner}>
             {renderTrick()}
@@ -323,11 +313,6 @@ export default function Hearts({ difficulty }: Props) {
                 <Text style={styles.roundLabel}>ROUND {gameState.roundNumber}</Text>
                 {gameState.heartsBroken && <Text style={styles.brokenLabel}>♥ BROKEN</Text>}
                 {gameState.leadSuit && <Text style={styles.suitLabel}>LEAD: {gameState.leadSuit.toUpperCase()}</Text>}
-              </View>
-            )}
-            {selectedPlayCardId && (
-              <View style={styles.playHint} pointerEvents="none">
-                <Text style={styles.playHintText}>TAP TO PLAY</Text>
               </View>
             )}
           </View>
@@ -362,7 +347,7 @@ export default function Hearts({ difficulty }: Props) {
             showsHorizontalScrollIndicator={false}
           >
             {gameState.players[0].cards.map((card, index) => {
-              const isSelected = selectedCards.some(c => c.id === card.id) || selectedPlayCardId === card.id;
+              const isSelected = selectedCards.some(c => c.id === card.id);
               const isLegal = gameState.gamePhase === 'playing' &&
                 gameState.currentPlayerIndex === 0 &&
                 canPlayCard(gameState, gameState.players[0], card);
@@ -470,15 +455,9 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   cardIndicatorText: { color: '#fff', fontSize: 8, fontWeight: 'bold' },
   centerFelt: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   feltInner: {
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: 'rgba(0,0,0,0.15)',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.05)',
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    overflow: 'hidden',
   },
   centerFeltHighlight: { backgroundColor: 'rgba(85, 239, 196, 0.05)', borderRadius: 120 },
   playHint: { position: 'absolute', backgroundColor: 'rgba(85, 239, 196, 0.2)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#55efc4' },

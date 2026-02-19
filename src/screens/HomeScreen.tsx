@@ -73,7 +73,9 @@ export default function HomeScreen({ navigation }: Props) {
 
         <View style={styles.footerSpacer} />
       </Animated.ScrollView>
-      <AdBanner />
+      <View style={styles.adContainer}>
+        <AdBanner />
+      </View>
     </View>
   );
 }
@@ -102,4 +104,5 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: 4,
   },
   footerSpacer: { height: 100 },
+  adContainer: { width: '100%', backgroundColor: colors.background },
 });

@@ -26,7 +26,7 @@ export function initializeHangman(difficulty: Difficulty, level: number = 1): Ha
   const word = wordPool[Math.floor(Math.random() * wordPool.length)];
   
   let maxAttempts = 6;
-  if (difficulty === 'easy') maxAttempts = 8;
+  if (difficulty === 'easy') maxAttempts = 10;
   else if (difficulty === 'hard') maxAttempts = 5;
 
   return {

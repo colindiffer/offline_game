@@ -258,17 +258,26 @@ export default function SpiderSolitaire({ difficulty }: Props) {
         </View>
 
         <View style={styles.bottomRow}>
-          <TouchableOpacity
-            style={styles.stock}
-            onPress={handleDeal}
-            disabled={gameState.stock.length === 0 || paused}
-          >
-            {Array.from({ length: Math.ceil(gameState.stock.length / 10) }).map((_, idx) => (
-              <View key={idx} style={[styles.stockCard, { left: idx * 4 }]}>
-                <PlayingCard card={null} faceDown width={CARD_WIDTH} height={CARD_HEIGHT} pointerEvents="none" />
-              </View>
-            ))}
-          </TouchableOpacity>
+          <View style={styles.stockWrapper}>
+            <TouchableOpacity
+              style={styles.stock}
+              onPress={handleDeal}
+              disabled={gameState.stock.length === 0 || paused}
+            >
+              {gameState.stock.length === 0 ? (
+                <View style={[styles.emptySlot, { width: CARD_WIDTH * 2, height: CARD_HEIGHT, opacity: 0.3 }]} />
+              ) : (
+                Array.from({ length: Math.ceil(gameState.stock.length / 10) }).map((_, idx) => (
+                  <View key={idx} style={[styles.stockCard, { left: idx * 4 }]}>
+                    <PlayingCard card={{ id: 'stock-back', rank: 'A', suit: 'spades' }} faceDown width={CARD_WIDTH} height={CARD_HEIGHT} pointerEvents="none" />
+                  </View>
+                ))
+              )}
+            </TouchableOpacity>
+            <Text style={[styles.stockLabel, { opacity: gameState.stock.length === 0 ? 0.3 : 1 }]}>
+              DEAL ({Math.ceil(gameState.stock.length / 10)} left)
+            </Text>
+          </View>
 
           <View style={styles.controls}>
             <TouchableOpacity
@@ -280,7 +289,7 @@ export default function SpiderSolitaire({ difficulty }: Props) {
                 <Text style={styles.undoIcon}>↶</Text>
               </View>
             </TouchableOpacity>
-            <PremiumButton variant="secondary" height={40} onPress={resetGame} style={styles.resetBtn} disabled={paused}>
+            <PremiumButton variant="warning" height={40} onPress={resetGame} style={styles.resetBtn} disabled={paused}>
               <Text style={styles.resetText}>RESET</Text>
             </PremiumButton>
           </View>
@@ -353,8 +362,10 @@ const getStyles = (colors: ThemeColors, CARD_WIDTH: number, CARD_HEIGHT: number,
       paddingHorizontal: spacing.md,
       marginBottom: Platform.OS === 'ios' ? 20 : 10,
     },
+    stockWrapper: { alignItems: 'center', gap: 4 },
     stock: { width: CARD_WIDTH * 2, height: CARD_HEIGHT, position: 'relative' },
     stockCard: { position: 'absolute' },
+    stockLabel: { color: '#fff', fontSize: 9, fontWeight: '900', letterSpacing: 1 },
     controls: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
     undoBtn: {
       width: 50,

@@ -77,7 +77,7 @@ export const GAME_TUTORIALS: Record<GameId, TutorialStep[]> = {
   
   'connect-four': [
     {
-      title: 'Welcome to Connect Four!',
+      title: 'Welcome to 4 in a Row!',
       description: 'Drop pieces to get four in a row before the AI does!',
       icon: '🔴🟡',
     },
@@ -444,7 +444,7 @@ export const GAME_TUTORIALS: Record<GameId, TutorialStep[]> = {
 
   battleship: [
     {
-      title: 'Welcome to Battleship!',
+      title: 'Welcome to Sea Battle!',
       description: 'Sink the enemy fleet before they sink yours! Strategy and deduction are key.',
       icon: '🚢',
     },

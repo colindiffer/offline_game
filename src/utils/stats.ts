@@ -1,7 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GameId, GameStats } from '../types';
 
+import * as StoreReview from 'expo-store-review';
+
 const STATS_STORAGE_KEY = '@game_stats';
+const WINS_FOR_REVIEW = 5;
 
 type GameResult = 'win' | 'loss';
 
@@ -30,6 +33,12 @@ const createEmptyStats = (): Record<GameId, GameStats> => ({
   'memory-match': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
   'word-guess': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
   'spider-solitaire': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'battleship': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'spades': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'code-breaker': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'freecell': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'dominoes': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'backgammon': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
 });
 
 export function getEmptyStats(): Record<GameId, GameStats> {
@@ -75,6 +84,7 @@ export async function recordGameResult(
 
   if (result === 'win') {
     gameStats.wins += 1;
+    await checkReviewPrompt();
   } else {
     gameStats.losses += 1;
   }
@@ -85,6 +95,21 @@ export async function recordGameResult(
 
 export async function getAllStats(): Promise<Record<GameId, GameStats>> {
   return getStats();
+}
+
+export async function checkReviewPrompt(): Promise<void> {
+  const stats = await getStats();
+  const totalWins = Object.values(stats).reduce((sum, s) => sum + s.wins, 0);
+
+  if (totalWins >= WINS_FOR_REVIEW) {
+    const isAvailable = await StoreReview.isAvailableAsync();
+    const hasRequested = await AsyncStorage.getItem('@has_requested_review');
+
+    if (isAvailable && !hasRequested) {
+      await StoreReview.requestReview();
+      await AsyncStorage.setItem('@has_requested_review', 'true');
+    }
+  }
 }
 
 export async function clearAllStats(): Promise<void> {

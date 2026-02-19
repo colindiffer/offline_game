@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View, ScrollView } from 'react-native';
+import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Header from '../../components/Header';
 import TutorialScreen from '../../components/TutorialScreen';
 import HintButton from '../../components/HintButton';
@@ -18,7 +18,7 @@ import PremiumButton from '../../components/PremiumButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CELL_SIZE = Math.floor((SCREEN_WIDTH - 32) / 9);
+const CELL_SIZE = Math.floor((SCREEN_WIDTH - 48) / 9);
 
 interface Props {
   difficulty: Difficulty;
@@ -242,6 +242,10 @@ export default function Sudoku({ difficulty }: Props) {
                       borderLeftWidth: isThickLeft ? 3 : 1,
                       borderRightWidth: c === 8 ? 3 : 1,
                       borderBottomWidth: r === 8 ? 3 : 1,
+                      borderTopColor: isThickTop ? colors.textSecondary : colors.textSecondary + '50',
+                      borderLeftColor: isThickLeft ? colors.textSecondary : colors.textSecondary + '50',
+                      borderRightColor: c === 8 ? colors.textSecondary : colors.textSecondary + '50',
+                      borderBottomColor: r === 8 ? colors.textSecondary : colors.textSecondary + '50',
                     },
                   ]}
                   onPress={() => handleCellPress(r, c)}
@@ -268,7 +272,7 @@ export default function Sudoku({ difficulty }: Props) {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer} style={styles.viewRoot}>
+    <View style={styles.viewRoot}>
       <View style={styles.container}>
         <Text style={styles.bgIcon}>🔢</Text>
         <Header
@@ -302,7 +306,7 @@ export default function Sudoku({ difficulty }: Props) {
               <PremiumButton
                 key={num}
                 variant="secondary"
-                height={52}
+                height={44}
                 onPress={() => handleNumberPress(num)}
                 disabled={!selectedCell || gameWon || paused}
                 style={styles.numberButton}
@@ -312,7 +316,7 @@ export default function Sudoku({ difficulty }: Props) {
             ))}
             <PremiumButton
               variant="danger"
-              height={52}
+              height={44}
               onPress={handleClear}
               disabled={!selectedCell || gameWon || paused}
               style={styles.numberButton}
@@ -324,7 +328,7 @@ export default function Sudoku({ difficulty }: Props) {
           <View style={styles.actions}>
             <PremiumButton
               variant="secondary"
-              height={56}
+              height={44}
               onPress={resetLevel}
               disabled={paused}
               style={styles.actionBtn}
@@ -334,7 +338,7 @@ export default function Sudoku({ difficulty }: Props) {
 
             <PremiumButton
               variant="secondary"
-              height={56}
+              height={44}
               onPress={handleHint}
               disabled={remainingHints <= 0 || hintCooldown > 0 || gameWon || paused}
               style={styles.actionBtn}
@@ -371,28 +375,26 @@ export default function Sudoku({ difficulty }: Props) {
           />
         )}
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     viewRoot: {
+      flex: 1,
       backgroundColor: colors.background,
-    },
-    scrollContainer: {
-      flexGrow: 1,
     },
     container: {
       flex: 1,
-      padding: spacing.md,
+      padding: spacing.sm,
     },
     statsRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginTop: spacing.sm,
-      paddingHorizontal: spacing.sm,
+      marginTop: 2,
+      paddingHorizontal: spacing.xs,
     },
     hintsContainer: {
       flexDirection: 'row',
@@ -419,10 +421,10 @@ const getStyles = (colors: ThemeColors) =>
     },
     gameContainer: {
       alignItems: 'center',
-      marginTop: spacing.lg,
+      marginTop: spacing.xs,
     },
     board: {
-      backgroundColor: colors.border,
+      backgroundColor: colors.textSecondary,
       padding: 2,
       borderRadius: radius.xs,
     },
@@ -432,7 +434,6 @@ const getStyles = (colors: ThemeColors) =>
     cell: {
       justifyContent: 'center',
       alignItems: 'center',
-      borderColor: colors.border,
     },
     cellText: {
       fontSize: 22,
@@ -449,21 +450,21 @@ const getStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       flexWrap: 'wrap',
       justifyContent: 'center',
-      marginTop: spacing.xl,
-      gap: spacing.sm,
+      marginTop: 8,
+      gap: spacing.xs,
     },
     numberButton: {
-      width: 60,
+      width: 52,
     },
     numberText: {
-      fontSize: 22,
+      fontSize: 20,
       fontWeight: '900',
       color: colors.text,
     },
     actions: {
       flexDirection: 'row',
-      gap: spacing.md,
-      marginTop: spacing.xl,
+      gap: spacing.sm,
+      marginTop: 8,
       width: '100%',
     },
     actionBtn: {
@@ -471,7 +472,7 @@ const getStyles = (colors: ThemeColors) =>
     },
     actionText: {
       fontWeight: '900',
-      fontSize: 14,
+      fontSize: 13,
       color: colors.text,
       letterSpacing: 0.5,
     },

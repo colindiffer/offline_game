@@ -32,6 +32,8 @@ export default function Maze({ difficulty }: Props) {
   const [playerPos, setPlayerPos] = useState({ row: 0, col: 0 });
   const [gameWon, setGameWon] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [finalTime, setFinalTime] = useState(0);
+  const [timerStarted, setTimerStarted] = useState(false);
   const [highScore, setHighScoreState] = useState<number | null>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -55,7 +57,7 @@ export default function Maze({ difficulty }: Props) {
   }, [difficulty]);
 
   useEffect(() => {
-    if (!gameWon && isReady && startTimeRef.current) {
+    if (!gameWon && isReady && timerStarted) {
       timerRef.current = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - startTimeRef.current!) / 1000));
       }, 1000);
@@ -64,7 +66,7 @@ export default function Maze({ difficulty }: Props) {
       timerRef.current = null;
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [gameWon, isReady]);
+  }, [gameWon, isReady, timerStarted]);
 
   const movePlayer = useCallback(
     (direction: 'up' | 'down' | 'left' | 'right') => {
@@ -72,6 +74,7 @@ export default function Maze({ difficulty }: Props) {
 
       if (!startTimeRef.current) {
         startTimeRef.current = Date.now();
+        setTimerStarted(true);
       }
 
       let currentRow = playerPos.row;
@@ -96,12 +99,13 @@ export default function Maze({ difficulty }: Props) {
         if (hasWon(currentRow, currentCol, config.rows, config.cols)) {
           setGameWon(true);
           playSound('win');
-          const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
-          recordGameResult('maze', 'win', finalTime);
+          const elapsed = Math.floor((Date.now() - startTimeRef.current!) / 1000);
+          setFinalTime(elapsed);
+          recordGameResult('maze', 'win', elapsed);
 
-          if (highScore === null || finalTime < highScore || highScore === 0) {
-            setHighScoreState(finalTime);
-            setHighScore('maze', finalTime, difficulty);
+          if (highScore === null || elapsed < highScore || highScore === 0) {
+            setHighScoreState(elapsed);
+            setHighScore('maze', elapsed, difficulty);
           }
           
           const nextLvl = level + 1;
@@ -132,6 +136,8 @@ export default function Maze({ difficulty }: Props) {
     setPlayerPos({ row: 0, col: 0 });
     setGameWon(false);
     setElapsedTime(0);
+    setFinalTime(0);
+    setTimerStarted(false);
     startTimeRef.current = null;
   }, [difficulty]);
 
@@ -140,6 +146,8 @@ export default function Maze({ difficulty }: Props) {
     setPlayerPos({ row: 0, col: 0 });
     setGameWon(false);
     setElapsedTime(0);
+    setFinalTime(0);
+    setTimerStarted(false);
     startTimeRef.current = null;
   }, [difficulty, level]);
 
@@ -210,7 +218,7 @@ export default function Maze({ difficulty }: Props) {
         <GameOverOverlay
           result="win"
           title="LEVEL ESCAPED!"
-          subtitle={`Solved in ${elapsedTime} seconds.`}
+          subtitle={finalTime > 0 ? `Solved in ${finalTime} seconds.` : 'Level escaped!'}
           onPlayAgain={nextLevel}
           onPlayAgainLabel="NEXT LEVEL"
         />

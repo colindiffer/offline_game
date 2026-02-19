@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Platform, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GameMetadata } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
@@ -132,11 +132,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     zIndex: 2,
   },
-  icon: { 
+  icon: {
     fontSize: 72,
     textShadowColor: 'rgba(0,0,0,0.25)',
     textShadowOffset: { width: 0, height: 8 },
     textShadowRadius: 10,
+    fontFamily: Platform.OS === 'android' ? 'sans-serif' : undefined,
   },
   customIconContainer: {
     transform: [{ rotate: '-15deg' }],

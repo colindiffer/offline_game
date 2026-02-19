@@ -310,7 +310,7 @@ export default function Blackjack({ difficulty }: Props) {
               <PremiumButton variant="primary" height={64} style={styles.actionBtn} onPress={handleHit}>
                 <Text style={styles.actionBtnText}>HIT</Text>
               </PremiumButton>
-              <PremiumButton variant="secondary" height={64} style={styles.actionBtn} onPress={handleStand}>
+              <PremiumButton variant="warning" height={64} style={styles.actionBtn} onPress={handleStand}>
                 <Text style={styles.actionBtnText}>STAND</Text>
               </PremiumButton>
             </View>
@@ -358,7 +358,7 @@ const getStyles = (colors: ThemeColors) =>
       borderWidth: 8,
       borderColor: '#2d3436', // Dark frame
       justifyContent: 'space-between',
-      paddingVertical: spacing.xl,
+      paddingVertical: spacing.md,
     },
     dealerSection: {
       alignItems: 'center',
@@ -407,7 +407,7 @@ const getStyles = (colors: ThemeColors) =>
       marginHorizontal: -CARD_WIDTH * 0.25,
     },
     centerArea: {
-      height: 100,
+      minHeight: 60,
       justifyContent: 'center',
       alignItems: 'center',
     },
@@ -449,7 +449,7 @@ const getStyles = (colors: ThemeColors) =>
     },
     controls: {
       padding: spacing.lg,
-      paddingBottom: Platform.OS === 'ios' ? spacing.xxl : spacing.lg,
+      paddingBottom: Platform.OS === 'ios' ? spacing.xxl : spacing.xxl,
       backgroundColor: colors.surface,
       borderTopWidth: 1,
       borderTopColor: colors.border,

@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Animated, StyleSheet, TouchableOpacity, TouchableOpacityProps, View, ViewStyle, Text } from 'react-native';
+import { Animated, StyleSheet, TouchableOpacity, TouchableOpacityProps, View, ViewStyle, Text, StyleProp } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { spacing, radius, shadows } from '../utils/designTokens';
 
@@ -10,7 +10,7 @@ interface Props extends TouchableOpacityProps {
     variant?: PremiumButtonVariant;
     depth?: number;
     height?: number;
-    contentStyle?: ViewStyle;
+    contentStyle?: StyleProp<ViewStyle>;
 }
 
 export default function PremiumButton({

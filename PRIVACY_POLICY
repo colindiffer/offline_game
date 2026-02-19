@@ -1,0 +1,44 @@
+    1 # Privacy Policy for Classic Offline Games Room
+    2
+    3 **Effective Date: February 19, 2026**
+    4
+    5 Classic Offline Games Room ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and
+      disclose information when you use our mobile application.
+    6
+    7 ## 1. Information We Collect
+    8
+    9 ### 1.1 Information Collected Automatically
+   10 When you use the app, we may collect certain information automatically, including:
+   11 *   **Usage Data:** Information about how you interact with the app, such as games played, high scores, and time spent in the app.
+   12 *   **Device Information:** We may collect information about your mobile device, such as device model, operating system version, and unique device
+      identifiers.
+   13
+   14 ### 1.2 Third-Party Services
+   15 We use third-party services that may collect information used to identify you:
+   16 *   **Google Play Services:** Used for app functionality and updates.
+   17 *   **Google AdMob:** We use Google AdMob to display advertisements. AdMob may collect and use data (such as advertising IDs) to show personalized or
+      non-personalized ads.
+   18 *   **Firebase Analytics:** We use Firebase to understand app usage and improve the user experience.
+   19
+   20 ## 2. How We Use Your Information
+   21 We use the information we collect to:
+   22 *   Provide and maintain the app's functionality.
+   23 *   Improve and personalize your experience.
+   24 *   Monitor and analyze usage and trends.
+   25 *   Show relevant advertisements.
+   26
+   27 ## 3. Data Storage and Offline Support
+   28 Most of your game data (high scores, settings) is stored locally on your device using `AsyncStorage`. This data remains on your device unless you clea
+      the app's cache or uninstall it.
+   29
+   30 ## 4. Children's Privacy
+   31 Our app is intended for a general audience. We do not knowingly collect personally identifiable information from children under 13.
+   32
+   33 ## 5. Your Choices
+   34 You can manage your ad preferences through your device settings (e.g., "Limit Ad Tracking" on iOS or "Opt out of Interest-Based Ads" on Android).
+   35
+   36 ## 6. Changes to This Privacy Policy
+   37 We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.
+   38
+   39 ## 7. Contact Us
+   40 If you have any questions about this Privacy Policy, please contact us at: colindiffer@gmail.com

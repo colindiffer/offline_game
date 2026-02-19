@@ -19,7 +19,7 @@ import { Card } from '../../types/cards';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_PADDING = 16;
 const AVAILABLE_WIDTH = SCREEN_WIDTH - (SCREEN_PADDING * 2);
-const CARD_WIDTH = Math.floor(AVAILABLE_WIDTH / 4.5);
+const CARD_WIDTH = Math.floor(AVAILABLE_WIDTH / 5.5);
 const CARD_HEIGHT = Math.floor(CARD_WIDTH * 1.4);
 const OVERLAP = (13 * CARD_WIDTH - AVAILABLE_WIDTH) / 12;
 

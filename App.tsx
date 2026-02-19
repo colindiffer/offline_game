@@ -16,7 +16,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function AppContent() {
   const { colors, themeId } = useTheme();
   const navRef = useRef<NavigationContainerRef<RootStackParamList>>(null);
-  const routeNameRef = useRef<string | undefined>();
+  const routeNameRef = useRef<string | undefined>(undefined);
 
   return (
     <NavigationContainer
@@ -57,8 +57,8 @@ function AppContent() {
               snake: 'Snake',
               '2048': '2048',
               'minesweeper': 'Minesweeper',
-              'connect-four': 'Connect Four',
-              'tetris': 'Tetris',
+              'connect-four': '4 in a Row',
+              'tetris': 'Block Drop',
               'maze': 'Maze',
               'solitaire': 'Solitaire',
               'sudoku': 'Sudoku',
@@ -77,6 +77,12 @@ function AppContent() {
               'memory-match': 'Memory Match',
               'word-guess': 'Word Guess',
               'spider-solitaire': 'Spider Solitaire',
+              'battleship': 'Sea Battle',
+              'spades': 'Spades',
+              'code-breaker': 'Code Breaker',
+              'freecell': 'FreeCell',
+              'dominoes': 'Dominoes',
+              'backgammon': 'Backgammon',
             };
             return {
               title: titles[route.params.gameId],

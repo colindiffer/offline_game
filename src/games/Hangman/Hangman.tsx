@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Dimensions, Platform } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Dimensions, Platform, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
 import GameOverOverlay from '../../components/GameOverOverlay';
@@ -78,21 +78,21 @@ export default function Hangman({ difficulty }: Props) {
 
   const renderHangman = () => {
     const attempts = gameState.incorrectAttempts;
+    const max = gameState.maxAttempts;
+    // Each of the 10 visual stages appears proportionally to maxAttempts
+    const t = (part: number) => attempts >= Math.ceil((part / 10) * max);
     return (
       <View style={styles.hangmanDrawing}>
-        {/* Gallows */}
-        <View style={styles.base} />
-        <View style={styles.upright} />
-        <View style={styles.topBeam} />
-        <View style={styles.rope} />
-        
-        {/* Person */}
-        {attempts > 0 && <View style={styles.head} />}
-        {attempts > 1 && <View style={styles.body} />}
-        {attempts > 2 && <View style={styles.leftArm} />}
-        {attempts > 3 && <View style={styles.rightArm} />}
-        {attempts > 4 && <View style={styles.leftLeg} />}
-        {attempts > 5 && <View style={styles.rightLeg} />}
+        {t(1) && <View style={styles.base} />}
+        {t(2) && <View style={styles.upright} />}
+        {t(3) && <View style={styles.topBeam} />}
+        {t(4) && <View style={styles.rope} />}
+        {t(5) && <View style={styles.head} />}
+        {t(6) && <View style={styles.body} />}
+        {t(7) && <View style={styles.leftArm} />}
+        {t(8) && <View style={styles.rightArm} />}
+        {t(9) && <View style={styles.leftLeg} />}
+        {t(10) && <View style={styles.rightLeg} />}
       </View>
     );
   };
@@ -101,13 +101,17 @@ export default function Hangman({ difficulty }: Props) {
     <View style={styles.container}>
       <Text style={styles.bgIcon}>😵</Text>
       <Header title="Hangman" score={level} scoreLabel="LEVEL" highScore={highScore} highScoreLabel="BEST" />
-      
+
       <View style={styles.levelHeader}>
         <Text style={styles.themeText}>{gameState.theme}</Text>
         <Text style={styles.levelText}>Level {level}</Text>
       </View>
 
-      <View style={styles.gameArea}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {renderHangman()}
 
         <View style={styles.wordDisplay}>
@@ -144,19 +148,19 @@ export default function Hangman({ difficulty }: Props) {
             );
           })}
         </View>
-      </View>
 
-      <View style={styles.footer}>
-        <PremiumButton variant="secondary" height={50} onPress={resetLevel}>
-          <Text style={styles.footerText}>RESET LEVEL</Text>
-        </PremiumButton>
-      </View>
+        <View style={styles.footer}>
+          <PremiumButton variant="secondary" height={50} onPress={resetLevel}>
+            <Text style={styles.footerText}>RESET LEVEL</Text>
+          </PremiumButton>
+        </View>
+      </ScrollView>
 
       {(gameState.gameOver || gameState.gameWon) && (
-        <GameOverOverlay 
-          result={gameState.gameWon ? 'win' : 'lose'} 
-          title={gameState.gameWon ? 'SURVIVED!' : 'GAME OVER'} 
-          subtitle={gameState.gameWon ? 'You guessed it!' : `The word was: ${gameState.word}`} 
+        <GameOverOverlay
+          result={gameState.gameWon ? 'win' : 'lose'}
+          title={gameState.gameWon ? 'SURVIVED!' : 'GAME OVER'}
+          subtitle={gameState.gameWon ? 'You guessed it!' : `The word was: ${gameState.word}`}
           onPlayAgain={gameState.gameWon ? nextLevel : resetLevel}
           onPlayAgainLabel={gameState.gameWon ? "NEXT LEVEL" : "TRY AGAIN"}
         />
@@ -171,11 +175,12 @@ interface Props {
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  levelHeader: { alignItems: 'center', marginTop: spacing.md },
+  levelHeader: { alignItems: 'center', marginTop: spacing.sm },
   themeText: { color: colors.primary, fontSize: 12, fontWeight: '900', letterSpacing: 2 },
   levelText: { color: colors.text, fontSize: 24, fontWeight: '900' },
-  gameArea: { flex: 1, padding: spacing.md, alignItems: 'center', justifyContent: 'space-between' },
-  hangmanDrawing: { width: 200, height: 200, position: 'relative', marginTop: 20 },
+  scroll: { flex: 1 },
+  scrollContent: { alignItems: 'center', paddingHorizontal: spacing.md, paddingBottom: spacing.xxxl },
+  hangmanDrawing: { width: 200, height: 200, position: 'relative', marginTop: spacing.sm, marginBottom: spacing.sm },
   base: { position: 'absolute', bottom: 0, width: 100, height: 4, backgroundColor: colors.text, left: 0 },
   upright: { position: 'absolute', bottom: 0, left: 20, width: 4, height: 180, backgroundColor: colors.text },
   topBeam: { position: 'absolute', top: 20, left: 20, width: 100, height: 4, backgroundColor: colors.text },
@@ -186,16 +191,16 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   rightArm: { position: 'absolute', top: 100, left: 118, width: 20, height: 3, backgroundColor: colors.text, transform: [{ rotate: '30deg' }] },
   leftLeg: { position: 'absolute', top: 138, left: 100, width: 25, height: 3, backgroundColor: colors.text, transform: [{ rotate: '-45deg' }] },
   rightLeg: { position: 'absolute', top: 138, left: 108, width: 25, height: 3, backgroundColor: colors.text, transform: [{ rotate: '45deg' }] },
-  wordDisplay: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginVertical: 30 },
+  wordDisplay: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 10, marginVertical: spacing.md },
   letterSlot: { width: 25, alignItems: 'center' },
   letterText: { fontSize: 20, fontWeight: '900', color: colors.text, marginBottom: 2 },
   underline: { width: '100%', height: 3, backgroundColor: colors.primary, borderRadius: 2 },
-  keyboard: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, paddingBottom: 20 },
-  key: { width: (SCREEN_WIDTH - 80) / 7, height: 40, backgroundColor: colors.card, borderRadius: radius.sm, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border },
+  keyboard: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, width: '100%' },
+  key: { width: (SCREEN_WIDTH - 80) / 7, height: 38, backgroundColor: colors.card, borderRadius: radius.sm, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: colors.border },
   keyCorrect: { backgroundColor: colors.success + '40', borderColor: colors.success },
   keyWrong: { backgroundColor: colors.error + '40', borderColor: colors.error },
   keyText: { color: colors.text, fontWeight: 'bold' },
-  footer: { padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
+  footer: { width: '100%', paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
   footerText: { color: colors.text, fontWeight: 'bold' },
   bgIcon: {
     position: 'absolute',

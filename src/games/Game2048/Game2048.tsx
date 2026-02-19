@@ -146,7 +146,7 @@ export default function Game2048({ difficulty }: Props) {
   useEffect(() => {
     if (Platform.OS !== 'web') return;
     const handler = (e: KeyboardEvent) => {
-      if (gameOver || paused) return;
+      if (lost || paused) return;
       const map: Record<string, 'left' | 'right' | 'up' | 'down'> = {
         ArrowLeft: 'left',
         ArrowRight: 'right',

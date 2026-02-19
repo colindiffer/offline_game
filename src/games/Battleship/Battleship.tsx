@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Animated, useWindowDimensions, Platform } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Animated, ScrollView, useWindowDimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
 import GameOverOverlay from '../../components/GameOverOverlay';
@@ -202,7 +202,7 @@ export default function Battleship({ difficulty }: Props) {
     <View style={styles.container}>
       <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
       <Header
-        title="Battleship"
+        title="Sea Battle"
         score={enemyShipsSunk}
         scoreLabel="SUNK"
         highScore={5}
@@ -230,7 +230,7 @@ export default function Battleship({ difficulty }: Props) {
           </PremiumButton>
         </View>
       ) : (
-        <View style={styles.gameArea}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.gameArea} showsVerticalScrollIndicator={false}>
           <View style={styles.boardLabelContainer}>
             <Text style={styles.boardLabel}>ENEMY RADAR</Text>
             <View style={styles.statsBadge}>
@@ -252,7 +252,7 @@ export default function Battleship({ difficulty }: Props) {
                 <Text style={styles.enemyThinkingText}>ENEMY STRIKE INCOMING...</Text>
             </View>
           )}
-        </View>
+        </ScrollView>
       )}
 
       {gameState.winner && (
@@ -289,7 +289,7 @@ const getStyles = (colors: ThemeColors, CELL_SIZE: number, SCREEN_PADDING: numbe
   shipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
   miniShip: { height: 12, backgroundColor: colors.textSecondary, borderRadius: 6, opacity: 0.6 },
   startBtnText: { color: colors.textOnPrimary, fontWeight: '900', fontSize: 18, letterSpacing: 1 },
-  gameArea: { flex: 1, paddingHorizontal: SCREEN_PADDING, alignItems: 'center', justifyContent: 'center', paddingBottom: 40 },
+  gameArea: { flexGrow: 1, paddingHorizontal: SCREEN_PADDING, alignItems: 'center', justifyContent: 'center', paddingBottom: 60, paddingTop: spacing.md },
   boardLabelContainer: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', alignItems: 'center', marginBottom: spacing.xs },
   boardLabel: { fontSize: 12, fontWeight: '900', color: colors.textSecondary, letterSpacing: 1.5 },
   statsBadge: { backgroundColor: colors.card, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border },
@@ -317,6 +317,6 @@ const getStyles = (colors: ThemeColors, CELL_SIZE: number, SCREEN_PADDING: numbe
   missCell: { backgroundColor: 'rgba(255, 255, 255, 0.05)' },
   missDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.4)' },
   cellIcon: { fontSize: CELL_SIZE * 0.7 },
-  enemyThinking: { position: 'absolute', bottom: 40, backgroundColor: colors.error, paddingHorizontal: 20, paddingVertical: 10, borderRadius: radius.full, ...shadows.lg },
+  enemyThinking: { marginTop: spacing.lg, backgroundColor: colors.error, paddingHorizontal: 20, paddingVertical: 10, borderRadius: radius.full, ...shadows.lg },
   enemyThinkingText: { color: colors.textOnPrimary, fontWeight: 'bold', fontSize: 12 },
 });

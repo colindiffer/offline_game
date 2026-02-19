@@ -7,6 +7,7 @@ import GameOverOverlay from '../../components/GameOverOverlay';
 import PremiumButton from '../../components/PremiumButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getHighScore, setHighScore } from '../../utils/storage';
 import { recordGameResult } from '../../utils/stats';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
@@ -30,6 +31,8 @@ interface Props {
   difficulty: Difficulty;
 }
 
+const getSaveKey = (diff: string) => `@connect-four-state-${diff}`;
+
 export default function ConnectFour({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
@@ -49,22 +52,37 @@ export default function ConnectFour({ difficulty }: Props) {
     getHighScore('connect-four', difficulty).then(setHighScoreState);
   }, [difficulty]);
 
+  // Restore saved game state on mount
   useEffect(() => {
-    startTimeRef.current = Date.now();
+    AsyncStorage.getItem(getSaveKey(difficulty)).then(saved => {
+      if (saved) {
+        try {
+          const { board: savedBoard, currentPlayer: savedPlayer, score: savedScore } = JSON.parse(saved);
+          setBoard(savedBoard);
+          setCurrentPlayer(savedPlayer);
+          setScore(savedScore || 0);
+        } catch (_) { /* ignore corrupt data */ }
+      }
+      startTimeRef.current = Date.now();
+    });
   }, []);
 
   useEffect(() => {
     if (winner || isDraw) {
       const gameDuration = Math.floor((Date.now() - startTimeRef.current!) / 1000);
-      let result: 'win' | 'loss';
-      if (winner === 'R') {
-        result = 'win';
-      } else {
-        result = 'loss'; // AI wins or draw
-      }
+      const result: 'win' | 'loss' = winner === 'R' ? 'win' : 'loss';
       recordGameResult('connect-four', result, gameDuration);
+      // Game over — clear saved state
+      AsyncStorage.removeItem(getSaveKey(difficulty));
     }
   }, [winner, isDraw]);
+
+  // Persist board state after every move (only during an active game)
+  useEffect(() => {
+    if (!winner && !isDraw && startTimeRef.current) {
+      AsyncStorage.setItem(getSaveKey(difficulty), JSON.stringify({ board, currentPlayer, score }));
+    }
+  }, [board, currentPlayer]);
 
   const columnAnimations = useRef(
     Array(BOARD_COLS)
@@ -161,6 +179,7 @@ export default function ConnectFour({ difficulty }: Props) {
   }, [board, makeMove]);
 
   const resetGame = useCallback(() => {
+    AsyncStorage.removeItem(getSaveKey(difficulty));
     setBoard(createEmptyBoard(difficulty));
     setCurrentPlayer('R');
     setWinner(null);

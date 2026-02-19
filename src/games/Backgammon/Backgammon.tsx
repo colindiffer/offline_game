@@ -270,7 +270,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   whiteChecker: { backgroundColor: '#f5f6fa' },
   redChecker: { backgroundColor: '#2d3436' }, // Black checkers like screenshot
-  selectedChecker: { borderWidth: 3, borderColor: '#e17055', scale: 1.1 },
+  selectedChecker: { borderWidth: 3, borderColor: '#e17055', transform: [{ scale: 1.1 }] },
   selectedPoint: { opacity: 0.9 },
   bar: { width: 14, backgroundColor: '#3e2723', alignItems: 'center', justifyContent: 'center' },
   homeZone: { backgroundColor: 'rgba(0,0,0,0.1)', padding: spacing.sm, borderRadius: radius.md, marginTop: spacing.md, alignItems: 'center' },

@@ -164,17 +164,18 @@ export default function BrickBreaker({ difficulty }: Props) {
       setGameState(newState);
     });
 
-  const nextLevel = useCallback(async () => {
-    const savedLevel = await getLevel('brick-breaker', difficulty);
-    setLevelState(savedLevel);
-    const newState = initializeBrickBreaker(difficulty, BOARD_WIDTH, BOARD_HEIGHT, savedLevel);
+  const nextLevel = useCallback(() => {
+    const nextLvl = level + 1;
+    setLevel('brick-breaker', difficulty, nextLvl);
+    setLevelState(nextLvl);
+    const newState = initializeBrickBreaker(difficulty, BOARD_WIDTH, BOARD_HEIGHT, nextLvl);
     setGameState(newState);
     stateRef.current = newState;
     setScore(0);
     scoreRef.current = 0;
-    setIsPlaying(false);
-    startTimeRef.current = null;
-  }, [difficulty]);
+    setIsPlaying(true);
+    startTimeRef.current = Date.now();
+  }, [difficulty, level]);
 
   const resetGame = useCallback(() => {
     const newState = initializeBrickBreaker(difficulty, BOARD_WIDTH, BOARD_HEIGHT, level);

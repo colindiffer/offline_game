@@ -399,7 +399,7 @@ const getStyles = (colors: ThemeColors) =>
       backgroundColor: colors.primary + '60',
     },
     lastMoveCell: {
-      backgroundColor: colors.primary + '20',
+      backgroundColor: 'rgba(255, 214, 0, 0.35)',
     },
     pieceText: {
       fontSize: CELL_SIZE * 0.7,
@@ -407,9 +407,9 @@ const getStyles = (colors: ThemeColors) =>
     },
     whitePiece: {
       color: '#ffffff',
-      textShadowColor: 'rgba(0,0,0,0.3)',
+      textShadowColor: 'rgba(0,0,0,0.85)',
       textShadowOffset: { width: 1, height: 1 },
-      textShadowRadius: 2,
+      textShadowRadius: 4,
     },
     blackPiece: {
       color: '#2d3436',

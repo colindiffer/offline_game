@@ -16,7 +16,7 @@ import { initializeMemoryMatch, MemoryCard } from './logic';
 export default function MemoryMatch({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
-  const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const GRID_WIDTH = SCREEN_WIDTH - 24;
   const styles = useMemo(() => getStyles(colors), [colors]);
 
@@ -120,7 +120,12 @@ export default function MemoryMatch({ difficulty }: Props) {
   if (!isReady) return <View style={styles.container} />;
 
   const cols = cards.length > 24 ? 6 : cards.length > 12 ? 4 : 3;
-  const cardSize = Math.floor((GRID_WIDTH - (cols * 4)) / cols);
+  const rows = Math.ceil(cards.length / cols);
+  // Available height: screen minus header (~56px), footer (~70px), padding (~40px)
+  const availableHeight = SCREEN_HEIGHT - 56 - 70 - 40;
+  const cardSizeFromWidth = Math.floor((GRID_WIDTH - (cols * 4)) / cols);
+  const cardSizeFromHeight = Math.floor((availableHeight - (rows * 4)) / rows / 1.3);
+  const cardSize = Math.min(cardSizeFromWidth, cardSizeFromHeight);
 
   return (
     <View style={styles.container}>
@@ -185,7 +190,7 @@ interface Props {
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  gameArea: { flex: 1, justifyContent: 'flex-start', alignItems: 'center', paddingTop: spacing.lg },
+  gameArea: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: spacing.sm },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center' },
   card: { flex: 1, borderRadius: 12, ...shadows.md, overflow: 'hidden' },
   cardBack: { backgroundColor: '#4834d4', borderWidth: 3, borderColor: 'rgba(255,255,255,0.2)' },

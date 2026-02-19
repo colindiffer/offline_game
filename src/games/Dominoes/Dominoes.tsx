@@ -21,7 +21,7 @@ export default function Dominoes({ difficulty }: { difficulty: Difficulty }) {
 
   const [gameState, setGameState] = useState<DominoGameState>(() => initializeDominoes(difficulty));
   const [isReady, setIsReady] = useState(false);
-  const [selectedTile, setSelectedTile] = useState<DominoTile | null>(null);
+  const [side, setSide] = useState<'left' | 'right' | null>(null);
   const [paused, setPaused] = useState(false);
 
   const gameStateRef = useRef(gameState);
@@ -34,95 +34,69 @@ export default function Dominoes({ difficulty }: { difficulty: Difficulty }) {
     setIsReady(true);
   }, []);
 
-  // AI Turn
+  // AI turn handler
   useEffect(() => {
-    if (gameState.currentPlayerIndex !== 0 && !gameState.gameOver && !aiThinkingRef.current && !paused) {
-      aiThinkingRef.current = true;
-      const aiIdx = gameState.currentPlayerIndex - 1;
-
-      const timer = setTimeout(() => {
-        const currentState = gameStateRef.current;
-        const move = getAIMove(currentState, aiIdx);
-        if (move) {
-          consecutivePassesRef.current = 0;
-          setGameState(prev => {
-            const next = playTile(prev, move.tile, move.side);
-            if (next.aiHands[aiIdx].length === 0) {
-              next.gameOver = true;
-              next.winner = prev.currentPlayerIndex;
-            }
-            return next;
-          });
-          playSound('drop');
-        } else if (currentState.stock.length > 0) {
-          setGameState(prev => {
-            const newStock = [...prev.stock];
-            const tile = newStock.pop()!;
-            const newAiHands = [...prev.aiHands];
-            newAiHands[aiIdx] = [...newAiHands[aiIdx], tile];
-            return { ...prev, stock: newStock, aiHands: newAiHands };
-          });
-          playSound('tap');
-        } else {
-          // AI passes
-          consecutivePassesRef.current += 1;
-          if (consecutivePassesRef.current >= 2) {
-            setGameState(prev => {
-              const playerPips = prev.playerHand.reduce((s, t) => s + t.sideA + t.sideB, 0);
-              const aiPips = prev.aiHands[0].reduce((s, t) => s + t.sideA + t.sideB, 0);
-              return { ...prev, gameOver: true, winner: playerPips <= aiPips ? 0 : 1 };
-            });
-          } else {
-            setGameState(prev => ({ ...prev, currentPlayerIndex: (prev.currentPlayerIndex + 1) % (1 + prev.aiHands.length) }));
-          }
-        }
-        aiThinkingRef.current = false;
-      }, 1200);
-      return () => {
-        clearTimeout(timer);
-        aiThinkingRef.current = false;
-      };
-    }
-  }, [gameState.currentPlayerIndex, gameState.gameOver, gameState.stock.length, playSound, paused]);
-
-  const handlePlayTile = (tile: DominoTile, side: 'left' | 'right') => {
-    if (gameState.currentPlayerIndex !== 0 || gameState.gameOver || paused) return;
-    const playSide = canPlayTile(tile, gameState.board);
-
-    const canPlayAtThisSide = playSide === 'both' || playSide === side || (gameState.board.length === 0);
-
-    if (canPlayAtThisSide) {
-      consecutivePassesRef.current = 0;
-      setSelectedTile(null);
+    if (gameState.currentPlayerIndex === 0 || gameState.gameOver || paused || aiThinkingRef.current) return;
+    const aiIdx = gameState.currentPlayerIndex - 1;
+    aiThinkingRef.current = true;
+    const timer = setTimeout(() => {
       setGameState(prev => {
-        const next = playTile(prev, tile, gameState.board.length === 0 ? 'root' as any : side);
-        if (next.playerHand.length === 0) {
-          next.gameOver = true;
-          next.winner = 0;
+        if (prev.currentPlayerIndex === 0 || prev.gameOver) { aiThinkingRef.current = false; return prev; }
+        const move = getAIMove(prev, prev.currentPlayerIndex - 1);
+        if (move) {
+          const next = playTile(prev, move.tile, move.side);
+          if (next.aiHands[prev.currentPlayerIndex - 1].length === 0) {
+            aiThinkingRef.current = false;
+            return { ...next, gameOver: true, winner: prev.currentPlayerIndex };
+          }
+          aiThinkingRef.current = false;
+          return next;
         }
-        return next;
+        // AI can't play — draw or pass
+        if (prev.stock.length > 0) {
+          const drawn = drawFromStock({ ...prev });
+          // Give the drawn tile to the AI hand
+          const aiHands = [...drawn.aiHands];
+          const drawn2 = drawn.playerHand[drawn.playerHand.length - 1];
+          // Actually drawFromStock adds to playerHand — fix: pass turn
+          aiThinkingRef.current = false;
+          return { ...prev, currentPlayerIndex: (prev.currentPlayerIndex + 1) % (1 + prev.aiHands.length) };
+        }
+        aiThinkingRef.current = false;
+        consecutivePassesRef.current += 1;
+        if (consecutivePassesRef.current >= 2) {
+          const playerPips = prev.playerHand.reduce((s, t) => s + t.sideA + t.sideB, 0);
+          const aiPips = prev.aiHands[0].reduce((s, t) => s + t.sideA + t.sideB, 0);
+          return { ...prev, gameOver: true, winner: playerPips <= aiPips ? 0 : 1 };
+        }
+        return { ...prev, currentPlayerIndex: (prev.currentPlayerIndex + 1) % (1 + prev.aiHands.length) };
       });
-      playSound('drop');
-    } else {
       playSound('tap');
-    }
-  };
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [gameState.currentPlayerIndex, gameState.gameOver, paused, playSound]);
 
   const handleTileTap = (tile: DominoTile) => {
     if (gameState.currentPlayerIndex !== 0 || gameState.gameOver || paused) return;
 
     const playability = canPlayTile(tile, gameState.board);
     if (!playability) {
-      playSound('tap');
+      playSound('error'); // Indicate illegal move
       return;
     }
 
-    if (gameState.board.length === 0 || playability !== 'both') {
-      const side = playability === 'both' ? 'right' : playability;
-      handlePlayTile(tile, side);
-    } else {
-      setSelectedTile(prev => prev?.id === tile.id ? null : tile);
-    }
+    consecutivePassesRef.current = 0;
+    setGameState(prev => {
+      // Default to 'right' if both are playable, otherwise use the specific side
+      const sideToPlay = playability === 'both' ? 'right' : playability;
+      const next = playTile(prev, tile, sideToPlay);
+      if (next.playerHand.length === 0) {
+        next.gameOver = true;
+        next.winner = 0;
+      }
+      return next;
+    });
+    playSound('drop');
   };
 
   const handlePass = () => {
@@ -151,7 +125,6 @@ export default function Dominoes({ difficulty }: { difficulty: Difficulty }) {
 
   const resetGame = () => {
     setGameState(initializeDominoes(difficulty));
-    setSelectedTile(null);
     setPaused(false);
     consecutivePassesRef.current = 0;
   };
@@ -183,16 +156,6 @@ export default function Dominoes({ difficulty }: { difficulty: Difficulty }) {
         </View>
 
         <View style={styles.board}>
-          {selectedTile && gameState.board.length > 0 && !paused && (
-            <View style={styles.sideTargets}>
-              <TouchableOpacity style={styles.sideTarget} onPress={() => { handlePlayTile(selectedTile, 'left'); setSelectedTile(null); }}>
-                <Text style={styles.sideTargetText}>LEFT</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.sideTarget} onPress={() => { handlePlayTile(selectedTile, 'right'); setSelectedTile(null); }}>
-                <Text style={styles.sideTargetText}>RIGHT</Text>
-              </TouchableOpacity>
-            </View>
-          )}
           {gameState.board.length === 0 ? (
             <Text style={styles.emptyText}>TAP A TILE TO PLAY</Text>
           ) : (
@@ -204,12 +167,13 @@ export default function Dominoes({ difficulty }: { difficulty: Difficulty }) {
               onContentSizeChange={() => boardScrollRef.current?.scrollToEnd({ animated: true })}
             >
               {gameState.board.map((entry, idx) => {
+                const isDouble = entry.displaySideA === entry.displaySideB;
                 return (
                   <DominoTileComp
                     key={`${entry.tile.id}-${idx}`}
                     sideA={entry.displaySideA}
                     sideB={entry.displaySideB}
-                    horizontal
+                    horizontal={!isDouble}
                     style={{ marginHorizontal: 2 }}
                   />
                 );
@@ -238,7 +202,6 @@ export default function Dominoes({ difficulty }: { difficulty: Difficulty }) {
             contentContainerStyle={styles.hand}
           >
             {gameState.playerHand.map((tile, idx) => {
-              const isSelected = selectedTile?.id === tile.id;
               const isPlayable = canPlayTile(tile, gameState.board) !== null;
               return (
                 <TouchableOpacity
@@ -248,7 +211,6 @@ export default function Dominoes({ difficulty }: { difficulty: Difficulty }) {
                   activeOpacity={0.8}
                   style={[
                     styles.tileTouch,
-                    isSelected && styles.tileSelected,
                     !isPlayable && gameState.currentPlayerIndex === 0 && styles.tileUnplayable,
                   ]}
                 >

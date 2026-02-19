@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View, ScrollView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../contexts/ThemeContext';
 import { useSound } from '../contexts/SoundContext';
 import { clearAllHighScores } from '../utils/storage';
 import { clearAllStats } from '../utils/stats';
+import { isHapticEnabled, setHapticEnabled, triggerHaptic } from '../utils/haptics';
 import { THEMES, ThemeColors, ThemeId } from '../utils/themes';
 import { spacing, radius, shadows, typography } from '../utils/designTokens';
 
@@ -16,9 +17,21 @@ const THEME_NAMES: Record<ThemeId, string> = {
 export default function SettingsScreen() {
   const { colors, themeId, setTheme } = useTheme();
   const { isMuted, toggleMute } = useSound();
+  const [hapticEnabled, setHapticEnabledState] = useState(true);
   const [clearedHighScores, setClearedHighScores] = useState(false);
   const [clearedStats, setClearedStats] = useState(false);
   const styles = useMemo(() => getStyles(colors), [colors]);
+
+  useEffect(() => {
+    isHapticEnabled().then(setHapticEnabledState);
+  }, []);
+
+  const toggleHaptic = async () => {
+    const newVal = !hapticEnabled;
+    setHapticEnabledState(newVal);
+    await setHapticEnabled(newVal);
+    if (newVal) triggerHaptic('light');
+  };
 
   const handleClearHighScores = () => {
     Alert.alert(
@@ -112,6 +125,21 @@ export default function SettingsScreen() {
                 <View style={[styles.switchKnob, !isMuted ? styles.knobOn : styles.knobOff]} />
               </View>
             </TouchableOpacity>
+
+            {Platform.OS !== 'web' && (
+              <>
+                <View style={styles.divider} />
+                <TouchableOpacity style={styles.row} onPress={toggleHaptic} activeOpacity={0.6}>
+                  <View>
+                    <Text style={styles.settingTitle}>Haptic Feedback</Text>
+                    <Text style={styles.settingDesc}>Feel every win and move</Text>
+                  </View>
+                  <View style={[styles.switch, hapticEnabled ? styles.switchOn : styles.switchOff]}>
+                    <View style={[styles.switchKnob, hapticEnabled ? styles.knobOn : styles.knobOff]} />
+                  </View>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
         </View>
 

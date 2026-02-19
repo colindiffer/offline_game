@@ -14,6 +14,7 @@ interface Props {
   style?: any;
   width?: number;
   height?: number;
+  pointerEvents?: 'auto' | 'none' | 'box-none' | 'box-only';
 }
 
 const CARD_SIZES = {
@@ -22,7 +23,7 @@ const CARD_SIZES = {
   large: { width: 80, height: 120, fontSize: 32 },
 };
 
-export default function PlayingCard({ card, faceDown = false, size = 'medium', style, width, height }: Props) {
+export default function PlayingCard({ card, faceDown = false, size = 'medium', style, width, height, pointerEvents }: Props) {
   const { colors } = useTheme();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const cardSize = {
@@ -34,6 +35,7 @@ export default function PlayingCard({ card, faceDown = false, size = 'medium', s
   if (!card) {
     return (
       <View
+        pointerEvents={pointerEvents}
         style={[
           styles.card,
           styles.emptyCard,
@@ -47,6 +49,7 @@ export default function PlayingCard({ card, faceDown = false, size = 'medium', s
   if (faceDown) {
     return (
       <View
+        pointerEvents={pointerEvents}
         style={[
           styles.card,
           styles.cardBack,
@@ -71,6 +74,7 @@ export default function PlayingCard({ card, faceDown = false, size = 'medium', s
 
   return (
     <View
+      pointerEvents={pointerEvents}
       style={[
         styles.card,
         styles.cardFace,

@@ -6,6 +6,8 @@ import { ThemeColors } from '../utils/themes';
 import { spacing, radius, shadows, typography } from '../utils/designTokens';
 import PremiumButton from './PremiumButton';
 import { useNavigation } from '@react-navigation/native';
+import { useInterstitialAd } from '../lib/useInterstitialAd';
+import { triggerHaptic } from '../utils/haptics';
 
 export type GameResult = 'win' | 'lose' | 'draw' | 'paused';
 
@@ -32,6 +34,7 @@ export default function GameOverOverlay({
   const { colors } = useTheme();
   const navigation = useNavigation();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { showAd } = useInterstitialAd();
 
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const contentScale = useRef(new Animated.Value(0.9)).current;
@@ -58,6 +61,12 @@ export default function GameOverOverlay({
         useNativeDriver: true,
       }),
     ]).start();
+
+    if (result === 'win') {
+      triggerHaptic('success');
+    } else if (result === 'lose') {
+      triggerHaptic('error');
+    }
   }, []);
 
   const config = useMemo(() => {
@@ -66,34 +75,40 @@ export default function GameOverOverlay({
         return {
           icon: '🏆',
           color: colors.success,
-          gradient: ['#00b894', '#55efc4'],
+          gradient: ['#00b894', '#55efc4'] as any,
           btnLabel: onPlayAgainLabel || 'PLAY AGAIN',
         };
       case 'lose':
         return {
           icon: '💀',
           color: colors.error,
-          gradient: ['#d63031', '#ff7675'],
+          gradient: ['#d63031', '#ff7675'] as any,
           btnLabel: onPlayAgainLabel || 'TRY AGAIN',
         };
       case 'paused':
         return {
           icon: '⏸️',
           color: colors.primary,
-          gradient: [colors.primary, colors.accent],
+          gradient: [colors.primary, colors.accent] as any,
           btnLabel: onPlayAgainLabel || 'RESUME',
         };
       default:
         return {
           icon: '🤝',
           color: colors.warning,
-          gradient: ['#f1c40f', '#ffeaa7'],
+          gradient: ['#f1c40f', '#ffeaa7'] as any,
           btnLabel: onPlayAgainLabel || 'PLAY AGAIN',
         };
     }
   }, [result, colors, onPlayAgainLabel]);
 
+  const handlePlayAgain = () => {
+    if (result !== 'paused') showAd();
+    onPlayAgain();
+  };
+
   const handleQuit = () => {
+    if (result !== 'paused') showAd();
     if (secondaryAction) {
       secondaryAction.onPress();
     } else {
@@ -115,7 +130,7 @@ export default function GameOverOverlay({
         <View style={styles.card}>
           {/* Header Section */}
           <View style={styles.heroHeader}>
-            <LinearGradient colors={config.gradient} style={StyleSheet.absoluteFill} />
+            <LinearGradient colors={config.gradient as any} style={StyleSheet.absoluteFill} />
             <Text style={styles.heroIcon}>{config.icon}</Text>
             <View style={styles.headerGlow} />
           </View>
@@ -129,7 +144,7 @@ export default function GameOverOverlay({
               <PremiumButton
                 variant="primary"
                 height={56}
-                onPress={onPlayAgain}
+                onPress={handlePlayAgain}
                 style={styles.mainButton}
               >
                 <Text style={styles.buttonText}>{config.btnLabel}</Text>
