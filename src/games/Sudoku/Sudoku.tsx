@@ -187,6 +187,33 @@ export default function Sudoku({ difficulty }: Props) {
     return () => window.removeEventListener('keydown', handler);
   }, [handleNumberPress, handleClear, gameWon, selectedCell]);
 
+  const handleNewGame = useCallback(async () => {
+    const savedLevel = await getLevel('sudoku', difficulty);
+    setLevelState(savedLevel);
+    setBoard(generateSudoku(difficulty, savedLevel));
+    setSelectedCell(null);
+    setGameWon(false);
+    setElapsedTime(0);
+    setRemainingHints(3);
+    setHintCooldown(0);
+    setPaused(false);
+    startTimeRef.current = Date.now();
+  }, [difficulty]);
+
+  const handleRestart = useCallback(() => {
+    setBoard(prev => prev.map(row => row.map(cell => ({
+      ...cell,
+      value: cell.isFixed ? cell.value : 0
+    }))));
+    setSelectedCell(null);
+    setGameWon(false);
+    setElapsedTime(0);
+    setRemainingHints(3);
+    setHintCooldown(0);
+    setPaused(false);
+    startTimeRef.current = Date.now();
+  }, []);
+
   const nextLevel = useCallback(async () => {
     const savedLevel = await getLevel('sudoku', difficulty);
     setLevelState(savedLevel);
@@ -198,16 +225,6 @@ export default function Sudoku({ difficulty }: Props) {
     setHintCooldown(0);
     startTimeRef.current = Date.now();
   }, [difficulty]);
-
-  const resetLevel = useCallback(() => {
-    setBoard(generateSudoku(difficulty, level));
-    setSelectedCell(null);
-    setGameWon(false);
-    setElapsedTime(0);
-    setRemainingHints(3);
-    setHintCooldown(0);
-    startTimeRef.current = Date.now();
-  }, [difficulty, level]);
 
   if (!isReady) return <View style={styles.container} />;
 
@@ -329,11 +346,21 @@ export default function Sudoku({ difficulty }: Props) {
             <PremiumButton
               variant="secondary"
               height={44}
-              onPress={resetLevel}
+              onPress={handleRestart}
               disabled={paused}
               style={styles.actionBtn}
             >
-              <Text style={styles.actionText}>RESET LEVEL</Text>
+              <Text style={styles.actionText}>RESTART</Text>
+            </PremiumButton>
+
+            <PremiumButton
+              variant="secondary"
+              height={44}
+              onPress={handleNewGame}
+              disabled={paused}
+              style={styles.actionBtn}
+            >
+              <Text style={styles.actionText}>NEW GAME</Text>
             </PremiumButton>
 
             <PremiumButton
@@ -355,6 +382,8 @@ export default function Sudoku({ difficulty }: Props) {
             subtitle={`Finished in ${elapsedTime} seconds.`}
             onPlayAgain={nextLevel}
             onPlayAgainLabel="NEXT LEVEL"
+            onRestart={handleRestart}
+            onNewGame={handleNewGame}
           />
         )}
 
@@ -364,6 +393,8 @@ export default function Sudoku({ difficulty }: Props) {
             title="GAME PAUSED"
             onPlayAgain={() => setPaused(false)}
             onPlayAgainLabel="RESUME"
+            onRestart={handleRestart}
+            onNewGame={handleNewGame}
           />
         )}
 

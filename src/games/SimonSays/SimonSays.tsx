@@ -132,6 +132,15 @@ export default function SimonSays({ difficulty }: Props) {
     startLevel(level);
   }, [level, startLevel]);
 
+  const handleNewGame = useCallback(() => {
+    setLevelState(1);
+    startLevel(1);
+  }, [startLevel]);
+
+  const handleRestart = useCallback(() => {
+    resetLevel();
+  }, [resetLevel]);
+
   if (!isReady) return <View style={styles.container} />;
 
   return (
@@ -168,22 +177,26 @@ export default function SimonSays({ difficulty }: Props) {
       </View>
 
       {gameWon && (
-        <GameOverOverlay 
-          result="win" 
-          title="MEMORY MASTER!" 
-          subtitle={`Level ${level} complete.`} 
+        <GameOverOverlay
+          result="win"
+          title="MEMORY MASTER!"
+          subtitle={`Level ${level} complete.`}
           onPlayAgain={nextLevel}
           onPlayAgainLabel="NEXT LEVEL"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
 
       {gameOver && (
-        <GameOverOverlay 
-          result="lose" 
-          title="WRONG ORDER!" 
-          subtitle={`You reached Level ${level}.`} 
+        <GameOverOverlay
+          result="lose"
+          title="WRONG ORDER!"
+          subtitle={`You reached Level ${level}.`}
           onPlayAgain={resetLevel}
           onPlayAgainLabel="TRY AGAIN"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
 
@@ -50,24 +50,32 @@ export function useInterstitialAd() {
     };
   }, []);
 
-  const showAd = () => {
+  const showAd = useCallback((isFirstLevelOrGame: boolean = false) => {
+    if (isFirstLevelOrGame) {
+      console.log('InterstitialAd: Ad skipped because it is the first level/game.');
+      return;
+    }
+
     const now = Date.now();
-    const canShow = (now - lastShownTime) >= AD_COOLDOWN_MS;
+    const canShowDueToCooldown = (now - lastShownTime) >= AD_COOLDOWN_MS;
     console.log('InterstitialAd: Attempting to show ad.');
     console.log(`  - loaded: ${loaded}`);
-    console.log(`  - canShow (cooldown): ${canShow}`);
+    console.log(`  - canShowDueToCooldown: ${canShowDueToCooldown}`);
     console.log(`  - time since last shown: ${now - lastShownTime}ms (cooldown: ${AD_COOLDOWN_MS}ms)`);
 
-    if (loaded && canShow) {
+    if (loaded && canShowDueToCooldown) {
       console.log('InterstitialAd: Showing ad.');
       interstitial.show();
-    } else if (loaded && !canShow) {
+    } else if (loaded && !canShowDueToCooldown) {
       console.log('Ad skipped: Cooldown active');
+      // Ad is loaded but cooldown is active, try to load a new one for next time
+      interstitial.load();
     } else {
-      console.log('Ad not loaded yet. Attempting to load.');
+      console.log('Ad not loaded yet. Attempting to load for next opportunity.');
+      // Ad not loaded, try to load it. This will make it ready for the next call to showAd
       interstitial.load();
     }
-  };
+  }, [loaded]);
 
   return { showAd, loaded };
 }

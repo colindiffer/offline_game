@@ -214,6 +214,10 @@ export default function Hearts({ difficulty }: Props) {
     playSound('tap');
   }, [difficulty, playSound]);
 
+  const handleRestart = useCallback(() => {
+    handleNewGame();
+  }, [handleNewGame]);
+
   const getPassDirectionText = () => {
     switch (gameState.passDirection) {
       case 'left': return 'Pass 3 cards LEFT';
@@ -384,6 +388,8 @@ export default function Hearts({ difficulty }: Props) {
           subtitle={gameState.players.map(p => `${p.name}: ${p.totalScore} (+${p.score})`).join('\n')}
           onPlayAgain={handleNewRound}
           onPlayAgainLabel="CONTINUE"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
 
@@ -397,6 +403,8 @@ export default function Hearts({ difficulty }: Props) {
             .join('\n')}
           onPlayAgain={handleNewGame}
           onPlayAgainLabel="NEW GAME"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
 
@@ -406,6 +414,8 @@ export default function Hearts({ difficulty }: Props) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

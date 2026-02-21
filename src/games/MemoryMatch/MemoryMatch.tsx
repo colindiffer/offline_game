@@ -32,6 +32,7 @@ export default function MemoryMatch({ difficulty }: Props) {
   const startTimeRef = useRef<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const cardAnims = useRef<Animated.Value[]>([]).current;
+  const [paused, setPaused] = useState(false);
 
   // Initialize animations
   if (cardAnims.length === 0) {
@@ -40,27 +41,45 @@ export default function MemoryMatch({ difficulty }: Props) {
     }
   }
 
-  const init = useCallback(async () => {
-    const savedLevel = await getLevel('memory-match', difficulty);
-    const initialCards = initializeMemoryMatch(difficulty, savedLevel);
-    setLevelState(savedLevel);
+  const initializeGame = useCallback(async (currentLevel: number) => {
+    const initialCards = initializeMemoryMatch(difficulty, currentLevel);
     setCards(initialCards);
     setFlippedCards([]);
     setMoves(0);
     setGameWon(false);
     setElapsedTime(0);
-    setIsReady(true);
+    setIsProcessing(false);
     startTimeRef.current = Date.now();
     cardAnims.forEach(anim => anim.setValue(0));
   }, [difficulty, cardAnims]);
 
-  useEffect(() => {
-    init();
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [init]);
+  const handleNewGame = useCallback(async () => {
+    const savedLevel = await getLevel('memory-match', difficulty);
+    setLevelState(savedLevel);
+    initializeGame(savedLevel);
+    setPaused(false);
+  }, [difficulty, initializeGame]);
+
+  const handleRestart = useCallback(() => {
+    initializeGame(level);
+    setPaused(false);
+  }, [level, initializeGame]);
+
+  const nextLevel = useCallback(async () => {
+    const nextLvl = level + 1;
+    await setLevel('memory-match', difficulty, nextLvl);
+    setLevelState(nextLvl);
+    initializeGame(nextLvl);
+    setPaused(false);
+  }, [level, difficulty, initializeGame]);
 
   useEffect(() => {
-    if (!gameWon && isReady && startTimeRef.current) {
+    handleNewGame();
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [handleNewGame]);
+
+  useEffect(() => {
+    if (!gameWon && isReady && startTimeRef.current && !paused) {
       timerRef.current = setInterval(() => {
         setElapsedTime(Math.floor((Date.now() - startTimeRef.current!) / 1000));
       }, 1000);
@@ -68,7 +87,7 @@ export default function MemoryMatch({ difficulty }: Props) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-  }, [gameWon, isReady]);
+  }, [gameWon, isReady, paused]);
 
   const handleCardPress = useCallback((index: number) => {
     if (isProcessing || gameWon || cards[index].isMatched || flippedCards.includes(index) || flippedCards.length >= 2) return;
@@ -130,7 +149,8 @@ export default function MemoryMatch({ difficulty }: Props) {
   return (
     <View style={styles.container}>
       <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
-      <Header title="Memory" score={moves} scoreLabel="MOVES" highScore={level} highScoreLabel="LEVEL" />
+      <Header title="Memory" score={moves} scoreLabel="MOVES" highScore={level} highScoreLabel="LEVEL"
+        onPause={() => setPaused(!paused)} isPaused={paused} />
       
       <View style={styles.gameArea}>
         <View style={[styles.grid, { width: GRID_WIDTH }]}>
@@ -143,6 +163,7 @@ export default function MemoryMatch({ difficulty }: Props) {
                 onPress={() => handleCardPress(index)}
                 activeOpacity={0.9}
                 style={{ width: cardSize - 4, height: (cardSize - 4) * 1.3, margin: 2 }}
+                disabled={paused}
               >
                 <Animated.View style={[
                   styles.card, 
@@ -166,8 +187,11 @@ export default function MemoryMatch({ difficulty }: Props) {
       </View>
 
       <View style={styles.footer}>
-        <PremiumButton variant="secondary" height={50} onPress={() => init()}>
-          <Text style={styles.footerText}>RESET LEVEL</Text>
+        <PremiumButton variant="secondary" height={50} onPress={handleRestart} disabled={paused}>
+          <Text style={styles.footerBtnText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={50} onPress={handleNewGame} disabled={paused}>
+          <Text style={styles.footerBtnText}>NEW GAME</Text>
         </PremiumButton>
       </View>
 
@@ -176,10 +200,26 @@ export default function MemoryMatch({ difficulty }: Props) {
           result="win" 
           title="MATCHED!" 
           subtitle={`Completed in ${moves} moves.`} 
-          onPlayAgain={() => init()}
+          onPlayAgain={nextLevel}
           onPlayAgainLabel="NEXT LEVEL"
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
         />
       )}
+
+      {paused && !gameWon && (
+        <GameOverOverlay
+          result="paused"
+          title="GAME PAUSED"
+          onPlayAgain={() => setPaused(false)}
+          onPlayAgainLabel="RESUME"
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
+        />
+      )}
+    </View>
+  );
+}
     </View>
   );
 }
@@ -199,6 +239,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   cardFront: { backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: '#fff' },
   cardIcon: { color: '#000' },
   matchedOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(255,255,255,0.4)' },
-  footer: { padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
-  footerText: { color: colors.text, fontWeight: 'bold' },
+  footer: { padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl, flexDirection: 'row', justifyContent: 'space-around' },
+  footerBtnText: { color: colors.text, fontWeight: 'bold' },
 });

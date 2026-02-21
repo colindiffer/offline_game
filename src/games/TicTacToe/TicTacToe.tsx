@@ -15,6 +15,7 @@ import { Board, Cell, checkWinner, createEmptyBoard, getAIMove, getWinningLine, 
 import { ThemeColors } from '../../utils/themes';
 import { GAME_TUTORIALS } from '../../utils/tutorials';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useInterstitialAd } from '../../lib/useInterstitialAd';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const BOARD_SIZE = SCREEN_WIDTH - 32;
@@ -28,6 +29,7 @@ export default function TicTacToe({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { showAd } = useInterstitialAd();
   const [board, setBoard] = useState<Board>(createEmptyBoard());
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
   const [winner, setWinner] = useState<Cell>(null);
@@ -36,6 +38,7 @@ export default function TicTacToe({ difficulty }: Props) {
   const [highScore, setHigh] = useState(0);
   const [winLine, setWinLine] = useState<number[] | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  const isFirstGameRef = useRef(true);
 
   const startTimeRef = useRef<number | null>(null);
   const cellAnimations = useRef<Animated.Value[]>([]).current;
@@ -147,6 +150,22 @@ export default function TicTacToe({ difficulty }: Props) {
     cellAnimations.forEach(anim => anim.setValue(0));
   };
 
+  const [paused, setPaused] = useState(false);
+
+  const handleRestart = () => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
+    resetGame();
+    setPaused(false);
+  };
+
+  const handleNewGame = () => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
+    resetGame();
+    setPaused(false);
+  };
+
   const renderCell = (index: number) => {
     const value = board[index];
     const isWinCell = winLine?.includes(index);
@@ -182,6 +201,8 @@ export default function TicTacToe({ difficulty }: Props) {
         title="Tic Tac Toe"
         score={score}
         highScore={highScore}
+        onPause={() => setPaused(!paused)}
+        isPaused={paused}
       />
 
       <View style={styles.boardContainer}>
@@ -211,16 +232,48 @@ export default function TicTacToe({ difficulty }: Props) {
             </Text>
           </View>
         ) : (
-          <PremiumButton
-            variant="primary"
-            height={56}
-            onPress={resetGame}
-            style={styles.newGameBtn}
-          >
-            <Text style={styles.newGameText}>PLAY AGAIN</Text>
-          </PremiumButton>
+          <View style={styles.footerBtns}>
+            <PremiumButton
+              variant="secondary"
+              height={56}
+              onPress={handleRestart}
+              style={styles.flexBtn}
+            >
+              <Text style={styles.newGameText}>RESTART</Text>
+            </PremiumButton>
+            <PremiumButton
+              variant="primary"
+              height={56}
+              onPress={handleNewGame}
+              style={styles.flexBtn}
+            >
+              <Text style={styles.newGameText}>NEW GAME</Text>
+            </PremiumButton>
+          </View>
         )}
       </View>
+
+      {(winner || draw) && (
+        <GameOverOverlay
+          result={winner === 'X' ? 'win' : winner === 'O' ? 'lose' : 'draw'}
+          title={winner === 'X' ? 'YOU WIN!' : winner === 'O' ? 'AI WINS!' : 'DRAW!'}
+          onPlayAgain={handleRestart}
+          onPlayAgainLabel="PLAY AGAIN"
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
+        />
+      )}
+
+      {paused && !winner && !draw && (
+        <GameOverOverlay
+          result="paused"
+          title="GAME PAUSED"
+          onPlayAgain={() => setPaused(false)}
+          onPlayAgainLabel="RESUME"
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
+        />
+      )}
 
       {showTutorial && (
         <TutorialScreen
@@ -316,6 +369,13 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   footer: {
     paddingHorizontal: spacing.md,
     marginTop: spacing.lg,
+  },
+  footerBtns: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  flexBtn: {
+    flex: 1,
   },
   turnIndicator: {
     flexDirection: 'row',

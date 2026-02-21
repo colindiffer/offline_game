@@ -33,7 +33,7 @@ export function initializeBackgammon(): BackgammonGameState {
 export function rollDice(): number[] {
   const d1 = Math.floor(Math.random() * 6) + 1;
   const d2 = Math.floor(Math.random() * 6) + 1;
-  if (d1 === d2) return [d1, d1, d1, d1];
+  if (d1 === d2) return [d1, d1, d1, d1]; // Return 4 dice values for doubles
   return [d1, d2];
 }
 

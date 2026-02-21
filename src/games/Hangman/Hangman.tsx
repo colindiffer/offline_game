@@ -74,6 +74,15 @@ export default function Hangman({ difficulty }: Props) {
     setGameState(initializeHangman(difficulty, savedLevel));
   }, [difficulty]);
 
+  const handleNewGame = useCallback(() => {
+    setLevelState(1);
+    setGameState(initializeHangman(difficulty, 1));
+  }, [difficulty]);
+
+  const handleRestart = useCallback(() => {
+    resetLevel();
+  }, [resetLevel]);
+
   if (!isReady || !gameState) return <View style={styles.container} />;
 
   const renderHangman = () => {
@@ -163,6 +172,8 @@ export default function Hangman({ difficulty }: Props) {
           subtitle={gameState.gameWon ? 'You guessed it!' : `The word was: ${gameState.word}`}
           onPlayAgain={gameState.gameWon ? nextLevel : resetLevel}
           onPlayAgainLabel={gameState.gameWon ? "NEXT LEVEL" : "TRY AGAIN"}
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

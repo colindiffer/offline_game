@@ -151,6 +151,20 @@ export default function WordSearch({ difficulty }: Props) {
     startTimeRef.current = Date.now();
   }, [difficulty, level]);
 
+  const handleNewGame = useCallback(() => {
+    setLevelState(1);
+    setGameState(generateWordSearch(difficulty, 1));
+    setFoundPaths([]);
+    setSelection(null);
+    setGameWon(false);
+    setElapsedTime(0);
+    startTimeRef.current = Date.now();
+  }, [difficulty]);
+
+  const handleRestart = useCallback(() => {
+    resetLevel();
+  }, [resetLevel]);
+
   const isCellSelected = (r: number, c: number) => {
     if (!selection || !gameState) return false;
     const res = getSelectedWord(gameState.letters, selection.start, selection.end);
@@ -258,12 +272,14 @@ export default function WordSearch({ difficulty }: Props) {
       </View>
 
       {gameWon && (
-        <GameOverOverlay 
-          result="win" 
-          title="LEVEL COMPLETE!" 
-          subtitle={`Found all words in ${elapsedTime}s.`} 
+        <GameOverOverlay
+          result="win"
+          title="LEVEL COMPLETE!"
+          subtitle={`Found all words in ${elapsedTime}s.`}
           onPlayAgain={nextLevel}
           onPlayAgainLabel="NEXT LEVEL"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

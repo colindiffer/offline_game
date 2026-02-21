@@ -11,6 +11,7 @@ import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
 import { spacing, radius, shadows } from '../../utils/designTokens';
 import { initializeWordGuess, checkGuess, WordGuessState, LetterStatus } from './logic';
+import { useInterstitialAd } from '../../lib/useInterstitialAd';
 
 const KEYBOARD_ROWS = [
   ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
@@ -53,17 +54,31 @@ export default function WordGuess({ difficulty }: Props) {
     () => getStyles(colors, CELL_SIZE, KEY_H, SW),
     [colors, CELL_SIZE, SW]
   );
+  const { showAd } = useInterstitialAd();
 
-  const [level, setLevelState] = useState(1);
-  const [gameState, setGameState] = useState<WordGuessState | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const [paused, setPaused] = useState(false);
 
   const init = useCallback(async () => {
     const savedLevel = await getLevel('word-guess', difficulty);
     setLevelState(savedLevel);
     setGameState(initializeWordGuess(difficulty, savedLevel));
     setIsReady(true);
+    setPaused(false);
   }, [difficulty]);
+
+  const handleNewGame = useCallback(() => {
+    init();
+  }, [init]);
+
+  const handleRestart = useCallback(() => {
+    if (gameState) {
+      setGameState({
+        ...initializeWordGuess(difficulty, level),
+        targetWord: gameState.targetWord, // Keep the same word
+      });
+    }
+    setPaused(false);
+  }, [gameState, difficulty, level]);
 
   useEffect(() => {
     init();
@@ -142,7 +157,15 @@ export default function WordGuess({ difficulty }: Props) {
   return (
     <View style={styles.container}>
       <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
-      <Header title="Word Guess" score={level} scoreLabel="LEVEL" highScore={0} highScoreLabel="BEST" />
+      <Header
+        title="Word Guess"
+        score={level}
+        scoreLabel="LEVEL"
+        highScore={0}
+        highScoreLabel="BEST"
+        onPause={() => setPaused(!paused)}
+        isPaused={paused}
+      />
 
       <View style={styles.gameArea}>
         <View style={[styles.grid, { width: GRID_WIDTH }]}>
@@ -175,6 +198,7 @@ export default function WordGuess({ difficulty }: Props) {
                 <TouchableOpacity
                   key={key}
                   onPress={() => handleKeyPress(key)}
+                  disabled={paused}
                   style={[
                     styles.key,
                     key === 'ENTER' || key === '⌫' ? styles.wideKey : null,
@@ -199,8 +223,21 @@ export default function WordGuess({ difficulty }: Props) {
           result={gameState.gameWon ? 'win' : 'lose'}
           title={gameState.gameWon ? 'BRILLIANT!' : 'OUT OF TRIES'}
           subtitle={gameState.gameWon ? 'You found the word!' : `The word was: ${gameState.targetWord}`}
-          onPlayAgain={gameState.gameWon ? init : resetLevel}
+          onPlayAgain={gameState.gameWon ? init : handleRestart}
           onPlayAgainLabel={gameState.gameWon ? 'NEXT LEVEL' : 'TRY AGAIN'}
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
+        />
+      )}
+
+      {paused && !gameState.gameOver && !gameState.gameWon && (
+        <GameOverOverlay
+          result="paused"
+          title="GAME PAUSED"
+          onPlayAgain={() => setPaused(false)}
+          onPlayAgainLabel="RESUME"
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
         />
       )}
     </View>

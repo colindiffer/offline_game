@@ -76,10 +76,18 @@ export default function CodeBreaker({ difficulty }: Props) {
     }
   };
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     setGameState(initializeCodeBreaker(difficulty));
     setPaused(false);
-  };
+  }, [difficulty]);
+
+  const handleNewGame = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
+  const handleRestart = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
 
   if (!isReady) return null;
 
@@ -167,6 +175,8 @@ export default function CodeBreaker({ difficulty }: Props) {
           title={gameState.winner ? 'CODE BROKEN!' : 'MISSION FAILED'}
           subtitle={gameState.winner ? `You cracked it in ${gameState.guesses.length} tries.` : 'The secret code remains hidden.'}
           onPlayAgain={resetGame}
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
 
@@ -176,6 +186,8 @@ export default function CodeBreaker({ difficulty }: Props) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

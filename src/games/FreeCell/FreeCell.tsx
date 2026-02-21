@@ -269,13 +269,21 @@ export default function FreeCell({ difficulty }: Props) {
   }, [gameWon, elapsedTime, playSound, selectedCard, autoMoveToFoundation]);
 
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     setGameState(initializeFreeCell());
     setPaused(false);
     setElapsedTime(0);
     setSelectedCard(null);
     startTimeRef.current = Date.now();
-  };
+  }, []);
+
+  const handleNewGame = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
+  const handleRestart = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
 
   if (!isReady) return null;
 
@@ -402,7 +410,7 @@ export default function FreeCell({ difficulty }: Props) {
       </View>
 
       {gameWon && (
-        <GameOverOverlay result="win" title="BOARD CLEARED!" subtitle={`Solved in ${elapsedTime}s!`} onPlayAgain={resetGame} />
+        <GameOverOverlay result="win" title="BOARD CLEARED!" subtitle={`Solved in ${elapsedTime}s!`} onPlayAgain={resetGame} onNewGame={handleNewGame} onRestart={handleRestart} />
       )}
 
       {paused && !gameWon && (
@@ -411,6 +419,8 @@ export default function FreeCell({ difficulty }: Props) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

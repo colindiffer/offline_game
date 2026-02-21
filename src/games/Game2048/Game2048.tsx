@@ -16,6 +16,7 @@ import { ThemeColors } from '../../utils/themes';
 import { GAME_TUTORIALS } from '../../utils/tutorials';
 import PremiumButton from '../../components/PremiumButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useInterstitialAd } from '../../lib/useInterstitialAd';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const BOARD_PADDING = 8;
@@ -50,6 +51,7 @@ export default function Game2048({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { showAd } = useInterstitialAd();
   const [board, setBoard] = useState<Board2048>(() => initBoard(difficulty));
   const [score, setScore] = useState(0);
   const [highScore, setHigh] = useState(0);
@@ -59,6 +61,7 @@ export default function Game2048({ difficulty }: Props) {
   const [paused, setPaused] = useState(false);
   const [history, setHistory] = useState<Array<{ board: Board2048; score: number }>>([]);
   const [showTutorial, setShowTutorial] = useState(false);
+  const isFirstGameRef = useRef(true);
 
   const processingRef = useRef(false);
   const startTimeRef = useRef<number | null>(null);
@@ -191,6 +194,18 @@ export default function Game2048({ difficulty }: Props) {
     startTimeRef.current = Date.now();
   };
 
+  const handleRestart = () => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
+    resetGame();
+  };
+
+  const handleNewGame = () => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
+    resetGame();
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.bgIcon}>2048</Text>
@@ -247,17 +262,27 @@ export default function Game2048({ difficulty }: Props) {
           height={54}
           onPress={handleUndo}
           disabled={history.length === 0 || paused}
-          style={styles.undoBtn}
+          style={styles.actionBtn}
         >
           <Text style={styles.actionText}>UNDO ({history.length})</Text>
         </PremiumButton>
 
         <PremiumButton
+          variant="secondary"
+          height={54}
+          onPress={handleRestart}
+          disabled={paused}
+          style={styles.actionBtn}
+        >
+          <Text style={styles.actionText}>RESTART</Text>
+        </PremiumButton>
+
+        <PremiumButton
           variant="primary"
           height={54}
-          onPress={resetGame}
+          onPress={handleNewGame}
           disabled={paused}
-          style={styles.newGameBtn}
+          style={styles.actionBtn}
         >
           <Text style={[styles.actionText, { color: colors.textOnPrimary }]}>NEW GAME</Text>
         </PremiumButton>
@@ -269,6 +294,8 @@ export default function Game2048({ difficulty }: Props) {
           title="YOU DID IT!"
           onPlayAgain={resetGame}
           onPlayAgainLabel="PLAY AGAIN"
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
           secondaryAction={{ label: 'KEEP GOING', onPress: () => setKeepPlaying(true) }}
         />
       )}
@@ -280,6 +307,8 @@ export default function Game2048({ difficulty }: Props) {
           subtitle={`Final Score: ${score}`}
           onPlayAgain={resetGame}
           onPlayAgainLabel="TRY AGAIN"
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
         />
       )}
 
@@ -289,6 +318,8 @@ export default function Game2048({ difficulty }: Props) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
         />
       )}
 
@@ -350,14 +381,11 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
     marginTop: spacing.sm,
   },
-  undoBtn: {
+  actionBtn: {
     flex: 1,
-  },
-  newGameBtn: {
-    flex: 2,
   },
   actionText: {
     fontWeight: '900',

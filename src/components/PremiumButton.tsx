@@ -95,7 +95,8 @@ const styles = StyleSheet.create({
     content: {
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: spacing.lg,
+        paddingHorizontal: spacing.md, // Make padding more flexible
+        flexShrink: 1, // Allow children to shrink
     },
     shadow: {
         position: 'absolute',

@@ -170,6 +170,22 @@ export default function WaterSort({ difficulty }: Props) {
     tubeAnims.forEach(anim => anim.setValue(0));
   }, [difficulty, level, tubeAnims]);
 
+  const handleNewGame = useCallback(() => {
+    setLevelState(1);
+    setTubes(initializeWaterSort(difficulty, 1));
+    setUndoHistory([]);
+    setMoves(0);
+    setSelectedTube(null);
+    setGameWon(false);
+    setElapsedTime(0);
+    startTimeRef.current = Date.now();
+    tubeAnims.forEach(anim => anim.setValue(0));
+  }, [difficulty, tubeAnims]);
+
+  const handleRestart = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
   if (!isReady) return <View style={styles.container} />;
 
   const renderTube = (tube: Tube, index: number) => {
@@ -246,12 +262,14 @@ export default function WaterSort({ difficulty }: Props) {
       </View>
 
       {gameWon && (
-        <GameOverOverlay 
-          result="win" 
-          title="LEVEL COMPLETE!" 
-          subtitle={`Sorted in ${moves} moves!`} 
+        <GameOverOverlay
+          result="win"
+          title="LEVEL COMPLETE!"
+          subtitle={`Sorted in ${moves} moves!`}
           onPlayAgain={nextLevel}
           onPlayAgainLabel="NEXT LEVEL"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>
@@ -285,13 +303,12 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     fontSize: 24,
     fontWeight: '900',
   },
-  gameArea: { flex: 1, padding: spacing.md, justifyContent: 'center', alignItems: 'center' },
+  gameArea: { flex: 1, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, alignItems: 'center' },
   tubesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: spacing.sm,
-    paddingTop: 20,
   },
   tubeTouch: {
     width: TUBE_WIDTH,

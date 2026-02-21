@@ -189,6 +189,14 @@ export default function ConnectFour({ difficulty }: Props) {
     resetAnimations();
   }, [difficulty, resetAnimations]);
 
+  const handleNewGame = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
+  const handleRestart = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
   return (
     <View style={styles.container}>
       <Header
@@ -288,6 +296,8 @@ export default function ConnectFour({ difficulty }: Props) {
           result={winner === 'R' ? 'win' : winner === 'Y' ? 'lose' : 'draw'}
           title={winner === 'R' ? 'VICTORY!' : winner === 'Y' ? 'DEFEAT' : "STALEMATE"}
           onPlayAgain={resetGame}
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

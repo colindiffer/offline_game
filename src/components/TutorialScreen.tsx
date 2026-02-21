@@ -132,6 +132,7 @@ const getStyles = (colors: ThemeColors) =>
       flex: 1,
       backgroundColor: colors.background,
       paddingTop: Platform.OS === 'ios' ? 60 : 40,
+      paddingHorizontal: spacing.md, // Add horizontal padding to container
     },
     blob: {
       position: 'absolute',
@@ -151,6 +152,8 @@ const getStyles = (colors: ThemeColors) =>
       fontWeight: '900',
       color: colors.text,
       letterSpacing: -1,
+      flexShrink: 1, // Allow text to shrink
+      textAlign: 'center',
     },
     subtitle: {
       fontSize: 14,
@@ -161,7 +164,7 @@ const getStyles = (colors: ThemeColors) =>
     },
     contentCard: {
       flex: 1,
-      marginHorizontal: spacing.lg,
+      // marginHorizontal: spacing.lg, // Removed to use container padding
       backgroundColor: colors.card,
       borderRadius: radius.xl,
       borderWidth: 1,
@@ -173,79 +176,82 @@ const getStyles = (colors: ThemeColors) =>
       flex: 1,
     },
     scrollContent: {
-      padding: spacing.xl,
+      padding: spacing.lg, // Reduced padding
       alignItems: 'center',
     },
     iconContainer: {
-      width: 160,
-      height: 160,
-      borderRadius: 80,
+      width: 100, // Reduced icon container size
+      height: 100,
+      borderRadius: 50,
       backgroundColor: colors.background,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: spacing.xxl,
+      marginBottom: spacing.xl, // Reduced margin
       borderWidth: 1,
       borderColor: colors.border,
     },
     icon: {
-      fontSize: 100,
+      fontSize: 60, // Reduced icon font size
     },
     stepTitle: {
-      fontSize: 32,
+      fontSize: 28, // Reduced font size
       fontWeight: '900',
       color: colors.text,
       textAlign: 'center',
-      marginBottom: spacing.lg,
+      marginBottom: spacing.md, // Reduced margin
+      flexShrink: 1, // Allow text to shrink
     },
     description: {
-      fontSize: 20,
-      lineHeight: 28,
+      fontSize: 16, // Reduced font size
+      lineHeight: 24, // Adjusted line height
       color: colors.text,
       textAlign: 'center',
-      marginBottom: spacing.xxl,
+      marginBottom: spacing.xl, // Reduced margin
+      flexWrap: 'wrap', // Allow text to wrap
     },
     tipsSection: {
       width: '100%',
       backgroundColor: colors.background,
       borderRadius: radius.lg,
-      padding: spacing.xl,
+      padding: spacing.md, // Reduced padding
       borderWidth: 1,
       borderColor: colors.border,
     },
     tipsHeading: {
-      fontSize: 16,
+      fontSize: 14, // Reduced font size
       fontWeight: '900',
       color: colors.primary,
       letterSpacing: 2,
-      marginBottom: spacing.lg,
+      marginBottom: spacing.md, // Reduced margin
     },
     tipRow: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      marginBottom: spacing.md,
+      marginBottom: spacing.sm, // Reduced margin
     },
     tipDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      marginTop: 10,
-      marginRight: 16,
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      marginTop: 8, // Adjusted for new font size
+      marginRight: 12, // Reduced margin
     },
     tipText: {
       flex: 1,
-      fontSize: 18,
+      fontSize: 14, // Reduced font size
       color: colors.text,
-      lineHeight: 26,
+      lineHeight: 22, // Adjusted line height
+      flexWrap: 'wrap', // Allow text to wrap
     },
     footer: {
-      padding: spacing.xl,
-      paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl,
+      padding: spacing.md, // Reduced padding
+      paddingBottom: Platform.OS === 'ios' ? 30 : spacing.md, // Adjusted padding
     },
     pagination: {
       flexDirection: 'row',
       justifyContent: 'center',
-      gap: 8,
-      marginBottom: spacing.xl,
+      gap: 6, // Reduced gap
+      marginBottom: spacing.md, // Reduced margin
     },
     dot: {
       height: 6,
@@ -253,23 +259,23 @@ const getStyles = (colors: ThemeColors) =>
       width: 6,
     },
     activeDot: {
-      width: 24,
+      width: 18, // Reduced width
     },
     buttons: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: spacing.lg,
+      gap: spacing.md, // Reduced gap
     },
     prevBtn: {
       flex: 1,
-      height: 56,
+      height: 50, // Reduced height
       justifyContent: 'center',
       alignItems: 'center',
     },
     prevBtnText: {
       color: colors.textSecondary,
       fontWeight: '900',
-      fontSize: 14,
+      fontSize: 12, // Reduced font size
       letterSpacing: 1,
     },
     nextBtn: {
@@ -278,7 +284,7 @@ const getStyles = (colors: ThemeColors) =>
     nextBtnText: {
       color: colors.textOnPrimary,
       fontWeight: '900',
-      fontSize: 16,
+      fontSize: 14, // Reduced font size
       letterSpacing: 1,
     },
   });

@@ -15,6 +15,7 @@ import { GAME_TUTORIALS } from '../../utils/tutorials';
 import PremiumButton from '../../components/PremiumButton';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useInterstitialAd } from '../../lib/useInterstitialAd';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -31,22 +32,10 @@ export default function Minesweeper({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { showAd } = useInterstitialAd();
 
-  const [level, setLevelState] = useState(1);
-  const [board, setBoard] = useState<Board | null>(null);
-  const [gameOver, setGameOver] = useState(false);
-  const [gameWon, setGameWon] = useState(false);
-  const [minesRemaining, setMinesRemaining] = useState(0);
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [highScore, setHighScoreState] = useState<number | null>(null);
-  const [paused, setPaused] = useState(false);
-  const [isReady, setIsReady] = useState(false);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const [showTutorial, setShowTutorial] = useState(false);
-
-  const gameConfig = getGameConfig(difficulty, level);
   const CELL_SIZE = getCellSize(gameConfig.cols);
+  const initializedBoardRef = useRef<Board | null>(null); // Stores the board after the first safe click
 
   useEffect(() => {
     const init = async () => {
@@ -54,9 +43,9 @@ export default function Minesweeper({ difficulty }: Props) {
       const best = await getHighScore('minesweeper', difficulty);
       setLevelState(savedLevel);
       setHighScoreState(best);
-      const config = getGameConfig(difficulty, savedLevel);
-      setMinesRemaining(config.mines);
       setIsReady(true);
+      // Initialize an empty board when component mounts
+      setBoard(createBoard(difficulty, -1, -1, savedLevel, true));
     };
     init();
     AsyncStorage.getItem('@tutorial_minesweeper').then((shown) => {
@@ -76,40 +65,27 @@ export default function Minesweeper({ difficulty }: Props) {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [startTime, gameOver, gameWon, paused]);
 
-  const handleCellPress = useCallback(
-    (row: number, col: number, isLongPress: boolean = false) => {
+  const handleCellAction = useCallback(
+    (row: number, col: number, isLongPress: boolean) => {
       if (gameOver || gameWon || paused || !isReady) return;
 
-      if (!board) {
-        const initialBoard = createBoard(difficulty, row, col, level);
-        setBoard(initialBoard);
+      let currentBoard = board;
+
+      // If it's the very first action, generate the board with mines, ensuring the clicked cell is safe
+      if (!initializedBoardRef.current && !startTime) {
+        const newBoardWithMines = createBoard(difficulty, row, col, level);
+        initializedBoardRef.current = newBoardWithMines;
+        currentBoard = newBoardWithMines;
         setStartTime(Date.now());
-        setTimeout(() => {
-          if (!isLongPress) {
-            setBoard(prevBoard => {
-              if (!prevBoard) return prevBoard;
-              const newBoard = prevBoard.map((r) => r.map((c) => ({ ...c })));
-              revealCell(newBoard, row, col);
-              playSound('tap');
-              return newBoard;
-            });
-          }
-        }, 0);
+      } else if (!currentBoard) {
+        // This case should ideally not be reached if board is initialized with an empty one
         return;
       }
 
-      const newBoard = board.map((r) => r.map((c) => ({ ...c })));
+      const newBoard = currentBoard.map((r) => r.map((c) => ({ ...c })));
       const cell = newBoard[row][col];
 
-      if (isLongPress) {
-        if (cell.state === 'revealed') return;
-        toggleFlag(newBoard, row, col);
-        setMinesRemaining(
-          gameConfig.mines -
-          newBoard.flat().filter((c) => c.state === 'flagged').length
-        );
-        playSound('flag');
-      } else {
+      if (isLongPress) { // Long press to reveal
         if (cell.state === 'flagged' || cell.state === 'revealed') return;
         revealCell(newBoard, row, col);
         playSound('tap');
@@ -125,43 +101,79 @@ export default function Minesweeper({ difficulty }: Props) {
           playSound('win');
           const finalTime = Math.floor((Date.now() - (startTime || Date.now())) / 1000);
           recordGameResult('minesweeper', 'win', finalTime);
-          
+
           if (highScore === null || finalTime < highScore || highScore === 0) {
             setHighScoreState(finalTime);
             setHighScore('minesweeper', finalTime, difficulty);
           }
-          
+
           const nextLvl = level + 1;
           setLevel('minesweeper', difficulty, nextLvl);
         }
+      } else { // Single tap to flag/unflag
+        if (cell.state === 'revealed') return;
+        toggleFlag(newBoard, row, col);
+        setMinesRemaining(
+          gameConfig.mines -
+          newBoard.flat().filter((c) => c.state === 'flagged').length
+        );
+        playSound('flag');
       }
       setBoard(newBoard);
+      if (!initializedBoardRef.current && startTime) { // Ensure initializedBoardRef is set after first click
+          initializedBoardRef.current = newBoard;
+      }
     },
-    [board, gameOver, gameWon, paused, difficulty, gameConfig.mines, level, isReady, startTime, playSound]
+    [board, gameOver, gameWon, paused, difficulty, gameConfig.mines, level, isReady, startTime, playSound, highScore]
   );
 
+  const handleNewGame = useCallback(() => {
+    showAd(isFirstGameRef.current); // Show ad unless it's the very first game
+    isFirstGameRef.current = false;
+    const config = getGameConfig(difficulty, level);
+    setMinesRemaining(config.mines);
+    initializedBoardRef.current = null; // Clear stored initial board
+    setBoard(createBoard(difficulty, -1, -1, level, true)); // Create an empty board for new game
+    setGameOver(false);
+    setGameWon(false);
+    setStartTime(null);
+    setElapsedTime(0);
+    setPaused(false);
+  }, [difficulty, level, showAd]);
+
+  const handleRestart = useCallback(() => {
+    showAd(isFirstGameRef.current); // Show ad unless it's the very first game
+    isFirstGameRef.current = false;
+    if (initializedBoardRef.current) { // If a board was played, restart with it (hide all cells)
+      const newBoard = initializedBoardRef.current.map((r) => r.map((c) => ({ ...c, state: 'hidden' as const })));
+      setBoard(newBoard);
+      setMinesRemaining(gameConfig.mines);
+    } else { // If game not started, just prepare a new empty board
+      setBoard(createBoard(difficulty, -1, -1, level, true));
+      setMinesRemaining(gameConfig.mines);
+    }
+    setGameOver(false);
+    setGameWon(false);
+    setStartTime(null);
+    setElapsedTime(0);
+    setPaused(false);
+  }, [initializedBoardRef.current, gameConfig.mines, difficulty, level, showAd]);
+
   const nextLevel = useCallback(async () => {
+    showAd(isFirstGameRef.current); // Show ad unless it's the very first game
+    isFirstGameRef.current = false;
     const savedLevel = await getLevel('minesweeper', difficulty);
     setLevelState(savedLevel);
-    setBoard(null);
-    setGameOver(false);
-    setGameWon(false);
     const config = getGameConfig(difficulty, savedLevel);
     setMinesRemaining(config.mines);
-    setStartTime(null);
-    setElapsedTime(0);
-    setPaused(false);
-  }, [difficulty]);
-
-  const resetLevel = useCallback(() => {
-    setBoard(null);
+    initializedBoardRef.current = null; // Clear stored initial board
+    setBoard(createBoard(difficulty, -1, -1, savedLevel, true)); // Create an empty board for new level
     setGameOver(false);
     setGameWon(false);
-    setMinesRemaining(gameConfig.mines);
     setStartTime(null);
     setElapsedTime(0);
     setPaused(false);
-  }, [gameConfig.mines]);
+  }, [difficulty, showAd]);
 
   if (!isReady) return <View style={styles.container} />;
 
@@ -244,36 +256,25 @@ export default function Minesweeper({ difficulty }: Props) {
 
       <GameBoardContainer style={styles.boardContainer}>
         <View style={styles.boardFrame}>
-          {board ? (
-            board.map((row, r) => (
+          {board && board.map((row, r) => (
               <View key={r} style={styles.row}>
                 {row.map((cell) => renderCell(cell))}
               </View>
             ))
-          ) : (
-            <TouchableOpacity
-              style={[
-                styles.boardPlaceholder,
-                {
-                  width: CELL_SIZE * gameConfig.cols,
-                  height: CELL_SIZE * gameConfig.rows,
-                  backgroundColor: colors.card,
-                },
-              ]}
-              activeOpacity={0.8}
-              onPress={() => handleCellPress(Math.floor(gameConfig.rows / 2), Math.floor(gameConfig.cols / 2))}
-              disabled={paused}
-            >
-              <Text style={styles.placeholderText}>TAP TO START</Text>
-            </TouchableOpacity>
-          )}
+          }
+
         </View>
       </GameBoardContainer>
 
       <View style={styles.footer}>
-        <PremiumButton variant="secondary" height={50} onPress={resetLevel} disabled={paused} style={styles.resetBtn}>
-          <Text style={styles.resetText}>RESET LEVEL</Text>
-        </PremiumButton>
+        <View style={styles.footerBtns}>
+          <PremiumButton variant="secondary" height={50} onPress={handleRestart} disabled={paused} style={styles.flexBtn}>
+            <Text style={styles.resetText}>RESTART</Text>
+          </PremiumButton>
+          <PremiumButton variant="secondary" height={50} onPress={handleNewGame} disabled={paused} style={styles.flexBtn}>
+            <Text style={styles.resetText}>NEW GAME</Text>
+          </PremiumButton>
+        </View>
       </View>
 
       {(gameOver || gameWon) && (
@@ -281,8 +282,10 @@ export default function Minesweeper({ difficulty }: Props) {
           result={gameWon ? 'win' : 'lose'}
           title={gameWon ? 'MISSION CLEAR!' : 'KA-BOOM!'}
           subtitle={gameWon ? `Level ${level} complete!` : 'Try again!'}
-          onPlayAgain={gameWon ? nextLevel : resetLevel}
+          onPlayAgain={gameWon ? nextLevel : handleRestart}
           onPlayAgainLabel={gameWon ? "NEXT LEVEL" : "TRY AGAIN"}
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
         />
       )}
 
@@ -292,6 +295,8 @@ export default function Minesweeper({ difficulty }: Props) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
         />
       )}
 
@@ -323,7 +328,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   cell: { justifyContent: 'center', alignItems: 'center' },
   cellText: { fontWeight: '900' },
   footer: { paddingVertical: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
-  resetBtn: { width: '100%' },
+  footerBtns: { flexDirection: 'row', gap: spacing.md },
+  flexBtn: { flex: 1 },
   resetText: { fontWeight: '900', fontSize: 14, color: colors.text, letterSpacing: 1 },
   bgIcon: {
     position: 'absolute',

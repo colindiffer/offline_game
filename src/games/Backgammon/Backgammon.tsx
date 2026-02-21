@@ -59,8 +59,9 @@ export default function Backgammon({ difficulty }: { difficulty: Difficulty }) {
 
   const handleRoll = () => {
     if (paused) return;
-    const dice = rollDice();
-    setGameState(prev => ({ ...prev, dice, movesRemaining: [...dice] }));
+    const diceResult = rollDice();
+    const newMovesRemaining = [...diceResult]; // Use the full diceResult for moves
+    setGameState(prev => ({ ...prev, dice: diceResult, movesRemaining: newMovesRemaining }));
     playSound('tap');
   };
 
@@ -103,6 +104,20 @@ export default function Backgammon({ difficulty }: { difficulty: Difficulty }) {
     if (isValidMove(gameState, selectedPoint, 'off')) moves.push(99);
     return moves;
   }, [selectedPoint, gameState, difficulty, paused]);
+
+  const handleRestart = useCallback(() => {
+    setGameState(initializeBackgammon());
+    setSelectedPoint(null);
+    setPaused(false);
+    aiThinkingRef.current = false;
+  }, []);
+
+  const handleNewGame = useCallback(() => {
+    setGameState(initializeBackgammon());
+    setSelectedPoint(null);
+    setPaused(false);
+    aiThinkingRef.current = false;
+  }, []);
 
   if (!isReady) return null;
 
@@ -195,7 +210,7 @@ export default function Backgammon({ difficulty }: { difficulty: Difficulty }) {
 
         <View style={styles.controls}>
             <View style={styles.diceArea}>
-                {gameState.dice.map((d, i) => (
+                {gameState.dice.slice(0, 2).map((d, i) => ( // Only display up to 2 dice
                     <View key={i} style={[styles.die, !gameState.movesRemaining.includes(d) && { opacity: 0.5 }]}><Text style={styles.dieText}>{d}</Text></View>
                 ))}
             </View>
@@ -206,8 +221,11 @@ export default function Backgammon({ difficulty }: { difficulty: Difficulty }) {
       </View>
 
       <View style={styles.footer}>
-        <PremiumButton variant="secondary" onPress={() => setGameState(initializeBackgammon())} disabled={paused}>
-            <Text style={styles.resetText}>RESET BOARD</Text>
+        <PremiumButton variant="secondary" onPress={handleRestart} disabled={paused}>
+            <Text style={styles.resetText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" onPress={handleNewGame} disabled={paused}>
+            <Text style={styles.resetText}>NEW GAME</Text>
         </PremiumButton>
       </View>
 
@@ -217,6 +235,8 @@ export default function Backgammon({ difficulty }: { difficulty: Difficulty }) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
         />
       )}
     </View>
@@ -283,6 +303,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   die: { width: 48, height: 48, backgroundColor: '#fff', borderRadius: 10, justifyContent: 'center', alignItems: 'center', ...shadows.md, borderWidth: 1, borderColor: '#ddd' },
   dieText: { color: '#331d10', fontSize: 24, fontWeight: '900' },
   btnText: { color: '#fff', fontWeight: '900', fontSize: 18, letterSpacing: 2 },
-  footer: { paddingHorizontal: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
+  footer: { paddingHorizontal: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl, flexDirection: 'row', justifyContent: 'space-around', gap: spacing.md },
   resetText: { color: '#331d10', fontWeight: 'bold', fontSize: 14, opacity: 0.7 },
 });

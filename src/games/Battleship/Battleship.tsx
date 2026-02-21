@@ -147,6 +147,14 @@ export default function Battleship({ difficulty }: Props) {
     setPaused(false);
   }, []);
 
+  const handleNewGame = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
+  const handleRestart = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
   if (!isReady) return null;
 
   const renderGrid = (board: Board, isEnemy: boolean) => (
@@ -261,6 +269,8 @@ export default function Battleship({ difficulty }: Props) {
           title={gameState.winner === 'player' ? 'VICTORY!' : 'FLEET DESTROYED'}
           subtitle={gameState.winner === 'player' ? 'You ruled the high seas.' : 'The enemy found your carrier.'}
           onPlayAgain={resetGame}
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
 
@@ -270,6 +280,8 @@ export default function Battleship({ difficulty }: Props) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

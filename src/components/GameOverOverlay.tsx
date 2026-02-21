@@ -17,6 +17,8 @@ interface Props {
   subtitle?: string;
   onPlayAgain: () => void;
   onPlayAgainLabel?: string;
+  onRestart?: () => void;
+  onNewGame?: () => void;
   secondaryAction?: {
     label: string;
     onPress: () => void;
@@ -29,6 +31,8 @@ export default function GameOverOverlay({
   subtitle,
   onPlayAgain,
   onPlayAgainLabel,
+  onRestart,
+  onNewGame,
   secondaryAction,
 }: Props) {
   const { colors } = useTheme();
@@ -107,6 +111,20 @@ export default function GameOverOverlay({
     onPlayAgain();
   };
 
+  const handleRestart = () => {
+    if (onRestart) {
+      if (result !== 'paused') showAd();
+      onRestart();
+    }
+  };
+
+  const handleNewGame = () => {
+    if (onNewGame) {
+      if (result !== 'paused') showAd();
+      onNewGame();
+    }
+  };
+
   const handleQuit = () => {
     if (result !== 'paused') showAd();
     if (secondaryAction) {
@@ -150,6 +168,29 @@ export default function GameOverOverlay({
                 <Text style={styles.buttonText}>{config.btnLabel}</Text>
               </PremiumButton>
 
+              <View style={styles.rowButtons}>
+                {onRestart && (
+                  <PremiumButton
+                    variant="secondary"
+                    height={50}
+                    onPress={handleRestart}
+                    style={styles.flexButton}
+                  >
+                    <Text style={styles.rowButtonText}>RESTART</Text>
+                  </PremiumButton>
+                )}
+                {onNewGame && (
+                  <PremiumButton
+                    variant="secondary"
+                    height={50}
+                    onPress={handleNewGame}
+                    style={styles.flexButton}
+                  >
+                    <Text style={styles.rowButtonText}>NEW GAME</Text>
+                  </PremiumButton>
+                )}
+              </View>
+
               <PremiumButton
                 variant="secondary"
                 height={50}
@@ -180,8 +221,8 @@ const getStyles = (colors: ThemeColors) =>
       zIndex: 2000,
     },
     cardContainer: {
-      width: '85%',
-      maxWidth: 340,
+      width: '90%',
+      maxWidth: 360,
       ...shadows.xl,
     },
     card: {
@@ -192,13 +233,13 @@ const getStyles = (colors: ThemeColors) =>
       borderColor: 'rgba(255,255,255,0.1)',
     },
     heroHeader: {
-      height: 120,
+      height: 100,
       justifyContent: 'center',
       alignItems: 'center',
       overflow: 'hidden',
     },
     heroIcon: {
-      fontSize: 64,
+      fontSize: 54,
       zIndex: 2,
       textShadowColor: 'rgba(0,0,0,0.3)',
       textShadowOffset: { width: 0, height: 4 },
@@ -213,45 +254,64 @@ const getStyles = (colors: ThemeColors) =>
       filter: Platform.OS === 'web' ? 'blur(40px)' : undefined,
     },
     content: {
-      padding: spacing.xl,
+      padding: spacing.md, // Reduced padding
       alignItems: 'center',
     },
     title: {
-      fontSize: 24,
+      fontSize: 20, // Reduced font size
       fontWeight: '900',
       textAlign: 'center',
-      letterSpacing: 2,
-      marginBottom: spacing.sm,
+      letterSpacing: 1.5, // Reduced letter spacing
+      marginBottom: spacing.xs,
+      flexShrink: 1, // Allow text to shrink
     },
     subtitle: {
-      fontSize: 14,
+      fontSize: 13, // Reduced font size
       color: colors.textSecondary,
       textAlign: 'center',
-      marginBottom: spacing.xl,
-      lineHeight: 20,
+      marginBottom: spacing.md, // Reduced margin
+      lineHeight: 18, // Adjusted line height
       fontWeight: '500',
+      flexShrink: 1, // Allow text to shrink
     },
     buttonContainer: {
       width: '100%',
-      gap: spacing.md,
+      gap: spacing.xs, // Reduced gap
+    },
+    rowButtons: {
+      flexDirection: 'row',
+      gap: spacing.xs, // Reduced gap
+      width: '100%',
+    },
+    flexButton: {
+      flex: 1,
     },
     mainButton: {
       width: '100%',
     },
     buttonText: {
       color: '#fff',
-      fontSize: 16,
+      fontSize: 14, // Reduced font size
       fontWeight: '900',
       letterSpacing: 1,
+      flexShrink: 1, // Allow text to shrink
+    },
+    rowButtonText: {
+      color: colors.text,
+      fontSize: 12, // Reduced font size
+      fontWeight: 'bold',
+      letterSpacing: 0.5,
+      flexShrink: 1, // Allow text to shrink
     },
     quitButton: {
       width: '100%',
     },
     quitButtonText: {
       color: colors.text,
-      fontSize: 14,
+      fontSize: 13, // Reduced font size
       fontWeight: 'bold',
       opacity: 0.7,
+      flexShrink: 1, // Allow text to shrink
     },
     innerBorder: {
       position: 'absolute',

@@ -144,6 +144,18 @@ export default function Blackjack({ difficulty }: Props) {
     }
   }, [gameState, difficulty, playSound]);
 
+  const handleNewGame = useCallback(() => {
+    playSound('tap');
+    const totalGameDuration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+    recordGameResult('blackjack', 'loss', totalGameDuration);
+    startTimeRef.current = Date.now();
+    setGameState(initializeBlackjackGame(difficulty, INITIAL_BANKROLL));
+  }, [difficulty, playSound]);
+
+  const handleRestart = useCallback(() => {
+    handleNewHand();
+  }, [handleNewHand]);
+
   const getResultText = () => {
     if (!gameState.result) return '';
 

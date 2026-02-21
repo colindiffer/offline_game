@@ -16,6 +16,7 @@ import { ThemeColors } from '../../utils/themes';
 import { GAME_TUTORIALS } from '../../utils/tutorials';
 import PremiumButton from '../../components/PremiumButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useInterstitialAd } from '../../lib/useInterstitialAd';
 import {
   Direction,
   Point,
@@ -46,6 +47,7 @@ export default function Snake({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { showAd } = useInterstitialAd();
   const [snake, setSnake] = useState<Point[]>(getInitialSnake());
   const [food, setFood] = useState<Point>(() => spawnFood(getInitialSnake(), SNAKE_GRID_SIZE));
   const [direction, setDirection] = useState<Direction>('RIGHT');
@@ -55,6 +57,7 @@ export default function Snake({ difficulty }: Props) {
   const [score, setScore] = useState(0);
   const [highScore, setHigh] = useState(0);
   const [showTutorial, setShowTutorial] = useState(false);
+  const isFirstGameRef = useRef(true);
 
   const dirRef = useRef<Direction>('RIGHT');
   const snakeRef = useRef<Point[]>(snake);
@@ -201,6 +204,20 @@ export default function Snake({ difficulty }: Props) {
     setStarted(false);
     setScore(0);
     foodScale.setValue(1); // Reset food animation
+    setPaused(false);
+    pausedRef.current = false;
+  };
+
+  const handleRestart = () => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
+    resetGame();
+  };
+
+  const handleNewGame = () => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
+    resetGame();
   };
 
   const panGesture = Gesture.Pan()
@@ -324,12 +341,29 @@ export default function Snake({ difficulty }: Props) {
         </GestureDetector>
       </View>
 
+      <View style={styles.footer}>
+        <View style={styles.footerBtns}>
+          <PremiumButton variant="secondary" height={50} onPress={handleRestart} disabled={paused} style={styles.flexBtn}>
+            <Text style={styles.resetText}>RESTART</Text>
+          </PremiumButton>
+          <PremiumButton variant="secondary" height={50} onPress={handleNewGame} disabled={paused} style={styles.flexBtn}>
+            <Text style={styles.resetText}>NEW GAME</Text>
+          </PremiumButton>
+        </View>
+      </View>
+
       {gameOver && (
         <GameOverOverlay
           result="lose"
           title="AWW, SNAP!"
           subtitle={`You scored ${score} points.`}
-          onPlayAgain={resetGame}
+          onPlayAgain={() => {
+            showAd(isFirstGameRef.current);
+            isFirstGameRef.current = false;
+            resetGame();
+          }}
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
         />
       )}
 
@@ -339,6 +373,8 @@ export default function Snake({ difficulty }: Props) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
         />
       )}
 
@@ -421,6 +457,23 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     backgroundColor: '#00b894',
     borderRadius: 2,
     transform: [{ rotate: '45deg' }],
+  },
+  footer: {
+    paddingVertical: spacing.md,
+    width: '100%',
+  },
+  footerBtns: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  flexBtn: {
+    flex: 1,
+  },
+  resetText: {
+    fontWeight: '900',
+    fontSize: 14,
+    color: colors.text,
+    letterSpacing: 1,
   },
   bgIcon: {
     position: 'absolute',

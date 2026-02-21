@@ -123,11 +123,19 @@ export default function Dominoes({ difficulty }: { difficulty: Difficulty }) {
     }
   };
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     setGameState(initializeDominoes(difficulty));
     setPaused(false);
     consecutivePassesRef.current = 0;
-  };
+  }, [difficulty]);
+
+  const handleNewGame = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
+  const handleRestart = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
 
   const canPlayerPlayAny = gameState.playerHand.some(t => canPlayTile(t, gameState.board) !== null);
   const showPassButton = gameState.currentPlayerIndex === 0 && !gameState.gameOver && gameState.stock.length === 0 && !canPlayerPlayAny;
@@ -234,6 +242,8 @@ export default function Dominoes({ difficulty }: { difficulty: Difficulty }) {
           title={gameState.winner === 0 ? 'VICTORY!' : 'AI WINS'}
           subtitle={gameState.winner === 0 ? 'You cleared your hand first.' : 'The bot was faster this time.'}
           onPlayAgain={resetGame}
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
 
@@ -243,6 +253,8 @@ export default function Dominoes({ difficulty }: { difficulty: Difficulty }) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

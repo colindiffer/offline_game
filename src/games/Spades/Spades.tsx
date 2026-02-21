@@ -15,6 +15,7 @@ import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { initializeSpadesGame, handleBid, playCard, collectTrick, canPlayCard, getAIBid, dealCards } from './logic';
 import { SpadesGameState, SpadesPlayer, SpadesTrickCard } from './types';
 import { Card } from '../../types/cards';
+import AdBanner from '../../components/AdBanner'; // Import the AdBanner component
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_PADDING = 16;
@@ -22,6 +23,7 @@ const AVAILABLE_WIDTH = SCREEN_WIDTH - (SCREEN_PADDING * 2);
 const CARD_WIDTH = Math.floor(AVAILABLE_WIDTH / 5.5);
 const CARD_HEIGHT = Math.floor(CARD_WIDTH * 1.4);
 const OVERLAP = (13 * CARD_WIDTH - AVAILABLE_WIDTH) / 12;
+const AD_BANNER_HEIGHT = 50; // Assuming a fixed height for the ad banner
 
 export default function Spades({ difficulty }: Props) {
   const { colors } = useTheme();
@@ -85,6 +87,18 @@ export default function Spades({ difficulty }: Props) {
       return () => clearTimeout(timer);
     }
   }, [gameState.currentTrick.cards.length, paused]);
+
+  const handleNewGame = useCallback(() => {
+    setGameState(initializeSpadesGame(difficulty));
+    setSelectedCardId(null);
+    setPaused(false);
+  }, [difficulty]);
+
+  const handleRestart = useCallback(() => {
+    setGameState(initializeSpadesGame(difficulty));
+    setSelectedCardId(null);
+    setPaused(false);
+  }, [difficulty]);
 
   const handlePlayerBid = (bid: number) => {
     if (paused) return;
@@ -248,6 +262,8 @@ export default function Spades({ difficulty }: Props) {
           subtitle={`Your Team: ${gameState.teamScores[0]} (${gameState.teamBags[0]} bags)\nOpponents: ${gameState.teamScores[1]} (${gameState.teamBags[1]} bags)`}
           onPlayAgain={() => setGameState(dealCards(gameState))}
           onPlayAgainLabel="NEXT ROUND"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
 
@@ -257,8 +273,11 @@ export default function Spades({ difficulty }: Props) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
+      <AdBanner />
     </View>
   );
 }
@@ -268,7 +287,7 @@ interface Props {
 }
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, paddingBottom: AD_BANNER_HEIGHT }, // Add padding bottom for ad banner
   tableArea: { flex: 1, justifyContent: 'space-between', padding: spacing.md },
   playerBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)', padding: 8, borderRadius: radius.md, width: 140, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   topPlayer: { alignSelf: 'center' },
@@ -290,8 +309,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   trickRight: { right: 0, top: 60 },
   infoBox: { position: 'absolute', bottom: -40, alignItems: 'center' },
   infoText: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: '900', letterSpacing: 1 },
-  humanSection: { height: CARD_HEIGHT + 20, marginBottom: Platform.OS === 'ios' ? 20 : 0 },
-  handList: { paddingHorizontal: SCREEN_PADDING },
+  humanSection: { height: CARD_HEIGHT + 20 }, // Removed marginBottom
+  handList: { paddingHorizontal: SCREEN_PADDING, paddingBottom: 10 }, // Add padding bottom
   cardWrapper: { marginRight: -OVERLAP },
   cardSelected: { transform: [{ translateY: -20 }], zIndex: 100 },
   cardDimmed: { opacity: 0.5 },

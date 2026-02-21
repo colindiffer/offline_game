@@ -156,6 +156,19 @@ export default function Poker({ difficulty }: Props) {
     roundStartTimeRef.current = Date.now();
   }, [gameState, difficulty, playSound]);
 
+  const handleNewGame = useCallback(() => {
+    playSound('tap');
+    setRoundResult(null);
+    const newState = initializePokerGame(difficulty, INITIAL_CHIPS);
+    setGameState(dealInitialHands(startNewRound(newState)));
+    startTimeRef.current = Date.now();
+    roundStartTimeRef.current = Date.now();
+  }, [difficulty, playSound]);
+
+  const handleRestart = useCallback(() => {
+    handleNewRound();
+  }, [handleNewRound]);
+
   const getPhaseDescription = () => {
     switch (gameState.gamePhase) {
       case 'preFlop': return 'PRE-FLOP';

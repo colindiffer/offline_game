@@ -171,6 +171,14 @@ export default function Chess({ difficulty }: Props) {
     setIsAIThinking(false);
   }, []);
 
+  const handleNewGame = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
+  const handleRestart = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
   const isValidMoveTarget = (row: number, col: number): boolean => {
     if (!gameState.selectedPiece) return false;
     return gameState.validMoves.some(m =>
@@ -284,6 +292,8 @@ export default function Chess({ difficulty }: Props) {
           title={gameState.isCheckmate ? 'CHECKMATE!' : 'STALEMATE'}
           subtitle={gameState.isCheckmate ? (gameState.currentPlayer === 'black' ? 'A masterful victory.' : 'The AI outplayed you.') : 'A deadlock was reached.'}
           onPlayAgain={resetGame}
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

@@ -402,6 +402,14 @@ export default function Tetris({ difficulty }: Props) {
     startTimeRef.current = Date.now();
   }, [stopGameLoop]);
 
+  const handleNewGame = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
+  const handleRestart = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
   return (
     <View style={styles.container}>
       <Text style={styles.bgIcon}>🧱</Text>
@@ -470,6 +478,8 @@ export default function Tetris({ difficulty }: Props) {
           title="MISSION FAILED"
           subtitle={`FINAL SCORE: ${score}`}
           onPlayAgain={resetGame}
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
 
@@ -479,6 +489,8 @@ export default function Tetris({ difficulty }: Props) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

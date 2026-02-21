@@ -43,16 +43,16 @@ export default function GameCard({ game, onPress, index = 0 }: Props) {
     if (game.id === 'dominoes') {
       return (
         <View style={styles.customIconContainer}>
-          <DominoTile 
-            sideA={6} 
-            sideB={6} 
-            style={styles.gameCardDomino} 
-            pointerEvents="none" 
+          <DominoTile
+            sideA={6}
+            sideB={6}
+            style={styles.gameCardDomino}
+            pointerEvents="none"
           />
         </View>
       );
     }
-    
+
     if (game.id === '2048') {
       return (
         <View style={styles.tile2048}>
@@ -60,7 +60,16 @@ export default function GameCard({ game, onPress, index = 0 }: Props) {
         </View>
       );
     }
-    
+
+    if (game.id === 'brick-breaker') {
+      return (
+        <View style={styles.bbContainer}>
+          <View style={styles.bbBall} />
+          <View style={styles.bbPaddle} />
+        </View>
+      );
+    }
+
     return <Text style={styles.icon}>{game.icon}</Text>;
   };
 
@@ -131,6 +140,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 2,
+    overflow: 'hidden',
+    paddingBottom: 4,
   },
   icon: {
     fontSize: 72,
@@ -164,6 +175,37 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.2)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 2,
+  },
+  bbContainer: {
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    height: 70,
+    width: 90,
+  },
+  bbBall: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#fff',
+    position: 'absolute',
+    top: 8,
+    right: 22,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  bbPaddle: {
+    width: 70,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    elevation: 4,
   },
   labelContainer: {
     width: '100%',

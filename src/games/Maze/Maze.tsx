@@ -151,6 +151,21 @@ export default function Maze({ difficulty }: Props) {
     startTimeRef.current = null;
   }, [difficulty, level]);
 
+  const handleNewGame = useCallback(() => {
+    setLevelState(1);
+    setMaze(generateMaze(difficulty, 1));
+    setPlayerPos({ row: 0, col: 0 });
+    setGameWon(false);
+    setElapsedTime(0);
+    setFinalTime(0);
+    setTimerStarted(false);
+    startTimeRef.current = null;
+  }, [difficulty]);
+
+  const handleRestart = useCallback(() => {
+    resetLevel();
+  }, [resetLevel]);
+
   if (!isReady) return <View style={styles.container} />;
 
   const renderMaze = () => {
@@ -221,6 +236,8 @@ export default function Maze({ difficulty }: Props) {
           subtitle={finalTime > 0 ? `Solved in ${finalTime} seconds.` : 'Level escaped!'}
           onPlayAgain={nextLevel}
           onPlayAgainLabel="NEXT LEVEL"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

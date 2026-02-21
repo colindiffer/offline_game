@@ -190,6 +190,14 @@ export default function SpiderSolitaire({ difficulty }: Props) {
     startTimeRef.current = Date.now();
   }, [difficulty]);
 
+  const handleNewGame = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
+  const handleRestart = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
   if (!isReady) return null;
 
   return (
@@ -302,6 +310,8 @@ export default function SpiderSolitaire({ difficulty }: Props) {
           title="KING OF SPIDERS!"
           subtitle={`You beat it in ${elapsedTime}s!`}
           onPlayAgain={resetGame}
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
 
@@ -311,6 +321,8 @@ export default function SpiderSolitaire({ difficulty }: Props) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

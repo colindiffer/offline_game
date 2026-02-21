@@ -23,6 +23,8 @@ import {
 import { Card, GameState, Pile } from './types';
 import { spacing, radius, shadows } from '../../utils/designTokens';
 
+import { useInterstitialAd } from '../../lib/useInterstitialAd';
+
 interface Props {
   difficulty: Difficulty;
 }
@@ -31,6 +33,7 @@ export default function Solitaire({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const { showAd } = useInterstitialAd();
 
   const { CARD_WIDTH, CARD_HEIGHT, COLUMN_GAP, SCREEN_PADDING } = useMemo(() => {
     const gap = 2;
@@ -43,7 +46,8 @@ export default function Solitaire({ difficulty }: Props) {
   const styles = useMemo(() => getStyles(colors, CARD_WIDTH, CARD_HEIGHT, COLUMN_GAP, SCREEN_PADDING), [colors, CARD_WIDTH, CARD_HEIGHT, COLUMN_GAP, SCREEN_PADDING]);
   const config = getSolitaireConfig(difficulty);
 
-  const [gameState, setGameState] = useState<GameState>(() => initializeGame());
+  const [initialGameState, setInitialGameState] = useState<GameState>(() => initializeGame());
+  const [gameState, setGameState] = useState<GameState>(initialGameState);
   const [undoHistory, setUndoHistory] = useState<GameState[]>([]);
   const [selected, setSelected] = useState<{ source: string; cardIndex: number } | null>(null);
   const [gameWon, setGameWon] = useState(false);
@@ -58,11 +62,38 @@ export default function Solitaire({ difficulty }: Props) {
   gameWonRef.current = gameWon;
   const pausedRef = useRef(false);
   pausedRef.current = paused;
+  const isFirstGameRef = useRef(true); // Track if it's the very first game session
 
   const startTimeRef = useRef<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const cardAnimations = useRef<Map<string, Animated.Value>>(new Map());
   const pilePositions = useRef<Map<string, { x: number; y: number; width: number; height: number }>>(new Map());
+  
+  const resetAllState = useCallback(() => {
+    setUndoHistory([]);
+    setSelected(null);
+    setGameWon(false);
+    setElapsedTime(0);
+    setPasses(0);
+    setPaused(false);
+    startTimeRef.current = null;
+  }, []);
+
+  const handleRestart = useCallback(() => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
+    setGameState(initialGameState);
+    resetAllState();
+  }, [initialGameState, resetAllState, showAd]);
+
+  const handleNewGame = useCallback(() => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
+    const newInitialState = initializeGame();
+    setInitialGameState(newInitialState);
+    setGameState(newInitialState);
+    resetAllState();
+  }, [resetAllState, showAd]);
 
   useEffect(() => {
     getHighScore('solitaire', difficulty).then((score) => {
@@ -71,7 +102,7 @@ export default function Solitaire({ difficulty }: Props) {
   }, [difficulty]);
 
   useEffect(() => {
-    resetGame();
+    handleNewGame();
   }, [difficulty]);
 
   useEffect(() => {
@@ -112,105 +143,6 @@ export default function Solitaire({ difficulty }: Props) {
     setUndoHistory(prev => prev.slice(0, -1));
     playSound('tap');
   }, [undoHistory, paused, playSound]);
-
-  const performMove = useCallback((srcSource: string, srcIndex: number, targetSource: string) => {
-    if (paused) return;
-    let srcPile: Pile = [];
-    if (srcSource === 'waste') srcPile = gameStateRef.current.waste;
-    else if (srcSource.startsWith('tableau')) {
-      const tableauIndex = parseInt(srcSource.split('-')[1], 10);
-      srcPile = gameStateRef.current.tableau[tableauIndex];
-    }
-
-    if (srcPile.length === 0 || srcIndex >= srcPile.length) return;
-
-    const cards = srcPile.slice(srcIndex);
-    const card = cards[0];
-    let moved = false;
-
-    // Foundation logic
-    if (targetSource.startsWith('foundation') && cards.length === 1) {
-      const fIdx = parseInt(targetSource.split('-')[1], 10);
-      if (canMoveToFoundation(card, gameStateRef.current.foundations[fIdx])) {
-        saveToUndo(gameStateRef.current);
-        const newState = JSON.parse(JSON.stringify(gameStateRef.current));
-        const newFoundations = newState.foundations;
-        newFoundations[fIdx].push(card);
-
-        if (srcSource === 'waste') newState.waste.pop();
-        else if (srcSource.startsWith('tableau')) {
-          const tIdx = parseInt(srcSource.split('-')[1], 10);
-          newState.tableau[tIdx].splice(srcIndex);
-          if (newState.tableau[tIdx].length > 0) newState.tableau[tIdx][newState.tableau[tIdx].length - 1].faceUp = true;
-        }
-
-        setGameState(newState);
-        playSound('drop');
-        moved = true;
-        animateCardMove(`foundation-${fIdx}`);
-        if (isGameWon(newState.foundations)) {
-          setGameWon(true);
-          playSound('win');
-          const finalTime = Math.floor((Date.now() - startTimeRef.current!) / 1000);
-          recordGameResult('solitaire', 'win', finalTime);
-          if (highScore === null || finalTime < highScore || highScore === 0) {
-            setHighScoreState(finalTime);
-            setHighScore('solitaire', finalTime, difficulty);
-          }
-        }
-      }
-    }
-
-    // Tableau logic
-    if (!moved && targetSource.startsWith('tableau')) {
-      const tIdx = parseInt(targetSource.split('-')[1], 10);
-      if (canMoveToTableau(card, gameStateRef.current.tableau[tIdx])) {
-        saveToUndo(gameStateRef.current);
-        const newState = JSON.parse(JSON.stringify(gameStateRef.current));
-        newState.tableau[tIdx] = [...newState.tableau[tIdx], ...cards];
-
-        if (srcSource === 'waste') newState.waste.pop();
-        else if (srcSource.startsWith('tableau')) {
-          const srcTIdx = parseInt(srcSource.split('-')[1], 10);
-          newState.tableau[srcTIdx].splice(srcIndex);
-          if (newState.tableau[srcTIdx].length > 0) newState.tableau[srcTIdx][newState.tableau[srcTIdx].length - 1].faceUp = true;
-        }
-
-        setGameState(newState);
-        playSound('drop');
-        moved = true;
-        animateCardMove(`tableau-${tIdx}-${newState.tableau[tIdx].length - 1}`);
-      }
-    }
-  }, [highScore, playSound, saveToUndo, paused]);
-
-  const handleCardClick = useCallback((source: string, cardIndex: number) => {
-    if (gameWonRef.current || pausedRef.current) return;
-    if (!startTimeRef.current) startTimeRef.current = Date.now();
-
-    setSelected(prevSelected => {
-      if (prevSelected) {
-        const { source: srcSource, cardIndex: srcIndex } = prevSelected;
-        if (srcSource === source && srcIndex === cardIndex) return null;
-        performMove(srcSource, srcIndex, source);
-        return null;
-      } else {
-        playSound('tap');
-        return { source, cardIndex };
-      }
-    });
-  }, [performMove, playSound]);
-
-  const resetGame = useCallback(() => {
-    setGameState(initializeGame());
-    setUndoHistory([]);
-    setSelected(null);
-    setGameWon(false);
-    setElapsedTime(0);
-    setPasses(0);
-    setPaused(false);
-    startTimeRef.current = null;
-  }, []);
 
   const handleDraw = useCallback(() => {
     if (paused) return;
@@ -376,12 +308,15 @@ export default function Solitaire({ difficulty }: Props) {
           </View>
         </TouchableOpacity>
 
-        <PremiumButton variant="secondary" height={44} style={styles.newGameBtn} onPress={resetGame} disabled={paused}>
+        <PremiumButton variant="secondary" height={44} style={styles.bottomActionBtn} onPress={handleRestart} disabled={paused}>
+          <Text style={styles.newGameText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={44} style={styles.bottomActionBtn} onPress={handleNewGame} disabled={paused}>
           <Text style={styles.newGameText}>NEW GAME</Text>
         </PremiumButton>
       </View>
 
-      {gameWon && <GameOverOverlay result="win" title="MATCH COMPLETE" subtitle={`Time: ${elapsedTime}s`} onPlayAgain={resetGame} />}
+      {gameWon && <GameOverOverlay result="win" title="MATCH COMPLETE" subtitle={`Time: ${elapsedTime}s`} onPlayAgain={handleNewGame} onRestart={handleRestart} onNewGame={handleNewGame} />}
 
       {paused && !gameWon && (
         <GameOverOverlay
@@ -389,6 +324,8 @@ export default function Solitaire({ difficulty }: Props) {
           title="GAME PAUSED"
           onPlayAgain={() => setPaused(false)}
           onPlayAgainLabel="RESUME"
+          onRestart={handleRestart}
+          onNewGame={handleNewGame}
         />
       )}
 
@@ -471,7 +408,7 @@ const getStyles = (colors: ThemeColors, CARD_WIDTH: number, CARD_HEIGHT: number,
     alignItems: 'center',
   },
   undoBadgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
-  newGameBtn: { minWidth: 120 },
+  bottomActionBtn: { flex: 1 },
   newGameText: { color: '#fff', fontWeight: '900', fontSize: 12, letterSpacing: 1 },
   dragOverlay: { ...StyleSheet.absoluteFillObject, zIndex: 1000 },
   draggedCard: { position: 'absolute', zIndex: 1001, ...shadows.lg },

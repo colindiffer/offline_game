@@ -140,7 +140,7 @@ export const GAMES: GameMetadata[] = [
   {
     id: 'brick-breaker',
     name: 'Brick Breaker',
-    icon: '☄️',
+    icon: '🧱',
     description: 'Smash bricks',
     color: '#ff9f43',
     category: 'Arcade',

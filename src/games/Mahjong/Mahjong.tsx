@@ -122,6 +122,18 @@ export default function Mahjong({ difficulty }: Props) {
     setGameWon(false);
   }, [difficulty]);
 
+  const handleNewGame = useCallback(() => {
+    setLevelState(1);
+    setTiles(initializeMahjong(difficulty, 1));
+    setSelectedId(null);
+    setGameWon(false);
+    startTimeRef.current = Date.now();
+  }, [difficulty]);
+
+  const handleRestart = useCallback(() => {
+    resetLevel();
+  }, [resetLevel]);
+
   if (!isReady) return <View style={styles.container} />;
 
   const sortedTiles = [...tiles].sort((a, b) => {
@@ -197,12 +209,14 @@ export default function Mahjong({ difficulty }: Props) {
       </View>
 
       {gameWon && (
-        <GameOverOverlay 
-          result="win" 
-          title="BOARD CLEARED!" 
-          subtitle="You matched all tiles." 
+        <GameOverOverlay
+          result="win"
+          title="BOARD CLEARED!"
+          subtitle="You matched all tiles."
           onPlayAgain={nextLevel}
           onPlayAgainLabel="NEXT LEVEL"
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

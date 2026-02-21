@@ -183,6 +183,14 @@ export default function Reversi({ difficulty }: Props) {
     setIsAIThinking(false);
   }, []);
 
+  const handleNewGame = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
+  const handleRestart = useCallback(() => {
+    resetGame();
+  }, [resetGame]);
+
   const isValidMove = (row: number, col: number): boolean => {
     return gameState.validMoves.some(m => m.row === row && m.col === col);
   };
@@ -281,6 +289,8 @@ export default function Reversi({ difficulty }: Props) {
           title={gameState.winner === 'black' ? 'VICTORY!' : 'DEFEAT'}
           subtitle={gameState.winner === 'black' ? 'You outmaneuvered the AI.' : 'Better luck next time.'}
           onPlayAgain={resetGame}
+          onNewGame={handleNewGame}
+          onRestart={handleRestart}
         />
       )}
     </View>

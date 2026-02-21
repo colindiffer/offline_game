@@ -28,7 +28,7 @@ export function getGameConfig(difficulty: Difficulty, level: number = 1): GameCo
   return { rows: size, cols: size, mines };
 }
 
-export function createBoard(difficulty: Difficulty, firstClickRow: number, firstClickCol: number, level: number = 1): Board {
+export function createBoard(difficulty: Difficulty, firstClickRow: number, firstClickCol: number, level: number = 1, emptyBoard: boolean = false): Board {
   const { rows, cols, mines } = getGameConfig(difficulty, level);
   let board: Board = Array(rows)
     .fill(0)
@@ -44,12 +44,16 @@ export function createBoard(difficulty: Difficulty, firstClickRow: number, first
         }))
     );
 
+  if (emptyBoard) {
+    return board; // Return an empty board if requested
+  }
+
   let minesPlaced = 0;
   while (minesPlaced < mines) {
     const r = Math.floor(Math.random() * rows);
     const c = Math.floor(Math.random() * cols);
 
-    // Ensure first click area is clear
+    // Ensure first click area (3x3 around firstClickRow/Col) is clear
     if (
       !board[r][c].isMine &&
       (Math.abs(r - firstClickRow) > 1 || Math.abs(c - firstClickCol) > 1)

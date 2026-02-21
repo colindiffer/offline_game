@@ -1,18 +1,30 @@
 import { Difficulty } from '../../types';
 
 export interface Point { x: number; y: number; }
-export interface Brick { x: number; y: number; width: number; height: number; active: boolean; color: string; }
+export interface Brick { x: number; y: number; width: number; height: number; active: boolean; color: string; type?: 'powerUp'; powerUp?: PowerUpType; }
+
+export type PowerUpType = 'extraLife' | 'paddleGrow' | 'multiBall' | 'slowBall';
+
+export interface PowerUp {
+  x: number;
+  y: number;
+  type: PowerUpType;
+  active: boolean;
+}
 
 export interface BrickBreakerState {
   ball: Point;
   ballVel: Point;
   paddleX: number;
   bricks: Brick[];
+  powerUps: PowerUp[];
   gameOver: boolean;
   gameWon: boolean;
+  lives: number;
 }
 
 const BRICK_COLORS = ['#ff7675', '#fdcb6e', '#55efc4', '#74b9ff', '#a29bfe'];
+const POWER_UP_TYPES: PowerUpType[] = ['extraLife', 'paddleGrow', 'multiBall', 'slowBall'];
 
 export function initializeBrickBreaker(difficulty: Difficulty, boardWidth: number, boardHeight: number, level: number = 1): BrickBreakerState {
   let baseRows = difficulty === 'easy' ? 3 : difficulty === 'medium' ? 5 : 7;
@@ -40,6 +52,8 @@ export function initializeBrickBreaker(difficulty: Difficulty, boardWidth: numbe
         height: brickHeight - padding * 2,
         active: true,
         color: BRICK_COLORS[r % BRICK_COLORS.length],
+        type: Math.random() < 0.15 ? 'powerUp' : undefined, // 15% chance for a power-up brick
+        powerUp: POWER_UP_TYPES[Math.floor(Math.random() * POWER_UP_TYPES.length)],
       });
     }
   }
@@ -49,7 +63,9 @@ export function initializeBrickBreaker(difficulty: Difficulty, boardWidth: numbe
     ballVel: { x: ballSpeed * (Math.random() > 0.5 ? 1 : -1), y: -ballSpeed },
     paddleX: boardWidth / 2 - 50,
     bricks,
+    powerUps: [],
     gameOver: false,
     gameWon: false,
+    lives: 3,
   };
 }
