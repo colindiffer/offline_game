@@ -228,10 +228,25 @@ export default function Hearts({ difficulty }: Props) {
     }
   };
 
+  const getPlayerPenalties = (playerId: number) => {
+    let hearts = 0;
+    let hasQueen = false;
+    for (const trick of gameState.completedTricks) {
+      if (trick.winner === playerId) {
+        for (const tc of trick.cards) {
+          if (tc.card.suit === 'hearts') hearts++;
+          if (tc.card.suit === 'spades' && tc.card.rank === 'Q') hasQueen = true;
+        }
+      }
+    }
+    return { hearts, hasQueen };
+  };
+
   const renderPlayerBadge = (playerIndex: number, position: 'top' | 'left' | 'right') => {
     const player = gameState.players[playerIndex];
     if (!player) return null;
     const isCurrent = gameState.currentPlayerIndex === playerIndex;
+    const { hearts, hasQueen } = getPlayerPenalties(player.id);
 
     return (
       <View style={[styles.playerBadge, position === 'top' ? styles.topPlayer : position === 'left' ? styles.leftPlayer : styles.rightPlayer]}>
@@ -241,10 +256,13 @@ export default function Hearts({ difficulty }: Props) {
         <View style={styles.playerMeta}>
           <Text style={styles.playerNameText}>{player.name}</Text>
           <Text style={styles.playerScoreText}>Score: {player.totalScore}</Text>
-          {player.score > 0 && <Text style={styles.roundPoints}>+{player.score}</Text>}
+          <View style={styles.penaltyRow}>
+            {hearts > 0 && <Text style={styles.heartCount}>♥ {hearts}</Text>}
+            {hasQueen && <Text style={styles.queenBadge}>Q♠</Text>}
+          </View>
         </View>
         <View style={styles.cardIndicator}>
-          <Text style={styles.cardIndicatorText}>{player.cards.length} C</Text>
+          <Text style={styles.cardIndicatorText}>{player.cards.length}🂠</Text>
         </View>
       </View>
     );
@@ -460,6 +478,9 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   playerMeta: { flex: 1 },
   playerNameText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
   playerScoreText: { color: 'rgba(255,255,255,0.6)', fontSize: 9 },
+  penaltyRow: { flexDirection: 'row', gap: 4, marginTop: 1 },
+  heartCount: { color: '#ff6b6b', fontSize: 9, fontWeight: 'bold' },
+  queenBadge: { color: '#a29bfe', fontSize: 9, fontWeight: 'bold' },
   roundPoints: { color: '#fab1a0', fontSize: 9, fontWeight: 'bold', position: 'absolute', right: 0, top: -12 },
   cardIndicator: { backgroundColor: 'rgba(0,0,0,0.3)', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   cardIndicatorText: { color: '#fff', fontSize: 8, fontWeight: 'bold' },

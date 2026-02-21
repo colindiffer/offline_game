@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
 import GameOverOverlay from '../../components/GameOverOverlay';
@@ -24,11 +24,13 @@ export default function SpiderSolitaire({ difficulty }: Props) {
   const { width: SCREEN_WIDTH } = useWindowDimensions();
 
   const { CARD_WIDTH, CARD_HEIGHT, VERTICAL_SPREAD, SCREEN_PADDING, COLUMN_GAP } = useMemo(() => {
-    const padding = 0;
-    const gap = 0.5;
-    const cw = Math.floor((SCREEN_WIDTH - (padding * 2) - (gap * 9)) / 10);
+    const padding = 4;
+    const gap = 3;
+    const minCW = 58;
+    const naturalCW = Math.floor((SCREEN_WIDTH - (padding * 2) - (gap * 9)) / 10);
+    const cw = Math.max(naturalCW, minCW);
     const ch = Math.floor(cw * 1.4);
-    const vs = 0.4;
+    const vs = 0.28;
     return { CARD_WIDTH: cw, CARD_HEIGHT: ch, VERTICAL_SPREAD: vs, SCREEN_PADDING: padding, COLUMN_GAP: gap };
   }, [SCREEN_WIDTH]);
 
@@ -215,7 +217,7 @@ export default function SpiderSolitaire({ difficulty }: Props) {
       />
 
       <View style={styles.gameArea}>
-        <View style={styles.tableauContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tableauContainer}>
           {gameState.tableau.map((pile, i) => {
             const isValidTarget = validCols.has(i);
             const isSourceCol = selected?.col === i;
@@ -263,7 +265,7 @@ export default function SpiderSolitaire({ difficulty }: Props) {
               </View>
             );
           })}
-        </View>
+        </ScrollView>
 
         <View style={styles.bottomRow}>
           <View style={styles.stockWrapper}>
@@ -332,9 +334,9 @@ export default function SpiderSolitaire({ difficulty }: Props) {
 const getStyles = (colors: ThemeColors, CARD_WIDTH: number, CARD_HEIGHT: number, SCREEN_PADDING: number) =>
   StyleSheet.create({
     container: { flex: 1 },
-    gameArea: { flex: 1, paddingHorizontal: 0, paddingTop: spacing.xs },
-    tableauContainer: { flexDirection: 'row', flex: 1, justifyContent: 'center' },
-    column: { width: CARD_WIDTH, height: '100%', position: 'relative', marginHorizontal: 0.25 },
+    gameArea: { flex: 1, paddingHorizontal: SCREEN_PADDING, paddingTop: spacing.xs },
+    tableauContainer: { flexDirection: 'row', alignItems: 'flex-start', paddingBottom: 8 },
+    column: { width: CARD_WIDTH, height: 500, position: 'relative', marginHorizontal: 1.5 },
     cardWrapper: { position: 'absolute', width: '100%' },
     emptySlot: {
       position: 'absolute',
