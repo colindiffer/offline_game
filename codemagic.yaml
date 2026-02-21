@@ -40,7 +40,7 @@ workflows:
 
       - name: Build IPA
         script: |
-          WORKSPACE=$(find ios -name "*.xcworkspace" | head -1)
+          WORKSPACE=$(find ios -name "*.xcworkspace" -not -path "*.xcodeproj/*" | head -1)
           SCHEME=$(basename "$WORKSPACE" .xcworkspace)
           echo "Building workspace: $WORKSPACE  scheme: $SCHEME"
           xcode-project build-ipa \
