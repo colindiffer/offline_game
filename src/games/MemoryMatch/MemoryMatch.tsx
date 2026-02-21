@@ -230,9 +230,6 @@ export default function MemoryMatch({ difficulty }: Props) {
     </View>
   );
 }
-    </View>
-  );
-}
 
 interface Props {
   difficulty: Difficulty;
