@@ -224,8 +224,11 @@ export default function Maze({ difficulty }: Props) {
       </GestureDetector>
 
       <View style={styles.footer}>
-        <PremiumButton variant="secondary" height={50} onPress={resetLevel} style={styles.newGameBtn}>
-          <Text style={styles.newGameText}>RESET LEVEL</Text>
+        <PremiumButton variant="secondary" height={50} onPress={handleRestart} style={styles.flexBtn}>
+          <Text style={styles.newGameText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={50} onPress={handleNewGame} style={styles.flexBtn}>
+          <Text style={styles.newGameText}>NEW GAME</Text>
         </PremiumButton>
       </View>
 
@@ -266,8 +269,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   playerGlow: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(116, 185, 255, 0.2)' },
   exitPortal: { width: '60%', height: '60%', borderRadius: 4, overflow: 'hidden', borderWidth: 2, borderColor: '#fdcb6e', transform: [{ rotate: '45deg' }] },
   exitGradient: { flex: 1 },
-  footer: { padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
-  newGameBtn: { width: '100%' },
+  footer: { flexDirection: 'row', gap: spacing.md, padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
+  flexBtn: { flex: 1 },
   newGameText: { color: colors.text, fontWeight: '900', fontSize: 14, letterSpacing: 1 },
   bgIcon: {
     position: 'absolute',

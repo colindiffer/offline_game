@@ -285,8 +285,11 @@ export default function Checkers({ difficulty }: Props) {
       </View>
 
       <View style={styles.footer}>
-        <PremiumButton variant="secondary" height={56} onPress={resetGame} style={styles.newGameBtn}>
-          <Text style={styles.newGameText}>RESET BOARD</Text>
+        <PremiumButton variant="secondary" height={56} onPress={handleRestart} style={styles.flexBtn}>
+          <Text style={styles.newGameText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={56} onPress={handleNewGame} style={styles.flexBtn}>
+          <Text style={styles.newGameText}>NEW GAME</Text>
         </PremiumButton>
       </View>
 
@@ -431,10 +434,10 @@ const getStyles = (colors: ThemeColors) =>
     footer: {
       width: '100%',
       paddingHorizontal: spacing.md,
+      flexDirection: 'row',
+      gap: spacing.md,
     },
-    newGameBtn: {
-      width: '100%',
-    },
+    flexBtn: { flex: 1 },
     newGameText: {
       color: colors.text,
       fontWeight: '900',

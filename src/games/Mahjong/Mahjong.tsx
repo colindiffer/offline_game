@@ -203,8 +203,11 @@ export default function Mahjong({ difficulty }: Props) {
       </View>
 
       <View style={styles.footer}>
-        <PremiumButton variant="secondary" height={50} onPress={resetLevel}>
-          <Text style={styles.footerText}>RESET BOARD</Text>
+        <PremiumButton variant="secondary" height={50} style={styles.flexBtn} onPress={handleRestart}>
+          <Text style={styles.footerText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={50} style={styles.flexBtn} onPress={handleNewGame}>
+          <Text style={styles.footerText}>NEW GAME</Text>
         </PremiumButton>
       </View>
 
@@ -290,7 +293,8 @@ const getStyles = (colors: ThemeColors, tileWidth: number, tileHeight: number) =
     backgroundColor: '#dcdde1',
     opacity: 0.6,
   },
-  footer: { padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
+  footer: { flexDirection: 'row', gap: spacing.md, padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
+  flexBtn: { flex: 1 },
   footerText: { color: colors.text, fontWeight: 'bold' },
   bgIcon: {
     position: 'absolute',

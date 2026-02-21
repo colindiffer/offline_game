@@ -11,11 +11,13 @@ import { ThemeColors } from '../../utils/themes';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { initializeBackgammon, rollDice, isValidMove, performMove, getAIMove } from './logic';
 import { BackgammonGameState } from './types';
+import { useInterstitialAd } from '../../lib/useInterstitialAd';
 
 export default function Backgammon({ difficulty }: { difficulty: Difficulty }) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { showAd } = useInterstitialAd();
 
   const [gameState, setGameState] = useState<BackgammonGameState>(() => initializeBackgammon());
   const [selectedPoint, setSelectedPoint] = useState<number | 'bar' | null>(null);
@@ -24,6 +26,7 @@ export default function Backgammon({ difficulty }: { difficulty: Difficulty }) {
   const aiThinkingRef = useRef(false);
   const pausedRef = useRef(false);
   pausedRef.current = paused;
+  const isFirstGameRef = useRef(true);
 
   useEffect(() => {
     setIsReady(true);
@@ -106,18 +109,22 @@ export default function Backgammon({ difficulty }: { difficulty: Difficulty }) {
   }, [selectedPoint, gameState, difficulty, paused]);
 
   const handleRestart = useCallback(() => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
     setGameState(initializeBackgammon());
     setSelectedPoint(null);
     setPaused(false);
     aiThinkingRef.current = false;
-  }, []);
+  }, [showAd]);
 
   const handleNewGame = useCallback(() => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
     setGameState(initializeBackgammon());
     setSelectedPoint(null);
     setPaused(false);
     aiThinkingRef.current = false;
-  }, []);
+  }, [showAd]);
 
   if (!isReady) return null;
 

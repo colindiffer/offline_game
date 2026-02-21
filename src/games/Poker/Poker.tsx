@@ -317,6 +317,15 @@ export default function Poker({ difficulty }: Props) {
         )}
       </View>
 
+      <View style={styles.gameFooter}>
+        <PremiumButton variant="secondary" height={38} style={styles.footerBtn} onPress={handleRestart}>
+          <Text style={styles.footerBtnText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={38} style={styles.footerBtn} onPress={handleNewGame}>
+          <Text style={styles.footerBtnText}>NEW GAME</Text>
+        </PremiumButton>
+      </View>
+
       {showTutorial && <TutorialScreen gameName="Poker" steps={GAME_TUTORIALS.poker} onClose={handleTutorialClose} />}
     </View>
   );
@@ -582,4 +591,15 @@ const getStyles = (colors: ThemeColors, CARD_WIDTH: number, CARD_HEIGHT: number)
       letterSpacing: 1,
       fontSize: 12,
     },
+    gameFooter: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.background,
+    },
+    footerBtn: { flex: 1 },
+    footerBtnText: { color: colors.text, fontWeight: 'bold', fontSize: 11 },
   });

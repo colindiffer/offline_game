@@ -56,7 +56,11 @@ export default function WordGuess({ difficulty }: Props) {
   );
   const { showAd } = useInterstitialAd();
 
+  const [level, setLevelState] = useState(1);
+  const [gameState, setGameState] = useState<WordGuessState | null>(null);
+  const [isReady, setIsReady] = useState(false);
   const [paused, setPaused] = useState(false);
+  const isFirstGameRef = useRef(true);
 
   const init = useCallback(async () => {
     const savedLevel = await getLevel('word-guess', difficulty);
@@ -64,13 +68,18 @@ export default function WordGuess({ difficulty }: Props) {
     setGameState(initializeWordGuess(difficulty, savedLevel));
     setIsReady(true);
     setPaused(false);
+    isFirstGameRef.current = false; // Mark that the first game has started
   }, [difficulty]);
 
   const handleNewGame = useCallback(() => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
     init();
-  }, [init]);
+  }, [init, showAd]);
 
   const handleRestart = useCallback(() => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
     if (gameState) {
       setGameState({
         ...initializeWordGuess(difficulty, level),
@@ -78,7 +87,7 @@ export default function WordGuess({ difficulty }: Props) {
       });
     }
     setPaused(false);
-  }, [gameState, difficulty, level]);
+  }, [gameState, difficulty, level, showAd]);
 
   useEffect(() => {
     init();
@@ -223,7 +232,15 @@ export default function WordGuess({ difficulty }: Props) {
           result={gameState.gameWon ? 'win' : 'lose'}
           title={gameState.gameWon ? 'BRILLIANT!' : 'OUT OF TRIES'}
           subtitle={gameState.gameWon ? 'You found the word!' : `The word was: ${gameState.targetWord}`}
-          onPlayAgain={gameState.gameWon ? init : handleRestart}
+          onPlayAgain={() => {
+            showAd(isFirstGameRef.current);
+            isFirstGameRef.current = false;
+            if (gameState.gameWon) {
+              init(); // Re-initialize for next level
+            } else {
+              handleRestart();
+            }
+          }}
           onPlayAgainLabel={gameState.gameWon ? 'NEXT LEVEL' : 'TRY AGAIN'}
           onRestart={handleRestart}
           onNewGame={handleNewGame}

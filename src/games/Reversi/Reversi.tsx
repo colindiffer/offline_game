@@ -278,9 +278,14 @@ export default function Reversi({ difficulty }: Props) {
           )}
         </View>
 
-        <PremiumButton variant="secondary" height={56} onPress={resetGame} style={styles.newGameBtn}>
-          <Text style={styles.newGameText}>RESET BOARD</Text>
-        </PremiumButton>
+        <View style={styles.footerBtns}>
+          <PremiumButton variant="secondary" height={56} onPress={handleRestart} style={styles.flexBtn}>
+            <Text style={styles.newGameText}>RESTART</Text>
+          </PremiumButton>
+          <PremiumButton variant="secondary" height={56} onPress={handleNewGame} style={styles.flexBtn}>
+            <Text style={styles.newGameText}>NEW GAME</Text>
+          </PremiumButton>
+        </View>
       </View>
 
       {gameState.gameOver && (
@@ -407,9 +412,11 @@ const getStyles = (colors: ThemeColors) =>
       fontWeight: '900',
       letterSpacing: 1,
     },
-    newGameBtn: {
-      width: '100%',
+    footerBtns: {
+      flexDirection: 'row',
+      gap: spacing.md,
     },
+    flexBtn: { flex: 1 },
     newGameText: {
       color: colors.text,
       fontWeight: '900',

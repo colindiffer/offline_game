@@ -231,8 +231,11 @@ export default function Dominoes({ difficulty }: { difficulty: Difficulty }) {
       </View>
 
       <View style={styles.footer}>
-        <PremiumButton variant="secondary" onPress={resetGame} disabled={paused}>
-          <Text style={styles.resetText}>RESET GAME</Text>
+        <PremiumButton variant="secondary" height={50} style={styles.flexBtn} onPress={handleRestart} disabled={paused}>
+          <Text style={styles.resetText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={50} style={styles.flexBtn} onPress={handleNewGame} disabled={paused}>
+          <Text style={styles.resetText}>NEW GAME</Text>
         </PremiumButton>
       </View>
 
@@ -277,8 +280,9 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   drawText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
   hand: { gap: spacing.md, paddingHorizontal: spacing.md },
   tileTouch: { ...shadows.md },
-  footer: { padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
-  resetText: { color: '#fff', fontWeight: 'bold' },
+  footer: { flexDirection: 'row', gap: spacing.md, padding: spacing.xl, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
+  flexBtn: { flex: 1 },
+  resetText: { color: colors.text, fontWeight: 'bold' },
   sideTargets: { ...StyleSheet.absoluteFillObject, zIndex: 10, flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
   sideTarget: { borderWidth: 2, borderColor: '#55efc4', borderStyle: 'dashed', borderRadius: radius.md, paddingHorizontal: spacing.xl, paddingVertical: spacing.lg, backgroundColor: 'rgba(85, 239, 196, 0.1)' },
   sideTargetText: { color: '#55efc4', fontWeight: '900', fontSize: 14, letterSpacing: 2 },

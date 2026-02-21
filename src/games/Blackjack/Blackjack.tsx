@@ -345,6 +345,15 @@ export default function Blackjack({ difficulty }: Props) {
         )}
       </View>
 
+      <View style={styles.gameFooter}>
+        <PremiumButton variant="secondary" height={40} style={styles.footerBtn} onPress={handleRestart}>
+          <Text style={styles.footerBtnText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={40} style={styles.footerBtn} onPress={handleNewGame}>
+          <Text style={styles.footerBtnText}>NEW GAME</Text>
+        </PremiumButton>
+      </View>
+
       {showTutorial && GAME_TUTORIALS.blackjack && (
         <TutorialScreen
           gameName="Blackjack"
@@ -543,6 +552,17 @@ const getStyles = (colors: ThemeColors) =>
     newHandBtn: {
       width: '80%',
     },
+    gameFooter: {
+      flexDirection: 'row',
+      gap: spacing.sm,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.surface,
+    },
+    footerBtn: { flex: 1 },
+    footerBtnText: { color: colors.text, fontWeight: 'bold', fontSize: 12 },
     bgIcon: {
       position: 'absolute',
       top: '40%',

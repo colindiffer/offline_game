@@ -169,6 +169,15 @@ export default function CodeBreaker({ difficulty }: Props) {
         </View>
       </View>
 
+      <View style={styles.footer}>
+        <PremiumButton variant="secondary" height={44} style={styles.flexBtn} onPress={handleRestart} disabled={paused}>
+          <Text style={styles.footerBtnText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={44} style={styles.flexBtn} onPress={handleNewGame} disabled={paused}>
+          <Text style={styles.footerBtnText}>NEW GAME</Text>
+        </PremiumButton>
+      </View>
+
       {gameState.gamePhase === 'finished' && (
         <GameOverOverlay
           result={gameState.winner ? 'win' : 'lose'}
@@ -200,6 +209,9 @@ interface Props {
 
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1 },
+  footer: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.md, paddingBottom: Platform.OS === 'ios' ? 30 : spacing.md, paddingTop: spacing.sm },
+  flexBtn: { flex: 1 },
+  footerBtnText: { color: colors.text, fontWeight: 'bold', fontSize: 12 },
   gameArea: { flex: 1, padding: spacing.md },
   history: { flex: 1, backgroundColor: colors.card, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, marginBottom: spacing.lg },
   historyContent: { padding: spacing.md },

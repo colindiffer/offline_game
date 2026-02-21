@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(npx expo install:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(cd:*)",
+      "Bash(head:*)",
+      "Bash(openssl genrsa:*)",
+      "Bash(echo:*)"
     ]
   }
 }

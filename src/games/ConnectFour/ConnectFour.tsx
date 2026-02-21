@@ -277,18 +277,22 @@ export default function ConnectFour({ difficulty }: Props) {
       </View>
 
       <View style={styles.footer}>
-        {!winner && !isDraw ? (
+        {!winner && !isDraw && (
           <View style={styles.turnIndicator}>
             <View style={[styles.turnDot, { backgroundColor: currentPlayer === 'R' ? '#ff7675' : '#ffeaa7' }]} />
             <Text style={styles.statusText}>
               {currentPlayer === 'R' ? 'YOUR TURN' : 'AI THINKING...'}
             </Text>
           </View>
-        ) : (
-          <PremiumButton variant="primary" height={56} onPress={resetGame} style={styles.playAgainBtn}>
-            <Text style={styles.playAgainText}>PLAY AGAIN</Text>
-          </PremiumButton>
         )}
+        <View style={styles.footerBtns}>
+          <PremiumButton variant="secondary" height={56} onPress={handleRestart} style={styles.flexBtn}>
+            <Text style={styles.playAgainText}>RESTART</Text>
+          </PremiumButton>
+          <PremiumButton variant="primary" height={56} onPress={handleNewGame} style={styles.flexBtn}>
+            <Text style={styles.playAgainText}>NEW GAME</Text>
+          </PremiumButton>
+        </View>
       </View>
 
       {(winner || isDraw) && (
@@ -383,6 +387,14 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingHorizontal: spacing.md,
     marginTop: spacing.md,
     width: '100%',
+    gap: spacing.sm,
+  },
+  footerBtns: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  flexBtn: {
+    flex: 1,
   },
   turnIndicator: {
     flexDirection: 'row',

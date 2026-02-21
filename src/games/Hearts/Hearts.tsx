@@ -399,6 +399,15 @@ export default function Hearts({ difficulty }: Props) {
         </View>
       </View>
 
+      <View style={styles.footer}>
+        <PremiumButton variant="secondary" height={44} style={styles.flexBtn} onPress={handleRestart} disabled={paused}>
+          <Text style={styles.footerBtnText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={44} style={styles.flexBtn} onPress={handleNewGame} disabled={paused}>
+          <Text style={styles.footerBtnText}>NEW GAME</Text>
+        </PremiumButton>
+      </View>
+
       {gameState.gamePhase === 'roundEnd' && (
         <GameOverOverlay
           result="draw"
@@ -443,6 +452,9 @@ export default function Hearts({ difficulty }: Props) {
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   tableArea: { flex: 1, padding: spacing.sm, justifyContent: 'space-between' },
+  footer: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
+  flexBtn: { flex: 1 },
+  footerBtnText: { color: colors.text, fontWeight: 'bold', fontSize: 12 },
   playerBadge: {
     backgroundColor: colors.card,
     padding: spacing.xs,

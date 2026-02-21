@@ -271,6 +271,15 @@ export default function WordSearch({ difficulty }: Props) {
         </View>
       </View>
 
+      <View style={styles.footer}>
+        <PremiumButton variant="secondary" height={44} style={styles.flexBtn} onPress={handleRestart}>
+          <Text style={styles.footerBtnText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={44} style={styles.flexBtn} onPress={handleNewGame}>
+          <Text style={styles.footerBtnText}>NEW GAME</Text>
+        </PremiumButton>
+      </View>
+
       {gameWon && (
         <GameOverOverlay
           result="win"
@@ -311,6 +320,9 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   selectedCell: { backgroundColor: colors.primary, borderRadius: radius.xs },
   foundCell: { backgroundColor: colors.success + '80', borderRadius: radius.xs },
   letter: { color: colors.text, fontWeight: 'bold' },
+  footer: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.md, paddingBottom: Platform.OS === 'ios' ? 30 : spacing.md, paddingTop: spacing.sm },
+  flexBtn: { flex: 1 },
+  footerBtnText: { color: colors.text, fontWeight: 'bold', fontSize: 12 },
   wordListContainer: { flex: 1, width: '100%', marginTop: spacing.lg },
   wordList: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: spacing.sm, paddingBottom: 20 },
   wordItem: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border },

@@ -299,8 +299,11 @@ export default function SpiderSolitaire({ difficulty }: Props) {
                 <Text style={styles.undoIcon}>↶</Text>
               </View>
             </TouchableOpacity>
-            <PremiumButton variant="warning" height={40} onPress={resetGame} style={styles.resetBtn} disabled={paused}>
-              <Text style={styles.resetText}>RESET</Text>
+            <PremiumButton variant="secondary" height={40} onPress={handleRestart} style={styles.resetBtn} disabled={paused}>
+              <Text style={styles.resetText}>RESTART</Text>
+            </PremiumButton>
+            <PremiumButton variant="secondary" height={40} onPress={handleNewGame} style={styles.resetBtn} disabled={paused}>
+              <Text style={styles.resetText}>NEW GAME</Text>
             </PremiumButton>
           </View>
         </View>

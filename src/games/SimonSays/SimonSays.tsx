@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View, Animated, Dimensions, Platform } from 'react-native';
 import Header from '../../components/Header';
 import GameOverOverlay from '../../components/GameOverOverlay';
+import PremiumButton from '../../components/PremiumButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useSound } from '../../contexts/SoundContext';
 import { getHighScore, setHighScore, getLevel, setLevel } from '../../utils/storage';
@@ -146,7 +147,7 @@ export default function SimonSays({ difficulty }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.bgIcon}>🔴</Text>
-      <Header title="Simon Says" score={level} scoreLabel="LEVEL" highScore={0} highScoreLabel="RECORD" />
+      <Header title="Memory Lights" score={level} scoreLabel="LEVEL" highScore={0} highScoreLabel="RECORD" />
       
       <View style={styles.levelHeader}>
         <Text style={styles.levelText}>Level {level}</Text>
@@ -174,6 +175,15 @@ export default function SimonSays({ difficulty }: Props) {
             </TouchableOpacity>
           ))}
         </View>
+      </View>
+
+      <View style={styles.footer}>
+        <PremiumButton variant="secondary" height={50} style={styles.flexBtn} onPress={handleRestart}>
+          <Text style={styles.footerBtnText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={50} style={styles.flexBtn} onPress={handleNewGame}>
+          <Text style={styles.footerBtnText}>NEW GAME</Text>
+        </PremiumButton>
       </View>
 
       {gameWon && (
@@ -213,6 +223,9 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   levelText: { color: colors.text, fontSize: 24, fontWeight: '900' },
   statusText: { color: colors.primary, fontSize: 14, fontWeight: '900', letterSpacing: 2, marginTop: 4 },
   gameArea: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  footer: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.md, paddingBottom: Platform.OS === 'ios' ? 30 : spacing.md, paddingTop: spacing.sm },
+  flexBtn: { flex: 1 },
+  footerBtnText: { color: colors.text, fontWeight: 'bold', fontSize: 12 },
   padsContainer: {
     width: PAD_SIZE * 2 + 20,
     height: PAD_SIZE * 2 + 20,

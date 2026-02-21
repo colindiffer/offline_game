@@ -277,6 +277,14 @@ export default function Spades({ difficulty }: Props) {
           onRestart={handleRestart}
         />
       )}
+      <View style={styles.footer}>
+        <PremiumButton variant="secondary" height={44} style={styles.flexBtn} onPress={handleRestart} disabled={paused}>
+          <Text style={styles.footerBtnText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={44} style={styles.flexBtn} onPress={handleNewGame} disabled={paused}>
+          <Text style={styles.footerBtnText}>NEW GAME</Text>
+        </PremiumButton>
+      </View>
       <AdBanner />
     </View>
   );
@@ -289,6 +297,9 @@ interface Props {
 const getStyles = (colors: ThemeColors) => StyleSheet.create({
   container: { flex: 1, paddingBottom: AD_BANNER_HEIGHT }, // Add padding bottom for ad banner
   tableArea: { flex: 1, justifyContent: 'space-between', padding: spacing.md },
+  footer: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  flexBtn: { flex: 1 },
+  footerBtnText: { color: colors.text, fontWeight: 'bold', fontSize: 12 },
   playerBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.4)', padding: 8, borderRadius: radius.md, width: 140, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
   topPlayer: { alignSelf: 'center' },
   sidePlayers: { flexDirection: 'row', justifyContent: 'space-between' },

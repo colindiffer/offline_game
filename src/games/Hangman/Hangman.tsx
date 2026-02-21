@@ -159,8 +159,11 @@ export default function Hangman({ difficulty }: Props) {
         </View>
 
         <View style={styles.footer}>
-          <PremiumButton variant="secondary" height={50} onPress={resetLevel}>
-            <Text style={styles.footerText}>RESET LEVEL</Text>
+          <PremiumButton variant="secondary" height={50} style={styles.flexBtn} onPress={handleRestart}>
+            <Text style={styles.footerText}>RESTART</Text>
+          </PremiumButton>
+          <PremiumButton variant="secondary" height={50} style={styles.flexBtn} onPress={handleNewGame}>
+            <Text style={styles.footerText}>NEW GAME</Text>
           </PremiumButton>
         </View>
       </ScrollView>
@@ -211,7 +214,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   keyCorrect: { backgroundColor: colors.success + '40', borderColor: colors.success },
   keyWrong: { backgroundColor: colors.error + '40', borderColor: colors.error },
   keyText: { color: colors.text, fontWeight: 'bold' },
-  footer: { width: '100%', paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
+  footer: { width: '100%', flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.md, paddingTop: spacing.lg, paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl },
+  flexBtn: { flex: 1 },
   footerText: { color: colors.text, fontWeight: 'bold' },
   bgIcon: {
     position: 'absolute',

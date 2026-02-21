@@ -263,6 +263,17 @@ export default function Battleship({ difficulty }: Props) {
         </ScrollView>
       )}
 
+      {gameState.gamePhase !== 'placement' && (
+        <View style={styles.footer}>
+          <PremiumButton variant="secondary" height={44} style={styles.flexBtn} onPress={handleRestart} disabled={paused}>
+            <Text style={styles.footerBtnText}>RESTART</Text>
+          </PremiumButton>
+          <PremiumButton variant="secondary" height={44} style={styles.flexBtn} onPress={handleNewGame} disabled={paused}>
+            <Text style={styles.footerBtnText}>NEW GAME</Text>
+          </PremiumButton>
+        </View>
+      )}
+
       {gameState.winner && (
         <GameOverOverlay
           result={gameState.winner === 'player' ? 'win' : 'lose'}
@@ -294,6 +305,9 @@ interface Props {
 
 const getStyles = (colors: ThemeColors, CELL_SIZE: number, SCREEN_PADDING: number) => StyleSheet.create({
   container: { flex: 1 },
+  footer: { flexDirection: 'row', gap: spacing.md, paddingHorizontal: spacing.md, paddingBottom: Platform.OS === 'ios' ? 30 : spacing.sm, paddingTop: spacing.sm },
+  flexBtn: { flex: 1 },
+  footerBtnText: { color: colors.text, fontWeight: 'bold', fontSize: 12 },
   setupContainer: { flex: 1, padding: spacing.xl, justifyContent: 'center', alignItems: 'center' },
   setupTitle: { ...typography.heading, color: colors.text, marginBottom: spacing.sm },
   setupDesc: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginBottom: spacing.xxl },

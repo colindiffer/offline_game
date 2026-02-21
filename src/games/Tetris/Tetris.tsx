@@ -472,6 +472,15 @@ export default function Tetris({ difficulty }: Props) {
         </View>
       </View>
 
+      <View style={styles.footer}>
+        <PremiumButton variant="secondary" height={50} onPress={handleRestart} style={styles.flexBtn} disabled={paused}>
+          <Text style={styles.footerBtnText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={50} onPress={handleNewGame} style={styles.flexBtn} disabled={paused}>
+          <Text style={styles.footerBtnText}>NEW GAME</Text>
+        </PremiumButton>
+      </View>
+
       {gameOver && (
         <GameOverOverlay
           result="lose"
@@ -599,6 +608,15 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     margin: 1,
     borderRadius: 2,
   },
+  footer: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? 30 : spacing.md,
+    paddingTop: spacing.sm,
+  },
+  flexBtn: { flex: 1 },
+  footerBtnText: { color: colors.text, fontWeight: 'bold', fontSize: 12 },
   bgIcon: {
     position: 'absolute',
     bottom: '10%',

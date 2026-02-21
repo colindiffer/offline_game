@@ -13,6 +13,8 @@ import { ThemeColors } from '../../utils/themes';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { initializeWaterSort, canPour, pour, isWin, TUBE_CAPACITY, Tube } from './logic';
 
+import { useInterstitialAd } from '../../lib/useInterstitialAd';
+
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 interface Props {
@@ -23,6 +25,7 @@ export default function WaterSort({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { showAd } = useInterstitialAd();
 
   const [level, setLevelState] = useState(1);
   const [tubes, setTubes] = useState<Tube[]>([]);
@@ -33,6 +36,7 @@ export default function WaterSort({ difficulty }: Props) {
   const [highScore, setHighScoreState] = useState(0);
   const [undoHistory, setUndoHistory] = useState<Tube[][]>([]);
   const [isReady, setIsReady] = useState(false);
+  const isFirstGameRef = useRef(true);
 
   const startTimeRef = useRef<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -253,12 +257,12 @@ export default function WaterSort({ difficulty }: Props) {
           </View>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.controlBtn} onPress={resetGame}>
-          <View style={styles.controlInner}>
-            <Text style={styles.controlIcon}>↺</Text>
-            <Text style={styles.controlText}>Reset</Text>
-          </View>
-        </TouchableOpacity>
+        <PremiumButton variant="secondary" height={50} onPress={handleRestart} style={styles.newGameBtn}>
+          <Text style={styles.newGameText}>RESTART</Text>
+        </PremiumButton>
+        <PremiumButton variant="secondary" height={50} onPress={handleNewGame} style={styles.newGameBtn}>
+          <Text style={styles.newGameText}>NEW GAME</Text>
+        </PremiumButton>
       </View>
 
       {gameWon && (
@@ -379,11 +383,11 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     opacity: 0.2,
   },
   bottomControls: {
-    padding: spacing.xl,
-    paddingBottom: Platform.OS === 'ios' ? 40 : spacing.xl,
+    padding: spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? 30 : spacing.md,
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: spacing.xxl,
+    gap: spacing.md,
     alignItems: 'center',
   },
   controlBtn: { alignItems: 'center' },
@@ -400,8 +404,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   controlIcon: { fontSize: 24, color: colors.text },
   controlText: { fontSize: 10, color: colors.textSecondary, fontWeight: 'bold', marginTop: 2 },
-  newGameBtn: { minWidth: 140 },
-  newGameText: { color: colors.textOnPrimary, fontWeight: '900', fontSize: 14, letterSpacing: 1 },
+  newGameBtn: { flex: 1 },
+  newGameText: { color: colors.text, fontWeight: '900', fontSize: 12, letterSpacing: 1 },
   bgIcon: {
     position: 'absolute',
     top: '40%',

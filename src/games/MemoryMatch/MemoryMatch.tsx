@@ -11,6 +11,7 @@ import { recordGameResult } from '../../utils/stats';
 import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
+import { useInterstitialAd } from '../../lib/useInterstitialAd';
 import { initializeMemoryMatch, MemoryCard } from './logic';
 
 export default function MemoryMatch({ difficulty }: Props) {
@@ -19,6 +20,7 @@ export default function MemoryMatch({ difficulty }: Props) {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const GRID_WIDTH = SCREEN_WIDTH - 24;
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { showAd } = useInterstitialAd();
 
   const [level, setLevelState] = useState(1);
   const [cards, setCards] = useState<MemoryCard[]>([]);
@@ -33,6 +35,7 @@ export default function MemoryMatch({ difficulty }: Props) {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const cardAnims = useRef<Animated.Value[]>([]).current;
   const [paused, setPaused] = useState(false);
+  const isFirstGameRef = useRef(true);
 
   // Initialize animations
   if (cardAnims.length === 0) {
@@ -54,24 +57,31 @@ export default function MemoryMatch({ difficulty }: Props) {
   }, [difficulty, cardAnims]);
 
   const handleNewGame = useCallback(async () => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
     const savedLevel = await getLevel('memory-match', difficulty);
     setLevelState(savedLevel);
     initializeGame(savedLevel);
     setPaused(false);
-  }, [difficulty, initializeGame]);
+  }, [difficulty, initializeGame, showAd]);
 
   const handleRestart = useCallback(() => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
     initializeGame(level);
     setPaused(false);
-  }, [level, initializeGame]);
+  }, [level, initializeGame, showAd]);
 
   const nextLevel = useCallback(async () => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
     const nextLvl = level + 1;
     await setLevel('memory-match', difficulty, nextLvl);
     setLevelState(nextLvl);
     initializeGame(nextLvl);
     setPaused(false);
-  }, [level, difficulty, initializeGame]);
+  }, [level, difficulty, initializeGame, showAd]);
+
 
   useEffect(() => {
     handleNewGame();

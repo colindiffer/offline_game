@@ -87,6 +87,7 @@ function AppContent() {
             return {
               title: titles[route.params.gameId],
               animation: 'slide_from_right',
+              headerShown: false,
             };
           }}
         />

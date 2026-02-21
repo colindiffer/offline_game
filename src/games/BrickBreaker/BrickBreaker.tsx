@@ -15,6 +15,8 @@ import { ThemeColors } from '../../utils/themes';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { initializeBrickBreaker, BrickBreakerState, Point, PowerUp, PowerUpType } from './logic';
 
+import { useInterstitialAd } from '../../lib/useInterstitialAd';
+
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const BOARD_WIDTH = SCREEN_WIDTH - 32;
 const BOARD_HEIGHT = 450;
@@ -29,6 +31,7 @@ export default function BrickBreaker({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
+  const { showAd } = useInterstitialAd();
 
   const [level, setLevelState] = useState(1);
   const [gameState, setGameState] = useState<BrickBreakerState | null>(null);
@@ -39,6 +42,7 @@ export default function BrickBreaker({ difficulty }: Props) {
   const [paused, setPaused] = useState(false); // Explicit pause state
   const [lives, setLives] = useState(3);
   const [activePowerUps, setActivePowerUps] = useState<{ type: PowerUpType, duration: number }[]>([]);
+  const isFirstGameRef = useRef(true);
 
   const stateRef = useRef<BrickBreakerState | null>(null);
   const scoreRef = useRef(0);
@@ -268,19 +272,25 @@ export default function BrickBreaker({ difficulty }: Props) {
   };
 
   const handleRestart = useCallback(() => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
     initializeGame(level);
     setIsPlaying(false);
     setPaused(false);
-  }, [initializeGame, level]);
+  }, [initializeGame, level, showAd]);
 
   const handleNewGame = useCallback(() => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
     initializeGame(1); // Start from level 1 for a new game
     setLevelState(1);
     setIsPlaying(false);
     setPaused(false);
-  }, [initializeGame]);
+  }, [initializeGame, showAd]);
 
   const nextLevel = useCallback(async () => {
+    showAd(isFirstGameRef.current);
+    isFirstGameRef.current = false;
     const nextLvl = level + 1;
     await setLevel('brick-breaker', difficulty, nextLvl);
     setLevelState(nextLvl);
@@ -292,7 +302,8 @@ export default function BrickBreaker({ difficulty }: Props) {
     setIsPlaying(false); // New level starts paused, wait for tap
     startTimeRef.current = null;
     setPaused(false);
-  }, [difficulty, level]);
+  }, [difficulty, level, showAd]);
+
 
   if (!isReady || !gameState) return <View style={styles.container} />;
 
@@ -370,7 +381,19 @@ export default function BrickBreaker({ difficulty }: Props) {
           result={gameState.gameWon ? 'win' : (gameState.gameOver ? 'lose' : 'paused')}
           title={gameState.gameWon ? 'LEVEL COMPLETE!' : (gameState.gameOver ? 'GAME OVER' : 'GAME PAUSED')}
           subtitle={gameState.gameWon ? `Score: ${score}` : (gameState.gameOver ? `Final Score: ${score}` : '')}
-          onPlayAgain={paused ? handlePlay : (gameState.gameWon ? nextLevel : handleRestart)}
+          onPlayAgain={() => {
+            if (paused) {
+              handlePlay();
+            } else if (gameState.gameWon) {
+              showAd(isFirstGameRef.current);
+              isFirstGameRef.current = false;
+              nextLevel();
+            } else {
+              showAd(isFirstGameRef.current);
+              isFirstGameRef.current = false;
+              handleRestart();
+            }
+          }}
           onPlayAgainLabel={paused ? "RESUME" : (gameState.gameWon ? "NEXT LEVEL" : "TRY AGAIN")}
           onRestart={handleRestart}
           onNewGame={handleNewGame}

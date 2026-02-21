@@ -224,33 +224,34 @@ export default function TicTacToe({ difficulty }: Props) {
       </View>
 
       <View style={styles.footer}>
-        {!winner && !draw ? (
+        {!winner && !draw && (
           <View style={styles.turnIndicator}>
             <View style={[styles.turnDot, { backgroundColor: isPlayerTurn ? colors.primary : colors.success }]} />
             <Text style={styles.turnText}>
               {isPlayerTurn ? 'YOUR TURN (X)' : 'AI THINKING...'}
             </Text>
           </View>
-        ) : (
-          <View style={styles.footerBtns}>
-            <PremiumButton
-              variant="secondary"
-              height={56}
-              onPress={handleRestart}
-              style={styles.flexBtn}
-            >
-              <Text style={styles.newGameText}>RESTART</Text>
-            </PremiumButton>
-            <PremiumButton
-              variant="primary"
-              height={56}
-              onPress={handleNewGame}
-              style={styles.flexBtn}
-            >
-              <Text style={styles.newGameText}>NEW GAME</Text>
-            </PremiumButton>
-          </View>
         )}
+        <View style={styles.footerBtns}>
+          <PremiumButton
+            variant="secondary"
+            height={56}
+            onPress={handleRestart}
+            style={styles.flexBtn}
+            disabled={paused}
+          >
+            <Text style={styles.newGameText}>RESTART</Text>
+          </PremiumButton>
+          <PremiumButton
+            variant="primary"
+            height={56}
+            onPress={handleNewGame}
+            style={styles.flexBtn}
+            disabled={paused}
+          >
+            <Text style={styles.newGameText}>NEW GAME</Text>
+          </PremiumButton>
+        </View>
       </View>
 
       {(winner || draw) && (
@@ -369,6 +370,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   footer: {
     paddingHorizontal: spacing.md,
     marginTop: spacing.lg,
+    gap: spacing.sm,
   },
   footerBtns: {
     flexDirection: 'row',
