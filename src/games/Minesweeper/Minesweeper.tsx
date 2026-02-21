@@ -34,8 +34,22 @@ export default function Minesweeper({ difficulty }: Props) {
   const styles = useMemo(() => getStyles(colors), [colors]);
   const { showAd } = useInterstitialAd();
 
+  const [board, setBoard] = useState<Board | null>(null);
+  const [level, setLevelState] = useState(1);
+  const [gameOver, setGameOver] = useState(false);
+  const [gameWon, setGameWon] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [minesRemaining, setMinesRemaining] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [startTime, setStartTime] = useState<number | null>(null);
+  const [highScore, setHighScoreState] = useState<number | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isFirstGameRef = useRef(true);
+  const gameConfig = useMemo(() => getGameConfig(difficulty, level), [difficulty, level]);
   const CELL_SIZE = getCellSize(gameConfig.cols);
-  const initializedBoardRef = useRef<Board | null>(null); // Stores the board after the first safe click
+  const initializedBoardRef = useRef<Board | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -223,8 +237,8 @@ export default function Minesweeper({ difficulty }: Props) {
           },
           isBlownMine && { backgroundColor: colors.error },
         ]}
-        onPress={() => handleCellPress(cell.row, cell.col)}
-        onLongPress={() => handleCellPress(cell.row, cell.col, true)}
+        onPress={() => handleCellAction(cell.row, cell.col, false)}
+        onLongPress={() => handleCellAction(cell.row, cell.col, true)}
         disabled={gameOver || gameWon || paused || isRevealed}
       >
         <Text style={[styles.cellText, { color: textColor, fontSize: CELL_SIZE * 0.6 }]}>
