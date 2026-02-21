@@ -7,9 +7,6 @@ workflows:
       node: v20
       xcode: latest
       cocoapods: default
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.offlinegamesroom.app
       groups:
         - app_store_credentials
     scripts:
@@ -21,6 +18,22 @@ workflows:
 
       - name: Install CocoaPods
         script: cd ios && pod install
+
+      - name: Set up keychain
+        script: keychain initialize
+
+      - name: Fetch signing files
+        script: |
+          app-store-connect fetch-signing-files com.offlinegamesroom.app \
+            --type IOS_APP_STORE \
+            --certificate-type IOS_DISTRIBUTION \
+            --create
+
+      - name: Add certificates to keychain
+        script: keychain add-certificates
+
+      - name: Apply provisioning profiles
+        script: xcode-project use-profiles
 
       - name: Build IPA
         script: |
