@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
 
-const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-3940256099942544/1033173712';
+// TODO: Replace these with your real AdMob ad unit IDs from admob.google.com
+const PRODUCTION_INTERSTITIAL_ID = Platform.select({
+  ios: 'ca-app-pub-7047560171408604/8910007522',
+  android: 'ca-app-pub-7047560171408604/4845503969',
+  default: 'ca-app-pub-7047560171408604/4845503969',
+});
+
+const adUnitId = __DEV__ ? TestIds.INTERSTITIAL : PRODUCTION_INTERSTITIAL_ID!;
 
 const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
   requestNonPersonalizedAdsOnly: true,

@@ -98,7 +98,7 @@ const getStyles = (colors: ThemeColors, light: boolean) =>
     container: {
       paddingBottom: spacing.md,
       paddingHorizontal: spacing.md,
-      marginTop: Platform.OS === 'ios' ? 50 : 20,
+      marginTop: Platform.OS === 'ios' ? 4 : 16,
     },
     topRow: {
       flexDirection: 'row',
