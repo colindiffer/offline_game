@@ -26,7 +26,6 @@ workflows:
         script: |
           app-store-connect fetch-signing-files com.offlinegamesroom.app \
             --type IOS_APP_STORE \
-            --certificate-type IOS_DISTRIBUTION \
             --create
 
       - name: Add certificates to keychain
