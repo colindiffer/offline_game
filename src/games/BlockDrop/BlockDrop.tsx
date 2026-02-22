@@ -42,6 +42,7 @@ interface Props {
 export default function BlockDrop({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
+  const [cellSize, setCellSize] = useState(DEFAULT_CELL_SIZE);
   const styles = useMemo(() => getStyles(colors, cellSize), [colors, cellSize]);
 
   // Measure actual board container width to compute pixel-perfect cell size
@@ -53,7 +54,6 @@ export default function BlockDrop({ difficulty }: Props) {
   }, []);
 
   const [board, setBoard] = useState<BlockDropBoard>(createEmptyBoard());
-  const [cellSize, setCellSize] = useState(DEFAULT_CELL_SIZE);
   const [currentTetromino, setCurrentTetromino] = useState(getRandomTetromino());
   const [nextTetromino, setNextTetromino] = useState(getRandomTetromino());
   const [tetrominoPos, setTetrominoPos] = useState({ row: 0, col: Math.floor(BOARD_WIDTH / 2) - 2 });

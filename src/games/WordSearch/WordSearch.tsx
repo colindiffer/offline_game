@@ -71,6 +71,7 @@ export default function WordSearch({ difficulty }: Props) {
     if (!gameState) return null;
     const cellSize = gridSize / gameState.letters.length;
     const row = Math.floor((y - containerPos.current.y) / cellSize);
+    const col = Math.floor((x - containerPos.current.x) / cellSize);
     if (row >= 0 && row < gameState.letters.length && col >= 0 && col < gameState.letters[0].length) {
       return { row, col };
     }
