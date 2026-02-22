@@ -54,6 +54,7 @@ export default function MemoryMatch({ difficulty }: Props) {
     setIsProcessing(false);
     startTimeRef.current = Date.now();
     cardAnims.forEach(anim => anim.setValue(0));
+    setIsReady(true);
   }, [difficulty, cardAnims]);
 
   const handleNewGame = useCallback(async () => {

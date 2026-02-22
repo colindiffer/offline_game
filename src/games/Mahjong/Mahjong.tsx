@@ -14,7 +14,8 @@ import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { initializeMahjong, isTileFree, Tile } from './logic';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const BOARD_SIZE = SCREEN_WIDTH - 16; // Reduced margins from 32 to 16
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const BOARD_SIZE = SCREEN_WIDTH - 16;
 
 export default function Mahjong({ difficulty }: Props) {
   const { colors } = useTheme();
@@ -31,23 +32,28 @@ export default function Mahjong({ difficulty }: Props) {
 
   const metrics = useMemo(() => {
     if (tiles.length === 0) return { tileWidth: 50, tileHeight: 65, width: 0, height: 0 };
-    
+
     let maxCol = 0;
     let maxRow = 0;
     tiles.forEach(t => {
       if (t.col > maxCol) maxCol = t.col;
       if (t.row > maxRow) maxRow = t.row;
     });
-    
-    // Use 0.9 overlap to allow tiles to be bigger
-    const tileWidth = Math.floor(BOARD_SIZE / (maxCol * 0.9 + 1));
+
+    // header ~60 + levelHeader ~50 + footer ~80 + gameArea padding ~40
+    const maxBoardHeight = SCREEN_HEIGHT - 230;
+    const boardRows = maxRow * 0.8 + 1;
+
+    const tileWidthFromW = Math.floor(BOARD_SIZE / (maxCol * 0.9 + 1));
+    const tileWidthFromH = Math.floor(maxBoardHeight / (boardRows * 1.3));
+    const tileWidth = Math.min(tileWidthFromW, tileWidthFromH);
     const tileHeight = Math.floor(tileWidth * 1.3);
-    
+
     return {
       tileWidth,
       tileHeight,
       width: (maxCol * 0.9 + 1) * tileWidth,
-      height: (maxRow * 0.8 + 1) * tileHeight
+      height: boardRows * tileHeight,
     };
   }, [tiles]);
 

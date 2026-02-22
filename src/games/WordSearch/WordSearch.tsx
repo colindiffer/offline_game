@@ -17,7 +17,8 @@ import { generateWordSearch, getSelectedWord, WordSearchGrid, Position } from '.
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
-const GRID_SIZE = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52);
+// 0.44: leaves room for header(~60) + levelHeader with badge(~70) + wordList + footer(~80)
+const GRID_SIZE = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.44);
 
 export default function WordSearch({ difficulty }: Props) {
   const { colors } = useTheme();
