@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useMemo } from 'react';
-import { Animated, Platform, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GameMetadata } from '../types';
 import { useTheme } from '../contexts/ThemeContext';
 import PremiumButton from './PremiumButton';
-import DominoTile from './DominoTile';
+import GameIcon from './GameIcon';
 import { ThemeColors } from '../utils/themes';
 import { spacing, radius, shadows, typography } from '../utils/designTokens';
 
@@ -39,49 +39,7 @@ export default function GameCard({ game, onPress, index = 0 }: Props) {
     ]).start();
   }, []);
 
-  const renderIcon = () => {
-    if (game.id === 'dominoes') {
-      return (
-        <View style={styles.customIconContainer}>
-          <DominoTile
-            sideA={6}
-            sideB={6}
-            style={styles.gameCardDomino}
-            pointerEvents="none"
-          />
-        </View>
-      );
-    }
-
-    if (game.id === '2048') {
-      return (
-        <View style={styles.tile2048}>
-          <Text style={styles.tileText2048}>2048</Text>
-        </View>
-      );
-    }
-
-    if (game.id === 'brick-breaker') {
-      return (
-        <View style={styles.bbContainer}>
-          <View style={styles.bbBricksRow}>
-            <View style={[styles.bbBrick, { backgroundColor: '#ff7675' }]} />
-            <View style={[styles.bbBrick, { backgroundColor: '#fdcb6e' }]} />
-            <View style={[styles.bbBrick, { backgroundColor: '#55efc4' }]} />
-          </View>
-          <View style={styles.bbBricksRow}>
-            <View style={[styles.bbBrick, { backgroundColor: '#74b9ff' }]} />
-            <View style={[styles.bbBrick, { backgroundColor: '#a29bfe' }]} />
-            <View style={[styles.bbBrick, { backgroundColor: '#ff7675' }]} />
-          </View>
-          <View style={styles.bbBall} />
-          <View style={styles.bbPaddle} />
-        </View>
-      );
-    }
-
-    return <Text style={styles.icon}>{game.icon}</Text>;
-  };
+  const renderIcon = () => <GameIcon gameId={game.id} />;
 
   return (
     <Animated.View style={[styles.animWrapper, { opacity, transform: [{ translateY }] }]}>
@@ -152,80 +110,6 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     zIndex: 2,
     overflow: 'hidden',
     paddingBottom: 4,
-  },
-  icon: {
-    fontSize: 60,
-    textShadowColor: 'rgba(0,0,0,0.25)',
-    textShadowOffset: { width: 0, height: 8 },
-    textShadowRadius: 10,
-    fontFamily: Platform.OS === 'android' ? 'sans-serif' : undefined,
-  },
-  customIconContainer: {
-    transform: [{ rotate: '-15deg' }],
-    ...shadows.lg,
-  },
-  gameCardDomino: {
-    transform: [{ scale: 0.8 }],
-  },
-  tile2048: {
-    width: 70,
-    height: 70,
-    backgroundColor: '#edc22e', // Classic 2048 gold
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-    ...shadows.md,
-  },
-  tileText2048: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: '900',
-    textShadowColor: 'rgba(0,0,0,0.2)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  bbContainer: {
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: 72,
-    width: 90,
-    paddingVertical: 2,
-  },
-  bbBricksRow: {
-    flexDirection: 'row',
-    gap: 4,
-  },
-  bbBrick: {
-    width: 22,
-    height: 9,
-    borderRadius: 2,
-  },
-  bbBall: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: '#fff',
-    position: 'absolute',
-    bottom: 20,
-    left: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  bbPaddle: {
-    width: 70,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
-    elevation: 4,
   },
   labelContainer: {
     width: '100%',
