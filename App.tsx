@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -10,6 +10,7 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import { GameId, RootStackParamList } from './src/types';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import { SoundProvider } from './src/contexts/SoundContext';
+import MobileAds from 'react-native-google-mobile-ads';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -104,6 +105,10 @@ function AppContent() {
 }
 
 export default function App() {
+  useEffect(() => {
+    MobileAds().initialize().catch(console.error);
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SoundProvider>
