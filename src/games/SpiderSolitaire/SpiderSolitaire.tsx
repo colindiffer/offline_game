@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
 import GameOverOverlay from '../../components/GameOverOverlay';
@@ -23,20 +23,20 @@ export default function SpiderSolitaire({ difficulty }: Props) {
   const { playSound } = useSound();
   const { width: SCREEN_WIDTH } = useWindowDimensions();
 
-  const { CARD_WIDTH, CARD_HEIGHT, VERTICAL_SPREAD, SCREEN_PADDING, COLUMN_GAP } = useMemo(() => {
+  const { height: SCREEN_HEIGHT } = useWindowDimensions();
+  const { CARD_WIDTH, CARD_HEIGHT, VERTICAL_SPREAD, SCREEN_PADDING, COLUMN_GAP, COLUMN_HEIGHT } = useMemo(() => {
     const padding = 4;
     const gap = 3;
-    const minCW = 58;
-    const naturalCW = Math.floor((SCREEN_WIDTH - (padding * 2) - (gap * 9)) / 10);
-    const cw = Math.max(naturalCW, minCW);
+    const cw = Math.floor((SCREEN_WIDTH - (padding * 2) - (gap * 9)) / 10);
     const ch = Math.floor(cw * 1.4);
     const vs = 0.28;
-    return { CARD_WIDTH: cw, CARD_HEIGHT: ch, VERTICAL_SPREAD: vs, SCREEN_PADDING: padding, COLUMN_GAP: gap };
-  }, [SCREEN_WIDTH]);
+    const colH = Math.max(SCREEN_HEIGHT - 56 - 96 - 16, 280);
+    return { CARD_WIDTH: cw, CARD_HEIGHT: ch, VERTICAL_SPREAD: vs, SCREEN_PADDING: padding, COLUMN_GAP: gap, COLUMN_HEIGHT: colH };
+  }, [SCREEN_WIDTH, SCREEN_HEIGHT]);
 
   const styles = useMemo(
-    () => getStyles(colors, CARD_WIDTH, CARD_HEIGHT, SCREEN_PADDING),
-    [colors, CARD_WIDTH, CARD_HEIGHT, SCREEN_PADDING],
+    () => getStyles(colors, CARD_WIDTH, CARD_HEIGHT, SCREEN_PADDING, COLUMN_HEIGHT),
+    [colors, CARD_WIDTH, CARD_HEIGHT, SCREEN_PADDING, COLUMN_HEIGHT],
   );
 
   const [gameState, setGameState] = useState(() => initializeSpider(difficulty));
@@ -217,7 +217,7 @@ export default function SpiderSolitaire({ difficulty }: Props) {
       />
 
       <View style={styles.gameArea}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tableauContainer}>
+        <View style={styles.tableauContainer}>
           {gameState.tableau.map((pile, i) => {
             const isValidTarget = validCols.has(i);
             const isSourceCol = selected?.col === i;
@@ -265,7 +265,7 @@ export default function SpiderSolitaire({ difficulty }: Props) {
               </View>
             );
           })}
-        </ScrollView>
+        </View>
 
         <View style={styles.bottomRow}>
           <View style={styles.stockWrapper}>
@@ -334,12 +334,12 @@ export default function SpiderSolitaire({ difficulty }: Props) {
   );
 }
 
-const getStyles = (colors: ThemeColors, CARD_WIDTH: number, CARD_HEIGHT: number, SCREEN_PADDING: number) =>
+const getStyles = (colors: ThemeColors, CARD_WIDTH: number, CARD_HEIGHT: number, SCREEN_PADDING: number, COLUMN_HEIGHT: number) =>
   StyleSheet.create({
     container: { flex: 1 },
     gameArea: { flex: 1, paddingHorizontal: SCREEN_PADDING, paddingTop: spacing.xs },
-    tableauContainer: { flexDirection: 'row', alignItems: 'flex-start', paddingBottom: 8 },
-    column: { width: CARD_WIDTH, height: 500, position: 'relative', marginHorizontal: 1.5 },
+    tableauContainer: { flexDirection: 'row', alignItems: 'flex-start' },
+    column: { width: CARD_WIDTH, height: COLUMN_HEIGHT, position: 'relative', marginHorizontal: 1.5 },
     cardWrapper: { position: 'absolute', width: '100%' },
     emptySlot: {
       position: 'absolute',

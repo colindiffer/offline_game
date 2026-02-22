@@ -79,59 +79,54 @@ export default function Minesweeper({ difficulty }: Props) {
     (row: number, col: number, isLongPress: boolean) => {
       if (gameOver || gameWon || paused || !isReady) return;
 
-      let currentBoard = board;
+      if (!isLongPress) {
+        // TAP = REVEAL
+        let currentBoard = board;
 
-      // If it's the very first action, generate the board with mines, ensuring the clicked cell is safe
-      if (!initializedBoardRef.current && !startTime) {
-        const newBoardWithMines = createBoard(difficulty, row, col, level);
-        initializedBoardRef.current = newBoardWithMines;
-        currentBoard = newBoardWithMines;
-        setStartTime(Date.now());
-      } else if (!currentBoard) {
-        // This case should ideally not be reached if board is initialized with an empty one
-        return;
-      }
+        // On the very first reveal, generate the mine layout with this cell as the safe zone
+        if (!initializedBoardRef.current && !startTime) {
+          const newBoardWithMines = createBoard(difficulty, row, col, level);
+          initializedBoardRef.current = newBoardWithMines;
+          currentBoard = newBoardWithMines;
+          setStartTime(Date.now());
+        }
+        if (!currentBoard) return;
 
-      const newBoard = currentBoard.map((r) => r.map((c) => ({ ...c })));
-      const cell = newBoard[row][col];
-
-      if (isLongPress) { // Long press to reveal
+        const newBoard = currentBoard.map((r) => r.map((c) => ({ ...c })));
+        const cell = newBoard[row][col];
         if (cell.state === 'flagged' || cell.state === 'revealed') return;
+
         revealCell(newBoard, row, col);
         playSound('tap');
 
         if (checkLoss(newBoard)) {
           setGameOver(true);
           playSound('lose');
-          newBoard.forEach(r => r.forEach(c => {
-            if (c.isMine) c.state = 'revealed';
-          }));
+          newBoard.forEach(r => r.forEach(c => { if (c.isMine) c.state = 'revealed'; }));
         } else if (checkWin(newBoard)) {
           setGameWon(true);
           playSound('win');
           const finalTime = Math.floor((Date.now() - (startTime || Date.now())) / 1000);
           recordGameResult('minesweeper', 'win', finalTime);
-
           if (highScore === null || finalTime < highScore || highScore === 0) {
             setHighScoreState(finalTime);
             setHighScore('minesweeper', finalTime, difficulty);
           }
-
-          const nextLvl = level + 1;
-          setLevel('minesweeper', difficulty, nextLvl);
+          setLevel('minesweeper', difficulty, level + 1);
         }
-      } else { // Single tap to flag/unflag
+        setBoard(newBoard);
+      } else {
+        // LONG PRESS = FLAG / UNFLAG
+        if (!board) return;
+        const newBoard = board.map((r) => r.map((c) => ({ ...c })));
+        const cell = newBoard[row][col];
         if (cell.state === 'revealed') return;
         toggleFlag(newBoard, row, col);
         setMinesRemaining(
-          gameConfig.mines -
-          newBoard.flat().filter((c) => c.state === 'flagged').length
+          gameConfig.mines - newBoard.flat().filter((c) => c.state === 'flagged').length
         );
         playSound('flag');
-      }
-      setBoard(newBoard);
-      if (!initializedBoardRef.current && startTime) { // Ensure initializedBoardRef is set after first click
-          initializedBoardRef.current = newBoard;
+        setBoard(newBoard);
       }
     },
     [board, gameOver, gameWon, paused, difficulty, gameConfig.mines, level, isReady, startTime, playSound, highScore]
