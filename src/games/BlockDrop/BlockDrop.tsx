@@ -32,7 +32,7 @@ import {
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const MAX_BOARD_HEIGHT = SCREEN_HEIGHT * 0.6; // Use 60% of screen height
-const CELL_SIZE = Math.floor(Math.min((SCREEN_WIDTH - 100) / BOARD_WIDTH, MAX_BOARD_HEIGHT / BOARD_HEIGHT));
+const CELL_SIZE = Math.floor(Math.min(((SCREEN_WIDTH - 36) * 0.75 - 8) / BOARD_WIDTH, MAX_BOARD_HEIGHT / BOARD_HEIGHT));
 const GAME_AREA_WIDTH = CELL_SIZE * BOARD_WIDTH;
 const GAME_AREA_HEIGHT = CELL_SIZE * BOARD_HEIGHT;
 
