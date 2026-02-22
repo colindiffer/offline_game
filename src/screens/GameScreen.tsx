@@ -8,7 +8,7 @@ const Snake = lazy(() => import('../games/Snake/Snake'));
 const Game2048 = lazy(() => import('../games/Game2048/Game2048'));
 const Minesweeper = lazy(() => import('../games/Minesweeper/Minesweeper'));
 const ConnectFour = lazy(() => import('../games/ConnectFour/ConnectFour'));
-const Tetris = lazy(() => import('../games/Tetris/Tetris'));
+const BlockDrop = lazy(() => import('../games/BlockDrop/BlockDrop'));
 const Maze = lazy(() => import('../games/Maze/Maze'));
 const Solitaire = lazy(() => import('../games/Solitaire/Solitaire'));
 const Sudoku = lazy(() => import('../games/Sudoku/Sudoku'));
@@ -202,7 +202,7 @@ export default function GameScreen({ route }: Props) {
       case '2048': gameComponent = <Game2048 difficulty={difficulty} />; break;
       case 'minesweeper': gameComponent = <Minesweeper difficulty={difficulty} />; break;
       case 'connect-four': gameComponent = <ConnectFour difficulty={difficulty} />; break;
-      case 'block-drop': gameComponent = <Tetris difficulty={difficulty} />; break;
+      case 'block-drop': gameComponent = <BlockDrop difficulty={difficulty} />; break;
       case 'maze': gameComponent = <Maze difficulty={difficulty} />; break;
       case 'solitaire': gameComponent = <Solitaire difficulty={difficulty} />; break;
       case 'sudoku': gameComponent = <Sudoku difficulty={difficulty} />; break;

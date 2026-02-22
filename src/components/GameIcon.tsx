@@ -16,7 +16,7 @@ export default function GameIcon({ gameId }: Props) {
     case '2048': return <Icon2048 />;
     case 'minesweeper': return <MinesweeperIcon />;
     case 'connect-four': return <ConnectFourIcon />;
-    case 'block-drop': return <TetrisIcon />;
+    case 'block-drop': return <BlockDropIcon />;
     case 'maze': return <MazeIcon />;
     case 'solitaire': return <SolitaireIcon />;
     case 'sudoku': return <SudokuIcon />;
@@ -146,8 +146,8 @@ function ConnectFourIcon() {
   );
 }
 
-/* ── Tetris (T-piece) ── */
-function TetrisIcon() {
+/* ── Block Drop (T-piece) ── */
+function BlockDropIcon() {
   return (
     <View style={s.container}>
       <View style={[s.tetBlock, { top: 24, left: 12 }]} />
@@ -582,7 +582,7 @@ const s = StyleSheet.create({
   c4Filled: { backgroundColor: WD },
   c4Empty: { backgroundColor: WM },
 
-  /* Tetris */
+  /* Block Drop */
   tetBlock: { position: 'absolute', width: 16, height: 16, backgroundColor: WD, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(255,255,255,0.5)' },
 
   /* Maze */

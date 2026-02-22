@@ -2,7 +2,7 @@ import { Difficulty } from '../../types';
 
 export type TetrominoShape = number[][];
 export type TetrominoType = 'I' | 'J' | 'L' | 'O' | 'S' | 'T' | 'Z';
-export type TetrisBoard = (TetrominoType | 0)[][];
+export type BlockDropBoard = (TetrominoType | 0)[][];
 
 export const TETROMINOS: Record<TetrominoType, TetrominoShape> = {
   I: [[1, 1, 1, 1]],
@@ -38,7 +38,7 @@ const GAME_CONFIGS: Record<Difficulty, GameConfig> = {
   hard: { startSpeed: 400, speedUp: 50 },
 };
 
-export function createEmptyBoard(): TetrisBoard {
+export function createEmptyBoard(): BlockDropBoard {
   return Array(BOARD_HEIGHT)
     .fill(0)
     .map(() => Array(BOARD_WIDTH).fill(0));
@@ -66,7 +66,7 @@ export function rotateTetromino(shape: TetrominoShape): TetrominoShape {
 }
 
 export function isValidMove(
-  board: TetrisBoard,
+  board: BlockDropBoard,
   shape: TetrominoShape,
   row: number,
   col: number
@@ -93,12 +93,12 @@ export function isValidMove(
 }
 
 export function mergeTetromino(
-  board: TetrisBoard,
+  board: BlockDropBoard,
   shape: TetrominoShape,
   row: number,
   col: number,
   type: TetrominoType
-): TetrisBoard {
+): BlockDropBoard {
   const newBoard = board.map((r) => [...r]);
   for (let r = 0; r < shape.length; r++) {
     for (let c = 0; c < shape[0].length; c++) {
@@ -110,7 +110,7 @@ export function mergeTetromino(
   return newBoard;
 }
 
-export function clearLines(board: TetrisBoard): { newBoard: TetrisBoard; clearedLines: number } {
+export function clearLines(board: BlockDropBoard): { newBoard: BlockDropBoard; clearedLines: number } {
   let clearedLines = 0;
   const newBoard = board.filter((row) => !row.every((cell) => cell !== 0));
   clearedLines = BOARD_HEIGHT - newBoard.length;

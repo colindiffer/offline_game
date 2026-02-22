@@ -18,7 +18,7 @@ import {
   BOARD_WIDTH,
   TETROMINO_COLORS,
   TetrominoType,
-  TetrisBoard,
+  BlockDropBoard,
   createEmptyBoard,
   getRandomTetromino,
   isValidMove,
@@ -40,12 +40,12 @@ interface Props {
   difficulty: Difficulty;
 }
 
-export default function Tetris({ difficulty }: Props) {
+export default function BlockDrop({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
-  const [board, setBoard] = useState<TetrisBoard>(createEmptyBoard());
+  const [board, setBoard] = useState<BlockDropBoard>(createEmptyBoard());
   const [currentTetromino, setCurrentTetromino] = useState(getRandomTetromino());
   const [nextTetromino, setNextTetromino] = useState(getRandomTetromino());
   const [tetrominoPos, setTetrominoPos] = useState({ row: 0, col: Math.floor(BOARD_WIDTH / 2) - 2 });
@@ -343,7 +343,7 @@ export default function Tetris({ difficulty }: Props) {
     const ghostRow = getGhostRow();
 
     return board.map((row, r) => (
-      <View key={r} style={styles.tetrisRow}>
+      <View key={r} style={styles.blockDropRow}>
         {row.map((cell, c) => {
           let cellType: TetrominoType | 0 | 'ghost' = cell as any;
 
@@ -373,7 +373,7 @@ export default function Tetris({ difficulty }: Props) {
 
           if (cellType === 'ghost') {
             return (
-              <View key={`${r}-${c}`} style={[styles.tetrisCell, styles.ghostCell]}>
+              <View key={`${r}-${c}`} style={[styles.blockDropCell, styles.ghostCell]}>
                 <View style={[styles.ghostInner, { borderColor: TETROMINO_COLORS[currentTetromino.type] }]} />
               </View>
             );
@@ -382,7 +382,7 @@ export default function Tetris({ difficulty }: Props) {
           const color = TETROMINO_COLORS[cellType as TetrominoType];
 
           return (
-            <View key={`${r}-${c}`} style={[styles.tetrisCell, { backgroundColor: color }]}>
+            <View key={`${r}-${c}`} style={[styles.blockDropCell, { backgroundColor: color }]}>
               <LinearGradient
                 colors={['rgba(255,255,255,0.3)', 'rgba(0,0,0,0.1)']}
                 style={styles.cellGradient}
@@ -432,7 +432,7 @@ export default function Tetris({ difficulty }: Props) {
           <GestureDetector gesture={combinedGesture}>
             <View>
               <GameBoardContainer style={styles.boardWrapper}>
-                <View style={styles.tetrisBoard}>
+                <View style={styles.BlockDropBoard}>
                   {renderBoard()}
                 </View>
               </GameBoardContainer>
@@ -535,14 +535,14 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     borderColor: colors.border,
     overflow: 'hidden',
   },
-  tetrisBoard: {
+  BlockDropBoard: {
     width: GAME_AREA_WIDTH,
     height: GAME_AREA_HEIGHT,
   },
-  tetrisRow: {
+  blockDropRow: {
     flexDirection: 'row',
   },
-  tetrisCell: {
+  blockDropCell: {
     width: CELL_SIZE,
     height: CELL_SIZE,
     borderWidth: 1,
