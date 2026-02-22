@@ -129,6 +129,7 @@ const getStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     gameTitle: {
       ...typography.heading,
+      fontSize: 18,
       color: colors.text,
       textAlign: 'center',
       marginBottom: spacing.xs,
@@ -165,7 +166,7 @@ const getStyles = (colors: ThemeColors) =>
       flex: 1,
     },
     difficultyIcon: {
-      fontSize: 32,
+      fontSize: 22,
     },
     difficultyLabel: {
       ...typography.small,
@@ -178,7 +179,7 @@ const getStyles = (colors: ThemeColors) =>
     scoreValue: {
       ...typography.heading,
       color: colors.text,
-      fontSize: 28,
+      fontSize: 20,
       fontWeight: '900',
     },
     noScore: {

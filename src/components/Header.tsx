@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Platform } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
 import { spacing, radius, typography, shadows } from '../utils/designTokens';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
   title?: string;
@@ -28,7 +29,8 @@ export default function Header({
 }: Props) {
   const { colors } = useTheme();
   const navigation = useNavigation();
-  const styles = useMemo(() => getStyles(colors, light), [colors, light]);
+  const insets = useSafeAreaInsets();
+  const styles = useMemo(() => getStyles(colors, light, insets.top), [colors, light, insets.top]);
 
   return (
     <View style={styles.container}>
@@ -65,7 +67,7 @@ export default function Header({
             onPress={onPause}
             activeOpacity={0.7}
           >
-            <Text style={styles.pauseIcon}>{isPaused ? '▶' : '‖'}</Text>
+            <Text style={styles.pauseIcon}>{isPaused ? '▶' : '⏸'}</Text>
           </TouchableOpacity>
         ) : (
           <View style={[styles.circleBtn, { opacity: 0 }]} />
@@ -93,12 +95,12 @@ export default function Header({
   );
 }
 
-const getStyles = (colors: ThemeColors, light: boolean) =>
+const getStyles = (colors: ThemeColors, light: boolean, topInset: number) =>
   StyleSheet.create({
     container: {
+      paddingTop: topInset + spacing.sm,
       paddingBottom: spacing.md,
       paddingHorizontal: spacing.md,
-      marginTop: Platform.OS === 'ios' ? 4 : 16,
     },
     topRow: {
       flexDirection: 'row',

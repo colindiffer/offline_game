@@ -181,26 +181,26 @@ const getStyles = (colors: ThemeColors) =>
       alignItems: 'center',
     },
     iconContainer: {
-      width: 100, // Reduced icon container size
-      height: 100,
-      borderRadius: 50,
+      width: 72,
+      height: 72,
+      borderRadius: 36,
       backgroundColor: colors.background,
       justifyContent: 'center',
       alignItems: 'center',
-      marginBottom: spacing.xl, // Reduced margin
+      marginBottom: spacing.md,
       borderWidth: 1,
       borderColor: colors.border,
     },
     icon: {
-      fontSize: 60, // Reduced icon font size
+      fontSize: 40,
     },
     stepTitle: {
-      fontSize: 28, // Reduced font size
+      fontSize: 20,
       fontWeight: '900',
       color: colors.text,
       textAlign: 'center',
-      marginBottom: spacing.md, // Reduced margin
-      flexShrink: 1, // Allow text to shrink
+      marginBottom: spacing.sm,
+      flexShrink: 1,
     },
     description: {
       fontSize: 16, // Reduced font size

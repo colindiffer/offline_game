@@ -63,6 +63,7 @@ export default function Tetris({ difficulty }: Props) {
   const gameStateRef = useRef({ board, currentTetromino, tetrominoPos, gameOver, gameStarted });
   const pausedRef = useRef(false);
   const lastXRef = useRef(0);
+  const tetrominoPosRef = useRef(tetrominoPos);
 
   useEffect(() => {
     getHighScore('tetris', difficulty).then(setHighScoreState);
@@ -78,6 +79,7 @@ export default function Tetris({ difficulty }: Props) {
   useEffect(() => {
     levelRef.current = level;
     gameStateRef.current = { board, currentTetromino, tetrominoPos, gameOver, gameStarted };
+    tetrominoPosRef.current = tetrominoPos;
   }, [level, board, currentTetromino, tetrominoPos, gameOver, gameStarted]);
 
   useEffect(() => { pausedRef.current = paused; }, [paused]);
@@ -155,24 +157,29 @@ export default function Tetris({ difficulty }: Props) {
   const moveTetromino = useCallback((direction: 'left' | 'right' | 'down' | 'rotate' | 'harddrop' | 'softdrop') => {
     if (gameOver || !gameStarted || paused) return;
 
-    let { row, col } = tetrominoPos;
+    // Read from ref so gesture loop iterations see the latest position (avoids stale closure)
+    let { row, col } = tetrominoPosRef.current;
     let newShape = currentTetromino.shape;
 
     if (direction === 'rotate') {
-      const rotatedShape = rotateTetromino(newShape);
-      if (isValidMove(board, rotatedShape, row, col)) {
-        setCurrentTetromino({ ...currentTetromino, shape: rotatedShape });
-        playSound('tap');
+      if (isValidMove(board, newShape, row, col)) {
+        const rotatedShape = rotateTetromino(newShape);
+        if (isValidMove(board, rotatedShape, row, col)) {
+          setCurrentTetromino({ ...currentTetromino, shape: rotatedShape });
+          playSound('tap');
+        }
       }
     } else if (direction === 'left') {
       if (isValidMove(board, newShape, row, col - 1)) {
         col--;
+        tetrominoPosRef.current = { row, col }; // update ref synchronously for loop continuity
         setTetrominoPos({ row, col });
         playSound('tap');
       }
     } else if (direction === 'right') {
       if (isValidMove(board, newShape, row, col + 1)) {
         col++;
+        tetrominoPosRef.current = { row, col }; // update ref synchronously for loop continuity
         setTetrominoPos({ row, col });
         playSound('tap');
       }
