@@ -42,7 +42,8 @@
           "androidAppId": "ca-app-pub-7047560171408604~6663758767",
           "iosAppId": "ca-app-pub-7047560171408604~2240222622"
         }
-      ]
+      ],
+      "./plugins/withAndroidSigning.js"
     ],
     "extra": {
       "eas": {
