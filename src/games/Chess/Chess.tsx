@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Header from '../../components/Header';
 import GameOverOverlay from '../../components/GameOverOverlay';
 import GameBoardContainer from '../../components/GameBoardContainer';
@@ -21,10 +21,7 @@ import {
 } from './logic';
 import { getBestMove, getAIDifficulty } from './ai';
 import { GameState, Move, Position } from './types';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-const CELL_SIZE = Math.floor(Math.min((SCREEN_WIDTH - 44) / 8, (SCREEN_HEIGHT * 0.52) / 8));
+import { useGameArea } from '../../hooks/useGameArea';
 
 interface Props {
   difficulty: Difficulty;
@@ -33,7 +30,9 @@ interface Props {
 export default function Chess({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  const { areaWidth, areaHeight, onLayout: onGameAreaLayout } = useGameArea();
+  const cellSize = Math.floor(Math.min((areaWidth - 16) / 8, (areaHeight - 16) / 8));
+  const styles = useMemo(() => getStyles(colors, cellSize), [colors, cellSize]);
 
   const [gameState, setGameState] = useState<GameState>(() => initializeGame());
   const [isAIThinking, setIsAIThinking] = useState(false);
@@ -235,7 +234,7 @@ export default function Chess({ difficulty }: Props) {
         </View>
       </View>
 
-      <View style={styles.boardWrapper}>
+      <View style={styles.boardWrapper} onLayout={onGameAreaLayout}>
         <GameBoardContainer style={styles.boardContainer}>
           <View style={styles.board}>
             {gameState.board.map((row, rowIndex) => (
@@ -304,7 +303,7 @@ export default function Chess({ difficulty }: Props) {
   );
 }
 
-const getStyles = (colors: ThemeColors) =>
+const getStyles = (colors: ThemeColors, cellSize: number) =>
   StyleSheet.create({
     container: {
       flex: 1,
@@ -398,8 +397,8 @@ const getStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
     },
     cell: {
-      width: CELL_SIZE,
-      height: CELL_SIZE,
+      width: cellSize,
+      height: cellSize,
       justifyContent: 'center',
       alignItems: 'center',
     },
@@ -416,7 +415,7 @@ const getStyles = (colors: ThemeColors) =>
       backgroundColor: 'rgba(255, 214, 0, 0.35)',
     },
     pieceText: {
-      fontSize: CELL_SIZE * 0.7,
+      fontSize: cellSize * 0.7,
       ...shadows.sm,
     },
     whitePiece: {
@@ -439,9 +438,9 @@ const getStyles = (colors: ThemeColors) =>
       backgroundColor: 'rgba(46, 204, 113, 0.4)',
     },
     captureIndicator: {
-      width: CELL_SIZE - 4,
-      height: CELL_SIZE - 4,
-      borderRadius: (CELL_SIZE - 4) / 2,
+      width: cellSize - 4,
+      height: cellSize - 4,
+      borderRadius: (cellSize - 4) / 2,
       borderWidth: 2,
       borderColor: 'rgba(46, 204, 113, 0.4)',
       backgroundColor: 'transparent',

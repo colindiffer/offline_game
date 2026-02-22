@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Header from '../../components/Header';
 import TutorialScreen from '../../components/TutorialScreen';
@@ -17,13 +17,10 @@ import { GAME_TUTORIALS } from '../../utils/tutorials';
 import PremiumButton from '../../components/PremiumButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useInterstitialAd } from '../../lib/useInterstitialAd';
+import { useGameArea } from '../../hooks/useGameArea';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 const BOARD_PADDING = 8;
-const BOARD_SIZE = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52);
 const TILE_GAP = 6;
-const TILE_SIZE = (BOARD_SIZE - BOARD_PADDING * 2 - TILE_GAP * 5) / 4;
 
 const TILE_COLORS: Record<number, { bg: string; text: string }> = {
   0: { bg: '#3d3d5c', text: 'transparent' },
@@ -51,7 +48,10 @@ interface Props {
 export default function Game2048({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  const { areaWidth, areaHeight, onLayout: onGameAreaLayout } = useGameArea();
+  const boardSize = Math.min(areaWidth - 32, areaHeight - 32);
+  const tileSize = (boardSize - BOARD_PADDING * 2 - TILE_GAP * 5) / 4;
+  const styles = useMemo(() => getStyles(colors, boardSize, tileSize), [colors, boardSize, tileSize]);
   const { showAd } = useInterstitialAd();
   const [board, setBoard] = useState<Board2048>(() => initBoard(difficulty));
   const [score, setScore] = useState(0);
@@ -216,7 +216,7 @@ export default function Game2048({ difficulty }: Props) {
       />
 
       <GestureDetector gesture={panGesture}>
-        <View style={styles.boardContainer}>
+        <View style={styles.boardContainer} onLayout={onGameAreaLayout}>
           <GameBoardContainer>
             <View style={styles.board}>
               {board.map((row, r) => (
@@ -336,7 +336,7 @@ export default function Game2048({ difficulty }: Props) {
   );
 }
 
-const getStyles = (colors: ThemeColors) => StyleSheet.create({
+const getStyles = (colors: ThemeColors, boardSize: number, tileSize: number) => StyleSheet.create({
   container: {
     flex: 1,
     padding: spacing.md,
@@ -347,8 +347,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     marginVertical: spacing.xl,
   },
   board: {
-    width: BOARD_SIZE,
-    height: BOARD_SIZE,
+    width: boardSize,
+    height: boardSize,
     backgroundColor: colors.card,
     borderRadius: radius.md,
     padding: BOARD_PADDING,
@@ -361,8 +361,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   tile: {
-    width: TILE_SIZE,
-    height: TILE_SIZE,
+    width: tileSize,
+    height: tileSize,
     borderRadius: radius.sm,
     justifyContent: 'center',
     alignItems: 'center',

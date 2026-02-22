@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
 import Header from '../../components/Header';
 import TutorialScreen from '../../components/TutorialScreen';
 import GameOverOverlay from '../../components/GameOverOverlay';
@@ -16,11 +16,8 @@ import { ThemeColors } from '../../utils/themes';
 import { GAME_TUTORIALS } from '../../utils/tutorials';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useInterstitialAd } from '../../lib/useInterstitialAd';
+import { useGameArea } from '../../hooks/useGameArea';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-const BOARD_SIZE = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52);
-const CELL_SIZE = BOARD_SIZE / 3;
 
 interface Props {
   difficulty: Difficulty;
@@ -29,7 +26,10 @@ interface Props {
 export default function TicTacToe({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  const { areaWidth, areaHeight, onLayout: onGameAreaLayout } = useGameArea();
+  const boardSize = Math.min(areaWidth - 16, areaHeight - 16);
+  const cellSize = Math.floor(boardSize / 3);
+  const styles = useMemo(() => getStyles(colors, boardSize, cellSize), [colors, boardSize, cellSize]);
   const { showAd } = useInterstitialAd();
   const [board, setBoard] = useState<Board>(createEmptyBoard());
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
@@ -203,7 +203,7 @@ export default function TicTacToe({ difficulty }: Props) {
         isPaused={paused}
       />
 
-      <View style={styles.boardContainer}>
+      <View style={styles.boardContainer} onLayout={onGameAreaLayout}>
         <GameBoardContainer>
           <View style={styles.board}>
             {/* Grid Lines */}
@@ -289,7 +289,7 @@ export default function TicTacToe({ difficulty }: Props) {
   );
 }
 
-const getStyles = (colors: ThemeColors) => StyleSheet.create({
+const getStyles = (colors: ThemeColors, boardSize: number, cellSize: number) => StyleSheet.create({
   container: {
     flex: 1,
     padding: spacing.md,
@@ -301,8 +301,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   board: {
-    width: BOARD_SIZE,
-    height: BOARD_SIZE,
+    width: boardSize,
+    height: boardSize,
     position: 'relative',
     backgroundColor: colors.card,
     borderRadius: radius.lg,
@@ -357,7 +357,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: radius.sm,
   },
   cellText: {
-    fontSize: Math.floor(BOARD_SIZE / 3 * 0.65),
+    fontSize: Math.floor(cellSize * 0.65),
     fontWeight: '900',
   },
   xText: {

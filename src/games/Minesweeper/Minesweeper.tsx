@@ -16,14 +16,11 @@ import PremiumButton from '../../components/PremiumButton';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useInterstitialAd } from '../../lib/useInterstitialAd';
+import { useGameArea } from '../../hooks/useGameArea';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 
-const getCellSize = (cols: number) => {
-  const boardSize = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52);
-  return boardSize / cols;
-};
+const getCellSize = (cols: number, aw: number, ah: number) => Math.floor(Math.min(aw / cols, ah / cols));
 
 interface Props {
   difficulty: Difficulty;
@@ -34,6 +31,7 @@ export default function Minesweeper({ difficulty }: Props) {
   const { playSound } = useSound();
   const styles = useMemo(() => getStyles(colors), [colors]);
   const { showAd } = useInterstitialAd();
+  const { areaWidth, areaHeight, onLayout: onGameAreaLayout } = useGameArea();
 
   const [board, setBoard] = useState<Board | null>(null);
   const [level, setLevelState] = useState(1);
@@ -49,7 +47,7 @@ export default function Minesweeper({ difficulty }: Props) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isFirstGameRef = useRef(true);
   const gameConfig = useMemo(() => getGameConfig(difficulty, level), [difficulty, level]);
-  const CELL_SIZE = getCellSize(gameConfig.cols);
+  const CELL_SIZE = getCellSize(gameConfig.cols, areaWidth - 16, areaHeight - 16);
   const initializedBoardRef = useRef<Board | null>(null);
 
   useEffect(() => {
@@ -266,8 +264,9 @@ export default function Minesweeper({ difficulty }: Props) {
         <Text style={styles.levelText}>Level {level}</Text>
       </View>
 
-      <GameBoardContainer style={styles.boardContainer}>
-        <View style={styles.boardFrame}>
+      <View style={styles.boardContainer} onLayout={onGameAreaLayout}>
+        <GameBoardContainer>
+          <View style={styles.boardFrame}>
           {board && board.map((row, r) => (
               <View key={r} style={styles.row}>
                 {row.map((cell) => renderCell(cell))}
@@ -276,7 +275,8 @@ export default function Minesweeper({ difficulty }: Props) {
           }
 
         </View>
-      </GameBoardContainer>
+        </GameBoardContainer>
+      </View>
 
       <View style={styles.footer}>
         <View style={styles.footerBtns}>

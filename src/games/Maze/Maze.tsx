@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Header from '../../components/Header';
 import GameOverOverlay from '../../components/GameOverOverlay';
@@ -14,10 +14,7 @@ import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
 import { generateMaze, canMove, hasWon, getMazeConfig, MazeGrid } from './logic';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-const MAX_MAZE_SIZE = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52);
+import { useGameArea } from '../../hooks/useGameArea';
 
 interface Props {
   difficulty: Difficulty;
@@ -26,6 +23,7 @@ interface Props {
 export default function Maze({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
+  const { areaWidth, areaHeight, onLayout: onGameAreaLayout } = useGameArea();
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [level, setLevelState] = useState(1);
@@ -39,7 +37,8 @@ export default function Maze({ difficulty }: Props) {
   const [isReady, setIsReady] = useState(false);
 
   const config = getMazeConfig(difficulty, level);
-  const CELL_SIZE = Math.floor(MAX_MAZE_SIZE / Math.max(config.rows, config.cols));
+  const maxMazeSize = Math.min(areaWidth - 16, areaHeight - 16);
+  const CELL_SIZE = Math.floor(maxMazeSize / Math.max(config.rows, config.cols));
 
   const startTimeRef = useRef<number | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -215,7 +214,7 @@ export default function Maze({ difficulty }: Props) {
       </View>
 
       <GestureDetector gesture={panGesture}>
-        <View style={styles.boardContainer}>
+        <View style={styles.boardContainer} onLayout={onGameAreaLayout}>
           <GameBoardContainer style={styles.boardWrapper}>
             <View style={[styles.maze, { width: CELL_SIZE * config.cols, height: CELL_SIZE * config.rows }]}>
               {renderMaze()}

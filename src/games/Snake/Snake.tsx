@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View, Animated } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Header from '../../components/Header';
 import TutorialScreen from '../../components/TutorialScreen';
@@ -17,6 +17,7 @@ import { GAME_TUTORIALS } from '../../utils/tutorials';
 import PremiumButton from '../../components/PremiumButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useInterstitialAd } from '../../lib/useInterstitialAd';
+import { useGameArea } from '../../hooks/useGameArea';
 import {
   Direction,
   Point,
@@ -27,12 +28,6 @@ import {
   moveSnake,
   spawnFood,
 } from './logic';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-const BOARD_SIZE = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52);
-const CELL_SIZE = Math.floor(BOARD_SIZE / SNAKE_GRID_SIZE);
-const ACTUAL_BOARD = CELL_SIZE * SNAKE_GRID_SIZE;
 
 const TICK_BY_DIFFICULTY: Record<Difficulty, number> = {
   easy: 350,
@@ -47,6 +42,10 @@ interface Props {
 export default function Snake({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
+  const { areaWidth, areaHeight, onLayout: onGameAreaLayout } = useGameArea();
+  const boardSize = Math.min(areaWidth - 16, areaHeight - 16);
+  const cellSize = Math.floor(boardSize / SNAKE_GRID_SIZE);
+  const actualBoard = cellSize * SNAKE_GRID_SIZE;
   const styles = useMemo(() => getStyles(colors), [colors]);
   const { showAd } = useInterstitialAd();
   const [snake, setSnake] = useState<Point[]>(getInitialSnake());
@@ -255,11 +254,11 @@ export default function Snake({ difficulty }: Props) {
         isPaused={paused}
       />
 
-      <View style={styles.boardContainer}>
+      <View style={styles.boardContainer} onLayout={onGameAreaLayout}>
         <GestureDetector gesture={panGesture}>
           <View>
             <GameBoardContainer>
-              <View style={[styles.board, { width: ACTUAL_BOARD, height: ACTUAL_BOARD }]}>
+              <View style={[styles.board, { width: actualBoard, height: actualBoard }]}>
                 {/* Checkered Background */}
                 <View style={StyleSheet.absoluteFill}>
                   {Array.from({ length: SNAKE_GRID_SIZE }, (_, y) => (
@@ -270,8 +269,8 @@ export default function Snake({ difficulty }: Props) {
                           style={[
                             styles.cell,
                             {
-                              width: CELL_SIZE,
-                              height: CELL_SIZE,
+                              width: cellSize,
+                              height: cellSize,
                               backgroundColor: (x + y) % 2 === 0 ? colors.background : colors.surface,
                               opacity: 0.5,
                             },
@@ -295,16 +294,16 @@ export default function Snake({ difficulty }: Props) {
                       style={[
                         styles.element,
                         {
-                          width: CELL_SIZE,
-                          height: CELL_SIZE,
-                          left: p.x * CELL_SIZE,
-                          top: p.y * CELL_SIZE,
+                          width: cellSize,
+                          height: cellSize,
+                          left: p.x * cellSize,
+                          top: p.y * cellSize,
                         },
                       ]}
                     >
                       <View style={[
                         isHead ? styles.headCell : styles.snakeCell,
-                        { width: CELL_SIZE - 2, height: CELL_SIZE - 2, borderRadius: isHead ? 6 : 4 }
+                        { width: cellSize - 2, height: cellSize - 2, borderRadius: isHead ? 6 : 4 }
                       ]}>
                         {isHead && (
                           <View style={[styles.eyesContainer, { transform: [{ rotate: rotation }] }]}>
@@ -321,10 +320,10 @@ export default function Snake({ difficulty }: Props) {
                   style={[
                     styles.element,
                     {
-                      width: CELL_SIZE,
-                      height: CELL_SIZE,
-                      left: food.x * CELL_SIZE,
-                      top: food.y * CELL_SIZE,
+                      width: cellSize,
+                      height: cellSize,
+                      left: food.x * cellSize,
+                      top: food.y * cellSize,
                       transform: [{ scale: foodScale }],
                     },
                   ]}

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Header from '../../components/Header';
 import TutorialScreen from '../../components/TutorialScreen';
 import HintButton from '../../components/HintButton';
@@ -16,9 +16,7 @@ import { GAME_TUTORIALS } from '../../utils/tutorials';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import PremiumButton from '../../components/PremiumButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const CELL_SIZE = Math.floor((SCREEN_WIDTH - 48) / 9);
+import { useGameArea } from '../../hooks/useGameArea';
 
 interface Props {
   difficulty: Difficulty;
@@ -27,6 +25,8 @@ interface Props {
 export default function Sudoku({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
+  const { areaWidth, areaHeight, onLayout: onGameAreaLayout } = useGameArea();
+  const cellSize = Math.floor(Math.min((areaWidth - 16) / 9, (areaHeight - 16) / 9));
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [level, setLevelState] = useState(1);
@@ -243,8 +243,8 @@ export default function Sudoku({ difficulty }: Props) {
                   style={[
                     styles.cell,
                     {
-                      width: CELL_SIZE,
-                      height: CELL_SIZE,
+                      width: cellSize,
+                      height: cellSize,
                       backgroundColor: isHint
                         ? colors.success + '60'
                         : isSelected
@@ -287,7 +287,7 @@ export default function Sudoku({ difficulty }: Props) {
 
   return (
     <View style={styles.viewRoot}>
-      <View style={styles.container}>
+      <View style={styles.container} onLayout={onGameAreaLayout}>
         <Text style={styles.bgIcon}>🔢</Text>
         <Header
           title="Sudoku"

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { StyleSheet, Text, View, Dimensions, Platform, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, Platform, ScrollView } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
@@ -14,15 +14,13 @@ import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { generateWordSearch, getSelectedWord, WordSearchGrid, Position } from './logic';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-// 0.44: leaves room for header(~60) + levelHeader with badge(~70) + wordList + footer(~80)
-const GRID_SIZE = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.44);
+import { useGameArea } from '../../hooks/useGameArea';
 
 export default function WordSearch({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
+  const { areaWidth, areaHeight, onLayout: onGameAreaLayout } = useGameArea();
+  const gridSize = Math.min(areaWidth - 16, areaHeight * 0.85);
   const styles = useMemo(() => getStyles(colors), [colors]);
 
   const [level, setLevelState] = useState(1);
@@ -71,8 +69,7 @@ export default function WordSearch({ difficulty }: Props) {
 
   const getCellFromPos = (x: number, y: number): Position | null => {
     if (!gameState) return null;
-    const cellSize = GRID_SIZE / gameState.letters.length;
-    const col = Math.floor((x - containerPos.current.x) / cellSize);
+    const cellSize = gridSize / gameState.letters.length;
     const row = Math.floor((y - containerPos.current.y) / cellSize);
     if (row >= 0 && row < gameState.letters.length && col >= 0 && col < gameState.letters[0].length) {
       return { row, col };
@@ -179,7 +176,7 @@ export default function WordSearch({ difficulty }: Props) {
 
   const renderSelectionLine = () => {
     if (!selection || !gameState) return null;
-    const cellSize = GRID_SIZE / gameState.letters.length;
+    const cellSize = gridSize / gameState.letters.length;
     
     const startX = containerPos.current.x + selection.start.col * cellSize + cellSize / 2;
     const startY = containerPos.current.y + selection.start.row * cellSize + cellSize / 2;
@@ -212,7 +209,7 @@ export default function WordSearch({ difficulty }: Props) {
   };
 
   if (!isReady || !gameState) return <View style={styles.container} />;
-  const cellSize = GRID_SIZE / gameState.letters.length;
+  const cellSize = gridSize / gameState.letters.length;
 
   return (
     <View style={styles.container}>
@@ -226,7 +223,7 @@ export default function WordSearch({ difficulty }: Props) {
         <Text style={styles.levelText}>Level {level}</Text>
       </View>
 
-      <View style={styles.gameArea}>
+      <View style={styles.gameArea} onLayout={onGameAreaLayout}>
         <GestureDetector gesture={panGesture}>
           <View onLayout={onLayout}>
             <GameBoardContainer style={styles.boardWrapper}>

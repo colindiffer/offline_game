@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Animated, Dimensions, Platform } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Animated, Platform } from 'react-native';
 import Header from '../../components/Header';
 import GameOverOverlay from '../../components/GameOverOverlay';
 import PremiumButton from '../../components/PremiumButton';
@@ -11,10 +11,7 @@ import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { addToSequence, SimonColor } from './logic';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-const PAD_SIZE = Math.min((SCREEN_WIDTH - 80) / 2, SCREEN_HEIGHT * 0.25);
+import { useGameArea } from '../../hooks/useGameArea';
 
 const PAD_COLORS = [
   { base: '#ff7675', light: '#ffb8b8' }, // Red
@@ -26,7 +23,9 @@ const PAD_COLORS = [
 export default function SimonSays({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  const { areaWidth, areaHeight, onLayout: onGameAreaLayout } = useGameArea();
+  const padSize = Math.floor(Math.min((areaWidth - 40) / 2, (areaHeight - 40) / 2));
+  const styles = useMemo(() => getStyles(colors, padSize), [colors, padSize]);
 
   const [level, setLevelState] = useState(1);
   const [sequence, setSequence] = useState<SimonColor[]>([]);
@@ -157,7 +156,7 @@ export default function SimonSays({ difficulty }: Props) {
         </Text>
       </View>
 
-      <View style={styles.gameArea}>
+      <View style={styles.gameArea} onLayout={onGameAreaLayout}>
         <View style={styles.padsContainer}>
           {PAD_COLORS.map((color, i) => (
             <TouchableOpacity
@@ -218,7 +217,7 @@ interface Props {
   difficulty: Difficulty;
 }
 
-const getStyles = (colors: ThemeColors) => StyleSheet.create({
+const getStyles = (colors: ThemeColors, padSize: number) => StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   levelHeader: { alignItems: 'center', marginTop: spacing.md },
   levelText: { color: colors.text, fontSize: 24, fontWeight: '900' },
@@ -228,8 +227,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   flexBtn: { flex: 1 },
   footerBtnText: { color: colors.text, fontWeight: 'bold', fontSize: 12 },
   padsContainer: {
-    width: PAD_SIZE * 2 + 20,
-    height: PAD_SIZE * 2 + 20,
+    width: padSize * 2 + 20,
+    height: padSize * 2 + 20,
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 20,
@@ -237,8 +236,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
   },
   pad: {
-    width: PAD_SIZE,
-    height: PAD_SIZE,
+    width: padSize,
+    height: padSize,
     borderRadius: 20,
     borderWidth: 4,
     borderColor: 'rgba(0,0,0,0.2)',

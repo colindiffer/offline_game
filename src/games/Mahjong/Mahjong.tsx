@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Dimensions, Platform } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, ScrollView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Header from '../../components/Header';
 import GameOverOverlay from '../../components/GameOverOverlay';
@@ -12,14 +12,12 @@ import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { initializeMahjong, isTileFree, Tile } from './logic';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SCREEN_HEIGHT = Dimensions.get('window').height;
-const BOARD_SIZE = SCREEN_WIDTH - 16;
+import { useGameArea } from '../../hooks/useGameArea';
 
 export default function Mahjong({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
+  const { areaWidth, areaHeight, onLayout: onGameAreaLayout } = useGameArea();
 
   const [level, setLevelState] = useState(1);
   const [tiles, setTiles] = useState<Tile[]>([]);
@@ -41,10 +39,10 @@ export default function Mahjong({ difficulty }: Props) {
     });
 
     // header ~60 + levelHeader ~50 + footer ~80 + gameArea padding ~40
-    const maxBoardHeight = SCREEN_HEIGHT - 230;
+    const maxBoardHeight = areaHeight - 16;
     const boardRows = maxRow * 0.8 + 1;
 
-    const tileWidthFromW = Math.floor(BOARD_SIZE / (maxCol * 0.9 + 1));
+    const tileWidthFromW = Math.floor((areaWidth - 8) / (maxCol * 0.9 + 1));
     const tileWidthFromH = Math.floor(maxBoardHeight / (boardRows * 1.3));
     const tileWidth = Math.min(tileWidthFromW, tileWidthFromH);
     const tileHeight = Math.floor(tileWidth * 1.3);
@@ -55,7 +53,7 @@ export default function Mahjong({ difficulty }: Props) {
       width: (maxCol * 0.9 + 1) * tileWidth,
       height: boardRows * tileHeight,
     };
-  }, [tiles]);
+  }, [tiles, areaWidth, areaHeight]);
 
   const styles = useMemo(() => getStyles(colors, metrics.tileWidth, metrics.tileHeight), [colors, metrics]);
 
@@ -168,7 +166,7 @@ export default function Mahjong({ difficulty }: Props) {
         <Text style={styles.levelText}>Level {level}</Text>
       </View>
 
-      <View style={styles.gameArea}>
+      <View style={styles.gameArea} onLayout={onGameAreaLayout}>
         <View style={[styles.board, { width: metrics.width, height: metrics.height }]}>
           {sortedTiles.map(tile => tile.visible && (
             <TouchableOpacity
