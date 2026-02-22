@@ -11,7 +11,7 @@ import { recordGameResult } from '../../utils/stats';
 import { Difficulty } from '../../types';
 import { ThemeColors } from '../../utils/themes';
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
-import { useInterstitialAd } from '../../lib/useInterstitialAd';
+import { useGameArea } from '../../hooks/useGameArea';
 import { initializeMemoryMatch, MemoryCard } from './logic';
 
 export default function MemoryMatch({ difficulty }: Props) {

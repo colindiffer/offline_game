@@ -343,8 +343,9 @@ const getStyles = (colors: ThemeColors, boardSize: number, tileSize: number) => 
     backgroundColor: colors.background,
   },
   boardContainer: {
+    flex: 1,
     alignItems: 'center',
-    marginVertical: spacing.xl,
+    justifyContent: 'center',
   },
   board: {
     width: boardSize,

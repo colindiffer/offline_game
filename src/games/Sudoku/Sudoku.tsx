@@ -26,8 +26,10 @@ export default function Sudoku({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
   const { areaWidth, areaHeight, onLayout: onGameAreaLayout } = useGameArea();
-  const cellSize = Math.floor(Math.min((areaWidth - 16) / 9, (areaHeight - 16) / 9));
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  // Reserve space for statsRow(30) + GameBoardContainer padding(28) + numberPad(100) + actions(52) + paddings(16)
+  const RESERVED = 230;
+  const cellSize = Math.floor(Math.min((areaWidth - 16) / 9, (areaHeight - RESERVED) / 9));
+  const styles = useMemo(() => getStyles(colors, cellSize), [colors, cellSize]);
 
   const [level, setLevelState] = useState(1);
   const [board, setBoard] = useState<SudokuBoard>([]);

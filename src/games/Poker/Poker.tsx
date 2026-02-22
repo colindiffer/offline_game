@@ -35,12 +35,16 @@ interface Props {
 export default function Poker({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
-  const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
+  const isCompact = SCREEN_HEIGHT < 700;
 
   const CARD_WIDTH = Math.floor((SCREEN_WIDTH - 80) / 5);
-  const CARD_HEIGHT = Math.floor(CARD_WIDTH * 1.4);
+  const CARD_HEIGHT_FROM_W = Math.floor(CARD_WIDTH * 1.4);
+  // Budget for player cards: screen minus header(56) + table-min(180) + controls(90) + footer(42) + playerMeta(28) + paddings(32)
+  const CARD_HEIGHT_FROM_H = Math.floor(SCREEN_HEIGHT - 56 - 180 - 90 - 42 - 28 - 32);
+  const CARD_HEIGHT = Math.min(CARD_HEIGHT_FROM_W, CARD_HEIGHT_FROM_H);
 
-  const styles = useMemo(() => getStyles(colors, CARD_WIDTH, CARD_HEIGHT), [colors, CARD_WIDTH, CARD_HEIGHT]);
+  const styles = useMemo(() => getStyles(colors, CARD_WIDTH, CARD_HEIGHT, isCompact), [colors, CARD_WIDTH, CARD_HEIGHT, isCompact]);
 
   const [gameState, setGameState] = useState<PokerGameState>(() => {
     const initialState = initializePokerGame(difficulty, INITIAL_CHIPS);
