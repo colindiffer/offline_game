@@ -31,10 +31,9 @@ import {
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SCREEN_HEIGHT = Dimensions.get('window').height;
-const MAX_BOARD_HEIGHT = SCREEN_HEIGHT * 0.6; // Use 60% of screen height
-const CELL_SIZE = Math.floor(Math.min(((SCREEN_WIDTH - 36) * 0.75 - 8) / BOARD_WIDTH, MAX_BOARD_HEIGHT / BOARD_HEIGHT));
-const GAME_AREA_WIDTH = CELL_SIZE * BOARD_WIDTH;
-const GAME_AREA_HEIGHT = CELL_SIZE * BOARD_HEIGHT;
+const MAX_BOARD_HEIGHT = SCREEN_HEIGHT * 0.6;
+// Initial estimate; overridden by onLayout measurement for pixel-perfect fit
+const DEFAULT_CELL_SIZE = Math.floor(Math.min(((SCREEN_WIDTH - 36) * 0.75 - 8) / BOARD_WIDTH, MAX_BOARD_HEIGHT / BOARD_HEIGHT));
 
 interface Props {
   difficulty: Difficulty;
@@ -43,9 +42,18 @@ interface Props {
 export default function BlockDrop({ difficulty }: Props) {
   const { colors } = useTheme();
   const { playSound } = useSound();
-  const styles = useMemo(() => getStyles(colors), [colors]);
+  const styles = useMemo(() => getStyles(colors, cellSize), [colors, cellSize]);
+
+  // Measure actual board container width to compute pixel-perfect cell size
+  const handleBoardAreaLayout = useCallback((e: any) => {
+    const availableWidth = e.nativeEvent.layout.width;
+    const innerWidth = availableWidth - 8; // boardWrapper borderWidth: 4 each side
+    const newCellSize = Math.floor(Math.min(innerWidth / BOARD_WIDTH, MAX_BOARD_HEIGHT / BOARD_HEIGHT));
+    setCellSize(prev => (prev !== newCellSize ? newCellSize : prev));
+  }, []);
 
   const [board, setBoard] = useState<BlockDropBoard>(createEmptyBoard());
+  const [cellSize, setCellSize] = useState(DEFAULT_CELL_SIZE);
   const [currentTetromino, setCurrentTetromino] = useState(getRandomTetromino());
   const [nextTetromino, setNextTetromino] = useState(getRandomTetromino());
   const [tetrominoPos, setTetrominoPos] = useState({ row: 0, col: Math.floor(BOARD_WIDTH / 2) - 2 });
@@ -430,7 +438,7 @@ export default function BlockDrop({ difficulty }: Props) {
       <View style={styles.gameContainer}>
         <View style={styles.mainColumn}>
           <GestureDetector gesture={combinedGesture}>
-            <View>
+            <View onLayout={handleBoardAreaLayout}>
               <GameBoardContainer style={styles.boardWrapper}>
                 <View style={styles.BlockDropBoard}>
                   {renderBoard()}
@@ -513,7 +521,10 @@ export default function BlockDrop({ difficulty }: Props) {
   );
 }
 
-const getStyles = (colors: ThemeColors) => StyleSheet.create({
+const getStyles = (colors: ThemeColors, cellSize: number) => {
+  const gameAreaWidth = cellSize * BOARD_WIDTH;
+  const gameAreaHeight = cellSize * BOARD_HEIGHT;
+  return StyleSheet.create({
   container: {
     flex: 1,
     padding: spacing.md,
@@ -536,22 +547,22 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     overflow: 'hidden',
   },
   BlockDropBoard: {
-    width: GAME_AREA_WIDTH,
-    height: GAME_AREA_HEIGHT,
+    width: gameAreaWidth,
+    height: gameAreaHeight,
   },
   blockDropRow: {
     flexDirection: 'row',
   },
   blockDropCell: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
+    width: cellSize,
+    height: cellSize,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
     overflow: 'hidden',
   },
   emptyCell: {
-    width: CELL_SIZE,
-    height: CELL_SIZE,
+    width: cellSize,
+    height: cellSize,
     backgroundColor: 'transparent',
   },
   cellGradient: {
@@ -632,4 +643,5 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     opacity: 0.03,
     transform: [{ rotate: '-15deg' }],
   },
-});
+  });
+};
