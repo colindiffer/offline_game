@@ -5,6 +5,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { ThemeColors } from '../utils/themes';
 import { spacing, radius, shadows, typography } from '../utils/designTokens';
 import PremiumButton from './PremiumButton';
+import { GameId } from '../types';
+import GameIcon from './GameIcon';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,9 +21,10 @@ interface Props {
   gameName: string;
   steps: TutorialStep[];
   onClose: () => void;
+  gameId?: GameId;
 }
 
-export default function TutorialScreen({ gameName, steps, onClose }: Props) {
+export default function TutorialScreen({ gameName, steps, onClose, gameId }: Props) {
   const { colors } = useTheme();
   const [currentStep, setCurrentStep] = useState(0);
   const styles = useMemo(() => getStyles(colors), [colors]);
@@ -61,9 +64,9 @@ export default function TutorialScreen({ gameName, steps, onClose }: Props) {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {step.icon && (
+            {(step.icon || gameId) && (
               <View style={styles.iconContainer}>
-                <Text style={styles.icon}>{step.icon}</Text>
+                {gameId ? <GameIcon gameId={gameId} /> : <Text style={styles.icon}>{step.icon}</Text>}
               </View>
             )}
 
@@ -184,7 +187,7 @@ const getStyles = (colors: ThemeColors) =>
       width: 72,
       height: 72,
       borderRadius: 36,
-      backgroundColor: colors.background,
+      backgroundColor: colors.primary,
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: spacing.md,

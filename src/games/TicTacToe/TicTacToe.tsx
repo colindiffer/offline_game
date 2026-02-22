@@ -18,7 +18,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useInterstitialAd } from '../../lib/useInterstitialAd';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const BOARD_SIZE = SCREEN_WIDTH - 32;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const BOARD_SIZE = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52);
 const CELL_SIZE = BOARD_SIZE / 3;
 
 interface Props {
@@ -277,6 +278,7 @@ export default function TicTacToe({ difficulty }: Props) {
         <TutorialScreen
           gameName="Tic Tac Toe"
           steps={GAME_TUTORIALS['tic-tac-toe']}
+          gameId="tic-tac-toe"
           onClose={() => {
             setShowTutorial(false);
             AsyncStorage.setItem('@tutorial_tic-tac-toe', 'true');
@@ -355,7 +357,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     borderRadius: radius.sm,
   },
   cellText: {
-    fontSize: 64,
+    fontSize: Math.floor(BOARD_SIZE / 3 * 0.65),
     fontWeight: '900',
   },
   xText: {

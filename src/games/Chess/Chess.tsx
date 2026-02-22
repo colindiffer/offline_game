@@ -23,7 +23,8 @@ import { getBestMove, getAIDifficulty } from './ai';
 import { GameState, Move, Position } from './types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CELL_SIZE = Math.floor((SCREEN_WIDTH - 44) / 8);
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const CELL_SIZE = Math.floor(Math.min((SCREEN_WIDTH - 44) / 8, (SCREEN_HEIGHT * 0.52) / 8));
 
 interface Props {
   difficulty: Difficulty;

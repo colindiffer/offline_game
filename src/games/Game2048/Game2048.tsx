@@ -19,8 +19,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useInterstitialAd } from '../../lib/useInterstitialAd';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 const BOARD_PADDING = 8;
-const BOARD_SIZE = SCREEN_WIDTH - 32;
+const BOARD_SIZE = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52);
 const TILE_GAP = 6;
 const TILE_SIZE = (BOARD_SIZE - BOARD_PADDING * 2 - TILE_GAP * 5) / 4;
 
@@ -324,6 +325,7 @@ export default function Game2048({ difficulty }: Props) {
         <TutorialScreen
           gameName="2048"
           steps={GAME_TUTORIALS['2048']}
+          gameId="2048"
           onClose={() => {
             setShowTutorial(false);
             AsyncStorage.setItem('@tutorial_2048', 'true');

@@ -399,6 +399,7 @@ export default function Sudoku({ difficulty }: Props) {
           <TutorialScreen
             gameName="Sudoku"
             steps={GAME_TUTORIALS.sudoku}
+            gameId="sudoku"
             onClose={handleCloseTutorial}
           />
         )}

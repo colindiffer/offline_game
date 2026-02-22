@@ -18,9 +18,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useInterstitialAd } from '../../lib/useInterstitialAd';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 const getCellSize = (cols: number) => {
-  const boardSize = SCREEN_WIDTH - 32;
+  const boardSize = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52);
   return boardSize / cols;
 };
 
@@ -315,6 +316,7 @@ export default function Minesweeper({ difficulty }: Props) {
         <TutorialScreen
           gameName="Minesweeper"
           steps={GAME_TUTORIALS['minesweeper']}
+          gameId="minesweeper"
           onClose={() => {
             setShowTutorial(false);
             AsyncStorage.setItem('@tutorial_minesweeper', 'true');

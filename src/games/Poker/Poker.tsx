@@ -323,7 +323,7 @@ export default function Poker({ difficulty }: Props) {
         </PremiumButton>
       </View>
 
-      {showTutorial && <TutorialScreen gameName="Poker" steps={GAME_TUTORIALS.poker} onClose={handleTutorialClose} />}
+      {showTutorial && <TutorialScreen gameName="Poker" steps={GAME_TUTORIALS.poker} gameId="poker" onClose={handleTutorialClose} />}
     </View>
   );
 }

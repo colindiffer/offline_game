@@ -29,7 +29,8 @@ import {
 } from './logic';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const BOARD_SIZE = SCREEN_WIDTH - 32;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const BOARD_SIZE = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52);
 const CELL_SIZE = Math.floor(BOARD_SIZE / SNAKE_GRID_SIZE);
 const ACTUAL_BOARD = CELL_SIZE * SNAKE_GRID_SIZE;
 
@@ -379,6 +380,7 @@ export default function Snake({ difficulty }: Props) {
         <TutorialScreen
           gameName="Snake"
           steps={GAME_TUTORIALS['snake']}
+          gameId="snake"
           onClose={() => {
             setShowTutorial(false);
             AsyncStorage.setItem('@tutorial_snake', 'true');

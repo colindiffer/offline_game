@@ -16,7 +16,8 @@ import { generateMaze, canMove, hasWon, getMazeConfig, MazeGrid } from './logic'
 import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const MAX_MAZE_SIZE = SCREEN_WIDTH - 32;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const MAX_MAZE_SIZE = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52);
 
 interface Props {
   difficulty: Difficulty;

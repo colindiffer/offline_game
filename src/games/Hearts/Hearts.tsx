@@ -291,6 +291,7 @@ export default function Hearts({ difficulty }: Props) {
       <TutorialScreen
         gameName="Hearts"
         steps={GAME_TUTORIALS.hearts}
+        gameId="hearts"
         onClose={handleTutorialClose}
       />
     );

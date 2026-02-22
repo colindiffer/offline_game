@@ -66,11 +66,11 @@ export default function HighScoresScreen({ gameId, gameName, onClose }: Props) {
     return score.toString();
   };
 
-  const getDifficultyIcon = (diff: Difficulty): string => {
+  const getDifficultyDotColor = (diff: Difficulty): string => {
     switch (diff) {
-      case 'easy': return '🟢';
-      case 'medium': return '🟡';
-      case 'hard': return '🔴';
+      case 'easy': return '#2ed573';
+      case 'medium': return '#ffa502';
+      case 'hard': return '#ff4757';
     }
   };
 
@@ -87,7 +87,7 @@ export default function HighScoresScreen({ gameId, gameName, onClose }: Props) {
         {DIFFICULTIES.map((diff) => (
           <View key={diff} style={styles.scoreRow}>
             <View style={styles.difficultyInfo}>
-              <Text style={styles.difficultyIcon}>{getDifficultyIcon(diff)}</Text>
+              <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: getDifficultyDotColor(diff) }} />
               <View>
                 <Text style={styles.difficultyLabel}>{getDifficultyLabel(diff)}</Text>
                 <Text style={[
@@ -164,9 +164,6 @@ const getStyles = (colors: ThemeColors) =>
       alignItems: 'center',
       gap: spacing.lg,
       flex: 1,
-    },
-    difficultyIcon: {
-      fontSize: 22,
     },
     difficultyLabel: {
       ...typography.small,

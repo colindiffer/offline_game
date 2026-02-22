@@ -13,7 +13,8 @@ import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { addToSequence, SimonColor } from './logic';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const PAD_SIZE = (SCREEN_WIDTH - 80) / 2;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const PAD_SIZE = Math.min((SCREEN_WIDTH - 80) / 2, SCREEN_HEIGHT * 0.25);
 
 const PAD_COLORS = [
   { base: '#ff7675', light: '#ffb8b8' }, // Red

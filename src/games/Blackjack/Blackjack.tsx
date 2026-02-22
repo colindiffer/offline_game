@@ -355,6 +355,7 @@ export default function Blackjack({ difficulty }: Props) {
         <TutorialScreen
           gameName="Blackjack"
           steps={GAME_TUTORIALS.blackjack}
+          gameId="blackjack"
           onClose={handleTutorialClose}
         />
       )}

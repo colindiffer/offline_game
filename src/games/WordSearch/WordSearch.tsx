@@ -16,7 +16,8 @@ import { spacing, radius, shadows, typography } from '../../utils/designTokens';
 import { generateWordSearch, getSelectedWord, WordSearchGrid, Position } from './logic';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const GRID_SIZE = SCREEN_WIDTH - 32;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
+const GRID_SIZE = Math.min(SCREEN_WIDTH - 32, SCREEN_HEIGHT * 0.52);
 
 export default function WordSearch({ difficulty }: Props) {
   const { colors } = useTheme();
