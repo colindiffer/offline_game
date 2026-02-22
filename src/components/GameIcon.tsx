@@ -48,17 +48,24 @@ export default function GameIcon({ gameId }: Props) {
 /* ── Tic-Tac-Toe ── */
 function TicTacToeIcon() {
   return (
-    <View style={s.container}>
-      {/* Grid lines */}
-      <View style={[s.tttHBar, { top: 22 }]} />
-      <View style={[s.tttHBar, { top: 40 }]} />
-      <View style={[s.tttVBar, { left: 22 }]} />
-      <View style={[s.tttVBar, { left: 40 }]} />
-      {/* X */}
-      <View style={[s.tttX1]} />
-      <View style={[s.tttX2]} />
-      {/* O */}
-      <View style={s.tttO} />
+    <View style={s.tttBoard}>
+      {[0,1,2].map(row => (
+        <View key={row} style={s.tttRow}>
+          {[0,1,2].map(col => (
+            <View key={col} style={[
+              s.tttCell,
+              col < 2 && s.tttCellBorderRight,
+              row < 2 && s.tttCellBorderBottom,
+            ]}>
+              {row === 0 && col === 2 && <>
+                <View style={s.tttXArm1} />
+                <View style={s.tttXArm2} />
+              </>}
+              {row === 2 && col === 0 && <View style={s.tttOShape} />}
+            </View>
+          ))}
+        </View>
+      ))}
     </View>
   );
 }
@@ -238,20 +245,7 @@ function CheckersIcon() {
 
 /* ── Chess ── */
 function ChessIcon() {
-  return (
-    <View style={s.container}>
-      {/* Base */}
-      <View style={s.chessBase} />
-      {/* Neck */}
-      <View style={s.chessNeck} />
-      {/* Head */}
-      <View style={s.chessHead} />
-      {/* Crown bumps */}
-      <View style={[s.chessBump, { left: 24 }]} />
-      <View style={[s.chessBump, { left: 31 }]} />
-      <View style={[s.chessBump, { left: 38 }]} />
-    </View>
-  );
+  return <Text style={s.chessSymbol}>{'♚\uFE0E'}</Text>;
 }
 
 /* ── Blackjack ── */
@@ -472,17 +466,7 @@ function BattleshipIcon() {
 
 /* ── Spades ── */
 function SpadesIcon() {
-  return (
-    <View style={s.container}>
-      {/* Inverted heart: two circles pointing up */}
-      <View style={[s.spadeCircle, { top: 16, left: 16 }]} />
-      <View style={[s.spadeCircle, { top: 16, left: 30 }]} />
-      {/* Point (rotated square) */}
-      <View style={s.spadePoint} />
-      {/* Stem */}
-      <View style={s.spadeStem} />
-    </View>
-  );
+  return <Text style={s.spadeSymbol}>{'♠\uFE0E'}</Text>;
 }
 
 /* ── Code Breaker ── */
@@ -558,11 +542,14 @@ const s = StyleSheet.create({
   },
 
   /* Tic-Tac-Toe */
-  tttHBar: { position: 'absolute', width: 56, height: 3, backgroundColor: WD, borderRadius: 2, left: 12 },
-  tttVBar: { position: 'absolute', height: 56, width: 3, backgroundColor: WD, borderRadius: 2, top: 12 },
-  tttX1: { position: 'absolute', width: 20, height: 3, backgroundColor: WD, borderRadius: 2, top: 12, left: 48, transform: [{ rotate: '45deg' }] },
-  tttX2: { position: 'absolute', width: 20, height: 3, backgroundColor: WD, borderRadius: 2, top: 12, left: 48, transform: [{ rotate: '-45deg' }] },
-  tttO: { position: 'absolute', width: 16, height: 16, borderRadius: 8, borderWidth: 3, borderColor: WD, top: 46, left: 12 },
+  tttBoard: { width: 66, height: 66 },
+  tttRow: { flexDirection: 'row', flex: 1 },
+  tttCell: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  tttCellBorderRight: { borderRightWidth: 3, borderRightColor: WD },
+  tttCellBorderBottom: { borderBottomWidth: 3, borderBottomColor: WD },
+  tttXArm1: { position: 'absolute', width: 14, height: 3, backgroundColor: WD, borderRadius: 2, transform: [{ rotate: '45deg' }] },
+  tttXArm2: { position: 'absolute', width: 14, height: 3, backgroundColor: WD, borderRadius: 2, transform: [{ rotate: '-45deg' }] },
+  tttOShape: { width: 13, height: 13, borderRadius: 7, borderWidth: 3, borderColor: WD },
 
   /* Snake */
   snakeHead: { position: 'absolute', width: 14, height: 14, borderRadius: 3, backgroundColor: WD },
@@ -615,10 +602,7 @@ const s = StyleSheet.create({
   checkPiece: { position: 'absolute', width: 9, height: 9, borderRadius: 5, backgroundColor: WD, top: 2, left: 2 },
 
   /* Chess */
-  chessBase: { position: 'absolute', bottom: 14, width: 44, height: 6, backgroundColor: WD, borderRadius: 3 },
-  chessNeck: { position: 'absolute', bottom: 20, width: 16, height: 16, backgroundColor: WD, left: 32 },
-  chessHead: { position: 'absolute', bottom: 34, width: 20, height: 12, backgroundColor: WD, borderRadius: 6, left: 30 },
-  chessBump: { position: 'absolute', bottom: 43, width: 7, height: 7, backgroundColor: WD, borderRadius: 4 },
+  chessSymbol: { fontSize: 52, color: WD, lineHeight: 66 },
 
   /* Poker */
   pokerChip: { position: 'absolute', bottom: 10, right: 10, width: 26, height: 26, borderRadius: 13, backgroundColor: WD, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)' },
@@ -675,9 +659,7 @@ const s = StyleSheet.create({
   bsMiss: { color: WD, fontSize: 8, fontWeight: '900' },
 
   /* Spades */
-  spadeCircle: { position: 'absolute', width: 20, height: 20, borderRadius: 10, backgroundColor: WD },
-  spadePoint: { position: 'absolute', top: 26, width: 22, height: 22, backgroundColor: WD, left: 29, transform: [{ rotate: '45deg' }] },
-  spadeStem: { position: 'absolute', bottom: 12, left: 37, width: 6, height: 14, backgroundColor: WD, borderRadius: 3 },
+  spadeSymbol: { fontSize: 52, color: WD, lineHeight: 66 },
 
   /* Code Breaker */
   cbRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
