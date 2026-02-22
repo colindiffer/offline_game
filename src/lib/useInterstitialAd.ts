@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { Platform } from 'react-native';
 import { InterstitialAd, AdEventType, TestIds } from 'react-native-google-mobile-ads';
 
-// TODO: Replace these with your real AdMob ad unit IDs from admob.google.com
 const PRODUCTION_INTERSTITIAL_ID = Platform.select({
   ios: 'ca-app-pub-7047560171408604/8910007522',
   android: 'ca-app-pub-7047560171408604/4845503969',
@@ -16,66 +15,52 @@ const interstitial = InterstitialAd.createForAdRequest(adUnitId, {
 });
 
 let lastShownTime = 0;
+let isLoaded = false;
 const AD_COOLDOWN_MS = 90 * 1000; // 90 seconds
 
+// Set up listeners once at module level — avoids duplicate listeners
+// from multiple hook instances competing over the same singleton ad object.
+interstitial.addAdEventListener(AdEventType.LOADED, () => {
+  console.log('InterstitialAd: LOADED');
+  isLoaded = true;
+});
+
+interstitial.addAdEventListener(AdEventType.CLOSED, () => {
+  console.log('InterstitialAd: CLOSED');
+  isLoaded = false;
+  lastShownTime = Date.now();
+  interstitial.load();
+});
+
+interstitial.addAdEventListener(AdEventType.ERROR, (error) => {
+  console.log('InterstitialAd: ERROR', error.message);
+  isLoaded = false;
+  // Retry loading after a short delay
+  setTimeout(() => interstitial.load(), 5000);
+});
+
+// Load the first ad immediately on import
+interstitial.load();
+
 export function useInterstitialAd() {
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    const unsubscribeLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
-      console.log('InterstitialAd: LOADED');
-      setLoaded(true);
-    });
-
-    const unsubscribeClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
-      console.log('InterstitialAd: CLOSED');
-      setLoaded(false);
-      lastShownTime = Date.now();
-      interstitial.load();
-    });
-
-    const unsubscribeError = interstitial.addAdEventListener(AdEventType.ERROR, (error) => {
-      console.log('InterstitialAd: ERROR', error.message);
-      setLoaded(false);
-    });
-
-    // Start loading the first ad
-    console.log('InterstitialAd: Initial load attempt');
-    interstitial.load();
-
-    return () => {
-      unsubscribeLoaded();
-      unsubscribeClosed();
-      unsubscribeError();
-    };
-  }, []);
-
-  const showAd = useCallback((isFirstLevelOrGame: boolean = false) => {
-    if (isFirstLevelOrGame) {
-      console.log('InterstitialAd: Ad skipped because it is the first level/game.');
-      return;
-    }
-
+  // isFirstLevelOrGame parameter kept for call-site compatibility but no longer skips the ad.
+  // Ads now show on every game/level end, subject to the 90-second cooldown.
+  const showAd = useCallback((_isFirstLevelOrGame: boolean = false) => {
     const now = Date.now();
     const canShowDueToCooldown = (now - lastShownTime) >= AD_COOLDOWN_MS;
+
     console.log('InterstitialAd: Attempting to show ad.');
-    console.log(`  - loaded: ${loaded}`);
+    console.log(`  - isLoaded: ${isLoaded}`);
     console.log(`  - canShowDueToCooldown: ${canShowDueToCooldown}`);
     console.log(`  - time since last shown: ${now - lastShownTime}ms (cooldown: ${AD_COOLDOWN_MS}ms)`);
 
-    if (loaded && canShowDueToCooldown) {
+    if (isLoaded && canShowDueToCooldown) {
       console.log('InterstitialAd: Showing ad.');
       interstitial.show();
-    } else if (loaded && !canShowDueToCooldown) {
-      console.log('Ad skipped: Cooldown active');
-      // Ad is loaded but cooldown is active, try to load a new one for next time
-      interstitial.load();
     } else {
-      console.log('Ad not loaded yet. Attempting to load for next opportunity.');
-      // Ad not loaded, try to load it. This will make it ready for the next call to showAd
-      interstitial.load();
+      console.log(`InterstitialAd: Skipped — ${!isLoaded ? 'not loaded yet' : 'cooldown active'}`);
     }
-  }, [loaded]);
+  }, []);
 
-  return { showAd, loaded };
+  return { showAd };
 }

@@ -164,6 +164,7 @@ const getStyles = (colors: ThemeColors) =>
     },
     contentCard: {
       flex: 1,
+      maxHeight: height * 0.6,
       // marginHorizontal: spacing.lg, // Removed to use container padding
       backgroundColor: colors.card,
       borderRadius: radius.xl,

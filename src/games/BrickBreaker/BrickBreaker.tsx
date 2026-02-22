@@ -184,7 +184,7 @@ export default function BrickBreaker({ difficulty }: Props) {
         hitBrick = true;
         playSound('drop');
         if (b.type === 'powerUp' && b.powerUp) {
-          powerUps.push({ x: b.x + b.width / 2, y: b.y + b.height / 2, type: b.powerUp, active: true });
+          newPowerUps.push({ x: b.x + b.width / 2, y: b.y + b.height / 2, type: b.powerUp, active: true });
         }
       }
       return b;

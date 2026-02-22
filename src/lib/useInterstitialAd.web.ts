@@ -1,11 +1,7 @@
-import { useState } from 'react';
+import { useCallback } from 'react';
 
 export function useInterstitialAd() {
-    const [loaded] = useState(false);
-
-    const showAd = () => {
-        // No-op on web
-    };
-
-    return { showAd, loaded };
+    // No-op on web
+    const showAd = useCallback((_isFirstLevelOrGame: boolean = false) => {}, []);
+    return { showAd };
 }

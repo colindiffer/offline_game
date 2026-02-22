@@ -53,9 +53,6 @@ export default function Blackjack({ difficulty }: Props) {
     getHighScore('blackjack', difficulty).then(score => {
       setHighScore(score || INITIAL_BANKROLL);
     });
-    AsyncStorage.getItem('@tutorial_blackjack').then(shown => {
-      if (!shown) setShowTutorial(true);
-    });
   }, [difficulty]);
 
   // Update high score when tokens increase

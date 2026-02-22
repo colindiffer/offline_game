@@ -59,9 +59,6 @@ export default function Poker({ difficulty }: Props) {
     getHighScore('poker', difficulty).then(score => {
       setHighScore(score || INITIAL_CHIPS);
     });
-    AsyncStorage.getItem('@tutorial_poker').then(shown => {
-      if (!shown) setShowTutorial(true);
-    });
   }, [difficulty]);
 
   useEffect(() => {

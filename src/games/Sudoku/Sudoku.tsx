@@ -56,9 +56,6 @@ export default function Sudoku({ difficulty }: Props) {
       startTimeRef.current = Date.now();
     };
     init();
-    AsyncStorage.getItem('@tutorial_sudoku').then((shown) => {
-      if (!shown) setShowTutorial(true);
-    });
   }, [difficulty]);
 
   useEffect(() => {

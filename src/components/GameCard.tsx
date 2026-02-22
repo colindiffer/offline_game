@@ -64,6 +64,16 @@ export default function GameCard({ game, onPress, index = 0 }: Props) {
     if (game.id === 'brick-breaker') {
       return (
         <View style={styles.bbContainer}>
+          <View style={styles.bbBricksRow}>
+            <View style={[styles.bbBrick, { backgroundColor: '#ff7675' }]} />
+            <View style={[styles.bbBrick, { backgroundColor: '#fdcb6e' }]} />
+            <View style={[styles.bbBrick, { backgroundColor: '#55efc4' }]} />
+          </View>
+          <View style={styles.bbBricksRow}>
+            <View style={[styles.bbBrick, { backgroundColor: '#74b9ff' }]} />
+            <View style={[styles.bbBrick, { backgroundColor: '#a29bfe' }]} />
+            <View style={[styles.bbBrick, { backgroundColor: '#ff7675' }]} />
+          </View>
           <View style={styles.bbBall} />
           <View style={styles.bbPaddle} />
         </View>
@@ -144,7 +154,7 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
     paddingBottom: 4,
   },
   icon: {
-    fontSize: 72,
+    fontSize: 60,
     textShadowColor: 'rgba(0,0,0,0.25)',
     textShadowOffset: { width: 0, height: 8 },
     textShadowRadius: 10,
@@ -178,18 +188,28 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   bbContainer: {
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    height: 70,
+    justifyContent: 'space-between',
+    height: 72,
     width: 90,
+    paddingVertical: 2,
+  },
+  bbBricksRow: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  bbBrick: {
+    width: 22,
+    height: 9,
+    borderRadius: 2,
   },
   bbBall: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: '#fff',
     position: 'absolute',
-    top: 8,
-    right: 22,
+    bottom: 20,
+    left: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.4,
@@ -198,8 +218,8 @@ const getStyles = (colors: ThemeColors) => StyleSheet.create({
   },
   bbPaddle: {
     width: 70,
-    height: 12,
-    borderRadius: 6,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },

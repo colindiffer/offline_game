@@ -62,9 +62,6 @@ export default function Minesweeper({ difficulty }: Props) {
       setBoard(createBoard(difficulty, -1, -1, savedLevel, true));
     };
     init();
-    AsyncStorage.getItem('@tutorial_minesweeper').then((shown) => {
-      if (!shown) setShowTutorial(true);
-    });
   }, [difficulty]);
 
   useEffect(() => {

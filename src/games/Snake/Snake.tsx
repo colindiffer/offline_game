@@ -34,8 +34,8 @@ const CELL_SIZE = Math.floor(BOARD_SIZE / SNAKE_GRID_SIZE);
 const ACTUAL_BOARD = CELL_SIZE * SNAKE_GRID_SIZE;
 
 const TICK_BY_DIFFICULTY: Record<Difficulty, number> = {
-  easy: 200,
-  medium: 150,
+  easy: 350,
+  medium: 200,
   hard: 100,
 };
 
@@ -69,9 +69,6 @@ export default function Snake({ difficulty }: Props) {
 
   useEffect(() => {
     getHighScore('snake', difficulty).then(setHigh);
-    AsyncStorage.getItem('@tutorial_snake').then((shown) => {
-      if (!shown) setShowTutorial(true);
-    });
   }, [difficulty]);
 
   useEffect(() => {

@@ -74,9 +74,6 @@ export default function Game2048({ difficulty }: Props) {
 
   useEffect(() => {
     getHighScore('2048', difficulty).then(setHigh);
-    AsyncStorage.getItem('@tutorial_2048').then((shown) => {
-      if (!shown) setShowTutorial(true);
-    });
   }, [difficulty]);
 
   useEffect(() => {

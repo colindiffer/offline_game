@@ -50,9 +50,6 @@ export default function TicTacToe({ difficulty }: Props) {
 
   useEffect(() => {
     getHighScore('tic-tac-toe', difficulty).then(setHigh);
-    AsyncStorage.getItem('@tutorial_tic-tac-toe').then((shown) => {
-      if (!shown) setShowTutorial(true);
-    });
   }, [difficulty]);
 
   useEffect(() => {

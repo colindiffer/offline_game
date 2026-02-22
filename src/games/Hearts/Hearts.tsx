@@ -65,9 +65,6 @@ export default function Hearts({ difficulty }: Props) {
     getHighScore('hearts', difficulty).then(score => {
       setHighScore(score || 0);
     });
-    AsyncStorage.getItem('@tutorial_hearts').then(shown => {
-      if (!shown) setShowTutorial(true);
-    });
   }, [difficulty]);
 
   useEffect(() => {

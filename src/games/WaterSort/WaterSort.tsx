@@ -236,13 +236,6 @@ export default function WaterSort({ difficulty }: Props) {
       <LinearGradient colors={[colors.background, colors.surface]} style={StyleSheet.absoluteFill} />
       <Header title="Water Sort" score={elapsedTime} scoreLabel="TIME" highScore={level} highScoreLabel="LEVEL" />
       
-      <View style={styles.levelHeader}>
-        <View style={styles.difficultyBadge}>
-          <Text style={styles.difficultyText}>{difficulty.toUpperCase()}</Text>
-        </View>
-        <Text style={styles.levelText}>Level {level}</Text>
-      </View>
-
       <View style={styles.gameArea}>
         <View style={styles.tubesGrid}>
           {tubes.map((tube, index) => renderTube(tube, index))}
