@@ -85,10 +85,10 @@ workflows:
           MYAPP_UPLOAD_KEY_PASSWORD=$CM_KEY_PASSWORD
           EOF
 
-      - name: Build Android App Bundle
+      - name: Build Android App Bundle and APK
         script: |
           cd android
-          ./gradlew bundleRelease
+          ./gradlew bundleRelease assembleRelease
 
     artifacts:
       - android/app/build/outputs/**/*.aab
