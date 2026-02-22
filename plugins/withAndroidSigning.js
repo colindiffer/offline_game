@@ -2,21 +2,19 @@ const { withAppBuildGradle } = require('@expo/config-plugins');
 
 const withAndroidSigning = (config) => {
   return withAppBuildGradle(config, (config) => {
-    if (config.modResults.contents.includes('MYAPP_UPLOAD_STORE_FILE')) {
+    let contents = config.modResults.contents;
+
+    // Check if already modified
+    if (contents.includes('MYAPP_UPLOAD_STORE_FILE')) {
       return config;
     }
 
-    // Add release signing config
-    config.modResults.contents = config.modResults.contents.replace(
-      /signingConfigs\s*\{[^}]*\}/,
-      `signingConfigs {
-        debug {
-            storeFile file('debug.keystore')
-            storePassword 'android'
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
-        }
-        release {
+    // Find the signingConfigs section and add release config
+    const signingConfigsRegex = /(signingConfigs\s*\{\s*debug\s*\{[^}]*\}\s*)(})/;
+    
+    contents = contents.replace(
+      signingConfigsRegex,
+      `$1        release {
             if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
                 storeFile file(MYAPP_UPLOAD_STORE_FILE)
                 storePassword MYAPP_UPLOAD_STORE_PASSWORD
@@ -24,16 +22,16 @@ const withAndroidSigning = (config) => {
                 keyPassword MYAPP_UPLOAD_KEY_PASSWORD
             }
         }
-    }`
+    $2`
     );
 
-    // Change release build to use release signing config
-    config.modResults.contents = config.modResults.contents.replace(
-      /release\s*\{[^}]*signingConfig\s+signingConfigs\.debug/,
-      `release {
-            signingConfig signingConfigs.release`
+    // Change release signingConfig from debug to release
+    contents = contents.replace(
+      /release\s*\{([^}]*?)signingConfig\s+signingConfigs\.debug/s,
+      'release {$1signingConfig signingConfigs.release'
     );
 
+    config.modResults.contents = contents;
     return config;
   });
 };
