@@ -202,7 +202,7 @@ export default function GameScreen({ route }: Props) {
       case '2048': gameComponent = <Game2048 difficulty={difficulty} />; break;
       case 'minesweeper': gameComponent = <Minesweeper difficulty={difficulty} />; break;
       case 'connect-four': gameComponent = <ConnectFour difficulty={difficulty} />; break;
-      case 'tetris': gameComponent = <Tetris difficulty={difficulty} />; break;
+      case 'block-drop': gameComponent = <Tetris difficulty={difficulty} />; break;
       case 'maze': gameComponent = <Maze difficulty={difficulty} />; break;
       case 'solitaire': gameComponent = <Solitaire difficulty={difficulty} />; break;
       case 'sudoku': gameComponent = <Sudoku difficulty={difficulty} />; break;

@@ -42,7 +42,7 @@ export const GAMES: GameMetadata[] = [
     category: 'Board',
   },
   {
-    id: 'tetris',
+    id: 'block-drop',
     name: 'Block Drop',
     icon: '🧱',
     description: 'Stack the falling blocks',

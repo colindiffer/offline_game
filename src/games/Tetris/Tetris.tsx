@@ -66,7 +66,7 @@ export default function Tetris({ difficulty }: Props) {
   const tetrominoPosRef = useRef(tetrominoPos);
 
   useEffect(() => {
-    getHighScore('tetris', difficulty).then(setHighScoreState);
+    getHighScore('block-drop', difficulty).then(setHighScoreState);
   }, [difficulty]);
 
   const stopGameLoop = useCallback(() => {
@@ -112,7 +112,7 @@ export default function Tetris({ difficulty }: Props) {
             const newScore = s + calculateScore(clearedLines, levelRef.current);
             if (newScore > highScore) {
               setHighScoreState(newScore);
-              setHighScore('tetris', newScore, difficulty);
+              setHighScore('block-drop', newScore, difficulty);
             }
             return newScore;
           });
@@ -150,7 +150,7 @@ export default function Tetris({ difficulty }: Props) {
   useEffect(() => {
     if (gameOver && startTimeRef.current) {
       const gameDuration = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      recordGameResult('tetris', score > 0 ? 'win' : 'loss', gameDuration);
+      recordGameResult('block-drop', score > 0 ? 'win' : 'loss', gameDuration);
     }
   }, [gameOver, score]);
 
@@ -215,7 +215,7 @@ export default function Tetris({ difficulty }: Props) {
             const newScore = s + calculateScore(clearedLines, level);
             if (newScore > highScore) {
               setHighScoreState(newScore);
-              setHighScore('tetris', newScore, difficulty);
+              setHighScore('block-drop', newScore, difficulty);
             }
             return newScore;
           });

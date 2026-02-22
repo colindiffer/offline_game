@@ -14,7 +14,7 @@ const createEmptyStats = (): Record<GameId, GameStats> => ({
   '2048': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
   minesweeper: { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
   'connect-four': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
-  tetris: { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
+  'block-drop': { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
   maze: { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
   solitaire: { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },
   sudoku: { gamesPlayed: 0, wins: 0, losses: 0, totalTimeSeconds: 0 },

@@ -16,7 +16,7 @@ export default function GameIcon({ gameId }: Props) {
     case '2048': return <Icon2048 />;
     case 'minesweeper': return <MinesweeperIcon />;
     case 'connect-four': return <ConnectFourIcon />;
-    case 'tetris': return <TetrisIcon />;
+    case 'block-drop': return <TetrisIcon />;
     case 'maze': return <MazeIcon />;
     case 'solitaire': return <SolitaireIcon />;
     case 'sudoku': return <SudokuIcon />;

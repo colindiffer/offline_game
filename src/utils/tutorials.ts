@@ -93,9 +93,9 @@ export const GAME_TUTORIALS: Record<GameId, TutorialStep[]> = {
     },
   ],
   
-  tetris: [
+  'block-drop': [
     {
-      title: 'Welcome to Tetris!',
+      title: 'Welcome to Block Drop!',
       description: 'Rotate and place falling blocks to clear lines!',
       icon: '🧱',
     },
@@ -106,7 +106,7 @@ export const GAME_TUTORIALS: Record<GameId, TutorialStep[]> = {
     },
     {
       title: 'Strategy',
-      description: 'Keep the board low and save space for the long I-piece to clear four lines at once (Tetris)!',
+      description: 'Keep the board low and save space for the long I-piece to clear four lines at once!',
       tips: ['Leave a column open for I-pieces', 'Don\'t create gaps', 'Speed increases over time'],
     },
   ],
